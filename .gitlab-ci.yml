@@ -11,4 +11,4 @@ trigger_backend:
     strategy: depend
   rules:
     - changes:
-        - backend/*
+        - backend/**/*
