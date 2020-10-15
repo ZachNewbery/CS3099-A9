@@ -8,8 +8,7 @@ trigger_backend:
   stage: triggers
   trigger:
     include: backend/.gitlab-ci.yml
+    strategy: depend
   rules:
     - changes:
         - backend/*
-
-
