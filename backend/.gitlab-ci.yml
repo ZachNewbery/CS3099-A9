@@ -5,6 +5,7 @@ build-backend-rust-latest:
   stage: build
   image: rust:latest
   script:
+    - cd backend
     - rustc --version
     - cargo --version
     - cargo test
@@ -19,6 +20,7 @@ build-backend-rust-nightly:
   stage: build
   image: rustlang/rust:nightly
   script:
+    - cd backend
     - rustc --version
     - cargo --version
     - cargo test
