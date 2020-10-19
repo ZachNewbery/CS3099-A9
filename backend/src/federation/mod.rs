@@ -9,3 +9,4 @@ pub async fn hello(web::Path(name): web::Path<String>) -> Result<String> {
 
 pub mod communities;
 pub mod posts;
+pub mod schemas;
