@@ -6,3 +6,6 @@ use actix_web::Result;
 pub async fn hello(web::Path(name): web::Path<String>) -> Result<String> {
     Ok(format!("Hello {}", name))
 }
+
+pub mod communities;
+pub mod posts;
