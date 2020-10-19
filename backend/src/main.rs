@@ -1,4 +1,6 @@
-use actix_web::{get, middleware, web, App, HttpServer, Result};
+use actix_web::{middleware, web, App, HttpServer};
+
+pub mod federation;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -15,14 +17,9 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
         App::new()
             .wrap(middleware::Logger::default())
-            .service(hello)
+            .service(web::scope("/federation").service(federation::hello))
     })
     .bind(bind)?
     .run()
     .await
-}
-
-#[get("/hello/{name}")]
-async fn hello(web::Path(name): web::Path<String>) -> Result<String> {
-    Ok(format!("Hello {}", name))
 }
