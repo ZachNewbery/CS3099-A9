@@ -13,7 +13,6 @@ async fn main() -> std::io::Result<()> {
         std::env::var("BIND_PORT").expect("BIND_PORT")
     );
 
-
     println!("Starting server on: {}", &bind);
 
     // Start the server!
