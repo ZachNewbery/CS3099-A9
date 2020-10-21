@@ -2,6 +2,7 @@ use crate::federation::communities::{communities, community_by_id, community_by_
 use crate::federation::posts::{delete_post, edit_post, new_post, post_by_id, posts};
 use actix_web::{middleware, web, App, HttpServer};
 
+pub mod database;
 pub mod federation;
 
 #[actix_web::main]
@@ -12,7 +13,6 @@ async fn main() -> std::io::Result<()> {
         std::env::var("BIND_ADDRESS").expect("BIND_ADDRESS"),
         std::env::var("BIND_PORT").expect("BIND_PORT")
     );
-
 
     println!("Starting server on: {}", &bind);
 
