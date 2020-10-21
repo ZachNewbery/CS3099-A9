@@ -10,3 +10,4 @@ edition = "2018"
 actix-web = "3"
 dotenv = "^0.15.0"
 serde = "^1.0.117"
+diesel = { version = "1.4.4", features = ["mysql"] }
