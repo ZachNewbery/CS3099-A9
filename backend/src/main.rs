@@ -1,6 +1,7 @@
 use crate::federation::communities::{communities, community_by_id, community_by_id_timestamps};
 use crate::federation::posts::{delete_post, edit_post, new_post, post_by_id, posts};
 use actix_web::{middleware, web, App, HttpServer};
+use self::database::*;
 
 pub mod database;
 pub mod federation;
@@ -15,6 +16,7 @@ async fn main() -> std::io::Result<()> {
     );
 
     println!("Starting server on: {}", &bind);
+    // let connection = establish_connection();
 
     // Start the server!
     HttpServer::new(|| {
