@@ -1,8 +1,20 @@
 import React from "react";
-import { Redirect } from "react-router-dom";
+import { Redirect, useHistory } from "react-router-dom";
+import styled from "styled-components";
 import { isAuthenticated } from "./helpers";
 
+const StyledContainer = styled.div`
+  display: flex;
+`;
+
 export const Home = () => {
-  if (!isAuthenticated()) return <Redirect to='/login' />
-  return <h1>Home</h1>
+  const history = useHistory();
+
+  if (!isAuthenticated()) return <Redirect to='/login' />;
+
+  return (
+    <StyledContainer>
+      <button onClick={() => history.push("/logout")}>Logout</button>
+    </StyledContainer>
+  )
 }

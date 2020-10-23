@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom'
 import { Home } from './Home';
 import { Login } from './Login';
+import { Logout } from './Logout';
 import { Registration } from './Registration';
 
 ReactDOM.render(
@@ -14,6 +15,9 @@ ReactDOM.render(
         </Route>
         <Route path="/login">
           <Login />
+        </Route>
+        <Route path="/logout">
+          <Logout />
         </Route>
         <Route path="/">
           <Home />
