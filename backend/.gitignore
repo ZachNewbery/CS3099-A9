@@ -12,3 +12,6 @@ target/
 
 # IntelliJ IDEA
 .idea/
+
+# Do not share the database password config
+database.env
