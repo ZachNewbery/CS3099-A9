@@ -24,7 +24,8 @@ export const Registration = () => {
 
   const handleSubmit = e => {
     e.preventDefault();
-    setErrors({});
+    let currentErrors = {};
+    setErrors(currentErrors);
 
     let { firstName, lastName, userName, password, confirmPassword } = formRef.current;
     
@@ -35,14 +36,15 @@ export const Registration = () => {
     confirmPassword = confirmPassword.value;
 
     if (password !== confirmPassword)  {
-      setErrors(currentErrors => ({ ...currentErrors, confirmPassword: 'Passwords don\'t match' }));
+      currentErrors.confirmPassword = 'Passwords don\'t match';
     }
 
-    if (Object.keys(errors).length === 0) {
+    if (Object.keys(currentErrors).length === 0) {
       localStorage.setItem('access-token', 'hithere');
       history.push('/');
     }
 
+    setErrors(currentErrors);
     console.log({ firstName, lastName, userName, password, confirmPassword });
   }
 

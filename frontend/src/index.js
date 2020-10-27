@@ -5,9 +5,11 @@ import { Home } from './Home';
 import { Login } from './Login';
 import { Logout } from './Logout';
 import { Registration } from './Registration';
+import { GlobalStyle } from "./helpers";
 
 ReactDOM.render(
   <React.StrictMode>
+    <GlobalStyle />
     <Router>
       <Switch>
         <Route path='/registration'>
