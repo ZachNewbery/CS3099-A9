@@ -7,8 +7,8 @@ pub mod federation;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    dotenv::dotenv().ok();
-    dotenv::from_filename("database.env").expect("no database source found");
+    dotenv::from_filename("setup.env").ok();
+    dotenv::from_filename(".env").expect("no database source found");
     let bind = format!(
         "{}:{}",
         std::env::var("BIND_ADDRESS").expect("BIND_ADDRESS"),
