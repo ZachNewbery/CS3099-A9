@@ -2,8 +2,13 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 pub(crate) struct UserID {
-    user_id: String,
-    server_id: String,
+    id: String,
+    host: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub(crate) enum PostContentType {
+    Text,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -18,6 +23,7 @@ pub(crate) struct Community {
 pub(crate) struct NewPost {
     parent: String, // Should be UUID v4?
     title: String,
+    content_type: PostContentType,
     body: String,
     author: UserID,
 }
@@ -32,6 +38,7 @@ pub(crate) struct UpdatePost {
 pub(crate) struct Post {
     id: String,            // Should be UUID v4?
     children: Vec<String>, // Should be a vec of UUID v4?
+    content_type: PostContentType,
     body: String,
     author: UserID,
     modified: u64, // Should be timestamp?
