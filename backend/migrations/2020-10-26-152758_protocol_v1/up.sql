@@ -1,5 +1,4 @@
 -- Your SQL goes here
-CREATE TABLE Users ( id SERIAL, username VARCHAR(24), primary key(id));
-CREATE TABLE Communities ( id SERIAL, uid VARCHAR(255) NOT NULL, title VARCHAR(255) NOT NULL, primary key(id));
-CREATE TABLE CommunitiesAdmins ( communitiesID SERIAL, userID SERIAL, FOREIGN KEY (communitiesID) REFERENCES Communities(id), FOREIGN KEY (userID) REFERENCES Users(id));
-CREATE TABLE Posts ( id SERIAL, uuid VARCHAR NOT NULL, title VARCHAR NOT NULL, primary key(id));
+CREATE TABLE IF NOT EXISTS Users ( id SERIAL PRIMARY KEY, username VARCHAR(24));
+CREATE TABLE IF NOT EXISTS Communities ( id SERIAL PRIMARY KEY, uuid VARCHAR(100) NOT NULL, title VARCHAR(100) NOT NULL);
+CREATE TABLE IF NOT EXISTS Posts ( id SERIAL PRIMARY KEY, uuid VARCHAR(100) NOT NULL, title VARCHAR(100) NOT NULL);
