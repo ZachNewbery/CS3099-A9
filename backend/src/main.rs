@@ -1,18 +1,18 @@
 #[macro_use]
 extern crate diesel;
-extern crate dotenv;
 
 use crate::federation::communities::{communities, community_by_id, community_by_id_timestamps};
 use crate::federation::posts::{delete_post, edit_post, new_post, post_by_id, posts};
 use actix_web::{middleware, web, App, HttpServer};
-use database::models::*;
 use diesel::prelude::*;
+use diesel::r2d2::ConnectionManager;
 
 pub mod database;
 pub mod federation;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    // Make sure dotenvs are all here
     dotenv::from_filename("setup.env").ok();
     dotenv::from_filename(".env").expect("no database source found");
     let bind = format!(
@@ -21,29 +21,37 @@ async fn main() -> std::io::Result<()> {
         std::env::var("BIND_PORT").expect("BIND_PORT")
     );
 
+    let manager = ConnectionManager::<MysqlConnection>::new(std::env::var("DATABASE_URL").unwrap());
+    let pool = r2d2::Pool::builder()
+        .max_size(8)
+        .build(manager)
+        .expect("could not set up threadpool for database");
+
     println!("Starting server on: {}", &bind);
-    let connection = database::establish_connection();
 
     // Start the server!
-    HttpServer::new(|| {
-        App::new().wrap(middleware::Logger::default()).service(
-            web::scope("/federation")
-                .service(
-                    web::scope("/communities")
-                        .service(communities)
-                        .service(community_by_id)
-                        .service(community_by_id_timestamps),
-                )
-                .service(
-                    web::scope("/posts")
-                        .service(posts)
-                        .service(new_post)
-                        .service(post_by_id)
-                        .service(edit_post)
-                        .service(delete_post),
-                )
-                .service(federation::hello), // Hello!
-        )
+    HttpServer::new(move || {
+        App::new()
+            .wrap(middleware::Logger::default())
+            .data(pool.clone())
+            .service(
+                web::scope("/federation")
+                    .service(
+                        web::scope("/communities")
+                            .service(communities)
+                            .service(community_by_id)
+                            .service(community_by_id_timestamps),
+                    )
+                    .service(
+                        web::scope("/posts")
+                            .service(posts)
+                            .service(new_post)
+                            .service(post_by_id)
+                            .service(edit_post)
+                            .service(delete_post),
+                    )
+                    .service(federation::hello), // Hello!
+            )
     })
     .bind(bind)?
     .run()
