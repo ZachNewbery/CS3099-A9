@@ -15,8 +15,16 @@ pub fn establish_connection() -> MysqlConnection {
         .unwrap_or_else(|_| panic!("Error connecting to {}", database_url))
 }
 
-pub fn create_post<'a>(conn: &MysqlConnection, title: &'a str) {
+pub fn create_post<'a>(conn: &MysqlConnection, title: &'a str, body: &'a str) {
     use schema::Posts;
 
-    let new_post = NewPost { title: title };
+    let new_post = NewPost {
+        title: title,
+        body: body,
+    };
+
+    diesel::insert_into(Posts::table)
+        .values(&new_post)
+        .execute(conn)
+        .expect("Error saving new post");
 }
