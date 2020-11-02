@@ -19,11 +19,9 @@ pub struct Community {
     pub title: String,
 }
 
-use super::schema::Posts;
-
-#[derive(Insertable)]
-#[table_name = "Posts"]
-pub struct NewPost<'a> {
-    pub title: &'a str,
-    pub body: &'a str,
-}
+// #[derive(Insertable)]
+// #[table_name = "Posts"]
+// pub struct NewPost<'a> {
+//     pub title: &'a str,
+//     pub body: &'a str,
+// }

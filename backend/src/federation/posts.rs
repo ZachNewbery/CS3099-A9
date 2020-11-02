@@ -1,3 +1,4 @@
+use crate::federation::schemas::NewPost;
 use actix_web::Result;
 use actix_web::{delete, get, post, put, web, HttpResponse};
 
@@ -7,7 +8,7 @@ pub(crate) async fn posts() -> Result<HttpResponse> {
 }
 
 #[post("/")]
-pub(crate) async fn new_post() -> Result<HttpResponse> {
+pub(crate) async fn new_post(_post: web::Json<NewPost>) -> Result<HttpResponse> {
     Ok(HttpResponse::NotImplemented().finish())
 }
 
