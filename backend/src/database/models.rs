@@ -7,6 +7,8 @@ pub struct User {
 #[derive(Queryable)]
 pub struct Post {
     pub id: i32,
+    pub author: i32,
+    pub content: String,
     pub uuid: String,
     pub title: String,
     pub body: String,
@@ -17,11 +19,12 @@ pub struct Community {
     pub id: i32,
     pub uuid: String,
     pub title: String,
+    pub desc: String,
 }
 
 // #[derive(Insertable)]
 // #[table_name = "Posts"]
-// pub struct NewPost<'a> {
+// pub struct DBNewPost<'a> {
 //     pub title: &'a str,
 //     pub body: &'a str,
 // }

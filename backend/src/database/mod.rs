@@ -4,6 +4,7 @@ pub mod models;
 pub mod schema;
 
 use crate::federation::schemas::NewPost;
+// use models::DBNewPost;
 use diesel::prelude::*;
 
 #[allow(dead_code)]

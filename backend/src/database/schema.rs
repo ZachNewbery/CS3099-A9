@@ -2,6 +2,7 @@ table! {
     Communities (id) {
         id -> Unsigned<Bigint>,
         uuid -> Varchar,
+        descr -> Varchar,
         title -> Varchar,
     }
 }
@@ -11,7 +12,11 @@ table! {
         id -> Unsigned<Bigint>,
         uuid -> Varchar,
         title -> Varchar,
+        author -> Nullable<Unsigned<Bigint>>,
+        contType -> Nullable<Varchar>,
         body -> Varchar,
+        created -> Date,
+        modified -> Nullable<Date>,
     }
 }
 
@@ -21,5 +26,7 @@ table! {
         username -> Nullable<Varchar>,
     }
 }
+
+joinable!(Posts -> Users (author));
 
 allow_tables_to_appear_in_same_query!(Communities, Posts, Users,);
