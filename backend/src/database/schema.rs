@@ -1,8 +1,7 @@
 table! {
     Communities (id) {
         id -> Unsigned<Bigint>,
-        uuid -> Varchar,
-        descr -> Varchar,
+        uid -> Varchar,
         title -> Varchar,
     }
 }
@@ -29,4 +28,8 @@ table! {
 
 joinable!(Posts -> Users (author));
 
-allow_tables_to_appear_in_same_query!(Communities, Posts, Users,);
+allow_tables_to_appear_in_same_query!(
+    Communities,
+    Posts,
+    Users,
+);
