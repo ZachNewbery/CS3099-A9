@@ -1,7 +1,7 @@
 table! {
     Communities (id) {
         id -> Unsigned<Bigint>,
-        uid -> Varchar,
+        uuid -> Varchar,
         title -> Varchar,
     }
 }
