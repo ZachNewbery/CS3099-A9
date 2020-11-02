@@ -1,10 +1,10 @@
 pub mod models;
 pub mod schema;
 
+use self::models::{NewPost, Post};
 use diesel::prelude::*;
 use dotenv::dotenv;
 use std::env;
-use self::models::{Post, NewPost};
 
 pub fn establish_connection() -> MysqlConnection {
     dotenv().ok();
@@ -18,7 +18,5 @@ pub fn establish_connection() -> MysqlConnection {
 pub fn create_post<'a>(conn: &MysqlConnection, title: &'a str) {
     use schema::Posts;
 
-    let new_post = NewPost {
-        title: title,
-    };
+    let new_post = NewPost { title: title };
 }

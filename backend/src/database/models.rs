@@ -21,7 +21,7 @@ pub struct Community {
 use super::schema::Posts;
 
 #[derive(Insertable)]
-#[table_name="Posts"]
+#[table_name = "Posts"]
 pub struct NewPost<'a> {
     pub title: &'a str,
 }

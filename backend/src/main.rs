@@ -5,8 +5,8 @@ extern crate dotenv;
 use crate::federation::communities::{communities, community_by_id, community_by_id_timestamps};
 use crate::federation::posts::{delete_post, edit_post, new_post, post_by_id, posts};
 use actix_web::{middleware, web, App, HttpServer};
-use diesel::prelude::*;
 use database::models::*;
+use diesel::prelude::*;
 
 pub mod database;
 pub mod federation;
