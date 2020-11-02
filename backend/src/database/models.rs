@@ -9,6 +9,7 @@ pub struct Post {
     pub id: i32,
     pub uuid: String,
     pub title: String,
+    pub body: String,
 }
 
 #[derive(Queryable)]

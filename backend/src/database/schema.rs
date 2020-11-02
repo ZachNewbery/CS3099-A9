@@ -11,6 +11,7 @@ table! {
         id -> Unsigned<Bigint>,
         uuid -> Varchar,
         title -> Varchar,
+        body -> Varchar,
     }
 }
 
