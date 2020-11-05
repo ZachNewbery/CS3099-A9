@@ -9,24 +9,29 @@ pub struct User {
     pub username: String,
 }
 
-#[derive(Queryable, Identifiable)]
+#[derive(Queryable, Identifiable, Associations)]
+#[belongs_to(User, foreign_key = "userId")]
 #[table_name = "LocalUsers"]
 pub struct LocalUser {
     pub id: u64,
+    #[column_name = "userId"]
     pub user_id: u64,
     pub password: String,
 }
 
-#[derive(Queryable, Identifiable)]
+#[derive(Queryable, Identifiable, Associations)]
+#[belongs_to(User, foreign_key = "userId")]
 #[table_name = "FederatedUsers"]
 pub struct FederatedUser {
     pub id: u64,
+    #[column_name = "userId"]
     pub user_id: u64,
     pub host: String,
 }
 
-#[derive(Queryable, Identifiable)]
+#[derive(Queryable, Identifiable, Associations)]
 #[table_name = "Posts"]
+#[belongs_to(User, foreign_key = "author")]
 pub struct Post {
     pub id: u64,
     pub uuid: String,
