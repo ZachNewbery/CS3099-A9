@@ -32,5 +32,6 @@ CREATE TABLE IF NOT EXISTS Posts (
     contentType BIGINT UNSIGNED NOT NULL,
     body VARCHAR(255) NOT NULL,
     CONSTRAINT FK_author FOREIGN KEY (author) REFERENCES Users(id),
-    created DATETIME NOT NULL, modified DATE
+    created DATETIME NOT NULL,
+    modified DATETIME
                                  );

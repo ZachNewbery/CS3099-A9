@@ -32,7 +32,7 @@ table! {
         contentType -> Unsigned<Bigint>,
         body -> Varchar,
         created -> Datetime,
-        modified -> Nullable<Date>,
+        modified -> Nullable<Datetime>,
     }
 }
 

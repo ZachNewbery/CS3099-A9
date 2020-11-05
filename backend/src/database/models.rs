@@ -34,8 +34,8 @@ pub struct Post {
     pub author: u64,
     pub content: String,
     pub body: String,
-    pub created: chrono::NaiveDate,
-    pub modified: Option<chrono::NaiveDate>,
+    pub created: NaiveDateTime,
+    pub modified: Option<NaiveDateTime>,
 }
 
 #[derive(Queryable, Identifiable)]
@@ -56,7 +56,7 @@ pub struct DBNewPost {
     pub author: u64,
     #[column_name = "contentType"]
     pub content_type: u64,
-    pub created: chrono::NaiveDateTime,
+    pub created: NaiveDateTime,
 }
 
 // TODO: Replace the placeholder user id!

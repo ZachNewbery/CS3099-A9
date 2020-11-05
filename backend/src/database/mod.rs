@@ -7,6 +7,7 @@ use self::models::*;
 use crate::federation::schemas::NewPost;
 use diesel::prelude::*;
 
+#[allow(dead_code)]
 pub(crate) fn create_post(
     conn: &MysqlConnection,
     new_post: NewPost,
