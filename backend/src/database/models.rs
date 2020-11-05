@@ -40,7 +40,7 @@ pub struct Post {
     pub content: String,
     pub body: String,
     pub created: NaiveDateTime,
-    pub modified: Option<NaiveDateTime>,
+    pub modified: NaiveDateTime,
 }
 
 #[derive(Queryable, Identifiable)]

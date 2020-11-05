@@ -1,5 +1,7 @@
+use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
+use uuid::Uuid;
 
 #[derive(Serialize, Deserialize)]
 pub(crate) struct UserID {
@@ -42,8 +44,9 @@ pub(crate) struct Community {
 
 #[derive(Serialize, Deserialize)]
 pub(crate) struct NewPost {
-    pub parent: String, // Should be UUID v4?
+    pub parent: Uuid,
     pub title: String,
+    #[serde(alias = "contentType")]
     pub content_type: PostContentType,
     pub body: String,
     pub author: UserID,
@@ -51,23 +54,27 @@ pub(crate) struct NewPost {
 
 #[derive(Serialize, Deserialize)]
 pub(crate) struct UpdatePost {
-    title: String,
-    body: String,
+    title: Option<String>,
+    #[serde(alias = "contentType")]
+    content_type: Option<PostContentType>,
+    body: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
 pub(crate) struct Post {
-    id: String,            // Should be UUID v4?
-    children: Vec<String>, // Should be a vec of UUID v4?
+    id: Uuid,
+    parent: Option<Uuid>, // TODO: Check if this should be uuid or string, ambiguous
+    children: Vec<Uuid>,
+    #[serde(alias = "contentType")]
     content_type: PostContentType,
     body: String,
     author: UserID,
-    modified: u64, // Should be timestamp?
-    created: u64,  // Should be timestamp?
+    created: NaiveDateTime,
+    modified: NaiveDateTime,
 }
 
 #[derive(Serialize, Deserialize)]
 pub(crate) struct PostTimeStamp {
-    id: String,    // Should be UUID v4?
-    modified: u64, // Should be timestamp?
+    id: Uuid,
+    modified: Option<NaiveDateTime>,
 }
