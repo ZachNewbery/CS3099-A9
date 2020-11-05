@@ -1,7 +1,8 @@
 table! {
     Communities (id) {
         id -> Unsigned<Bigint>,
-        uid -> Varchar,
+        uuid -> Varchar,
+        descr -> Varchar,
         title -> Varchar,
     }
 }
@@ -11,8 +12,8 @@ table! {
         id -> Bigint,
         uuid -> Varchar,
         title -> Varchar,
-        author -> Nullable<Bigint>,
-        contType -> Nullable<Varchar>,
+        author -> Bigint,
+        contType -> Varchar,
         body -> Varchar,
         created -> Date,
         modified -> Nullable<Date>,
@@ -22,7 +23,7 @@ table! {
 table! {
     Users (id) {
         id -> Unsigned<Bigint>,
-        username -> Nullable<Varchar>,
+        username -> Varchar,
     }
 }
 
