@@ -1,6 +1,6 @@
 table! {
     Communities (id) {
-        id -> Unsigned<Bigint>,
+        id -> Bigint,
         uuid -> Varchar,
         descr -> Varchar,
         title -> Varchar,
@@ -22,7 +22,7 @@ table! {
 
 table! {
     Users (id) {
-        id -> Unsigned<Bigint>,
+        id -> Bigint,
         username -> Varchar,
     }
 }
