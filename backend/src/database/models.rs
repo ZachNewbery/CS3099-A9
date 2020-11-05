@@ -1,34 +1,74 @@
-#[derive(Queryable)]
+use crate::database::schema::{Communities, FederatedUsers, LocalUsers, Posts, Users};
+use crate::federation::schemas::NewPost;
+use chrono::{NaiveDateTime, Utc};
+
+#[derive(Queryable, Identifiable)]
+#[table_name = "Users"]
 pub struct User {
-    pub id: i64,
+    pub id: u64,
     pub username: String,
 }
 
-#[derive(Queryable)]
+#[derive(Queryable, Identifiable)]
+#[table_name = "LocalUsers"]
+pub struct LocalUser {
+    pub id: u64,
+    pub user_id: u64,
+    pub password: String,
+}
+
+#[derive(Queryable, Identifiable)]
+#[table_name = "FederatedUsers"]
+pub struct FederatedUser {
+    pub id: u64,
+    pub user_id: u64,
+    pub host: String,
+}
+
+#[derive(Queryable, Identifiable)]
+#[table_name = "Posts"]
 pub struct Post {
-    pub id: i64,
+    pub id: u64,
     pub uuid: String,
     pub title: String,
-    pub author: i64,
+    pub author: u64,
     pub content: String,
     pub body: String,
     pub created: chrono::NaiveDate,
     pub modified: Option<chrono::NaiveDate>,
 }
 
-#[derive(Queryable)]
+#[derive(Queryable, Identifiable)]
+#[table_name = "Communities"]
 pub struct Community {
-    pub id: i64,
+    pub id: u64,
     pub uuid: String,
     pub title: String,
     pub desc: String,
 }
 
-use super::schema::Posts;
-
 #[derive(Insertable)]
 #[table_name = "Posts"]
-pub struct DBNewPost<'a> {
-    pub title: &'a str,
-    pub body: &'a str,
+pub struct DBNewPost {
+    pub uuid: String,
+    pub title: String,
+    pub body: String,
+    pub author: u64,
+    #[column_name = "contentType"]
+    pub content_type: u64,
+    pub created: chrono::NaiveDateTime,
+}
+
+// TODO: Replace the placeholder user id!
+impl From<NewPost> for DBNewPost {
+    fn from(value: NewPost) -> Self {
+        Self {
+            uuid: ::uuid::Uuid::new_v4().to_string(),
+            title: value.title,
+            body: value.body,
+            author: 0,
+            content_type: value.content_type.into(),
+            created: NaiveDateTime::from_timestamp(Utc::now().timestamp(), 0),
+        }
+    }
 }

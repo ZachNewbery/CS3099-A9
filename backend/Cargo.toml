@@ -10,6 +10,8 @@ edition = "2018"
 actix-web = "^3.2.0"
 dotenv = "^0.15.0"
 serde = "^1.0.117"
-diesel = { version = "1.4.4", features = ["mysql", "r2d2", "chrono"] }
+diesel = { version = "1.4.4", features = ["mysql", "r2d2", "chrono", "numeric"] }
 r2d2 = "^0.8.9"
 chrono = "0.4"
+thiserror = "^1.0.22"
+uuid = { version = "^0.8.1", features = ["v4"] }

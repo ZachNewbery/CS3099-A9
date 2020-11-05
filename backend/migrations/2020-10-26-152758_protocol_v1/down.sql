@@ -1,3 +1,4 @@
 -- This file should undo anything in `up.sql`
-DROP TABLE IF EXISTS Posts, Users, Communities;
-
+SET FOREIGN_KEY_CHECKS = 0;
+DROP TABLE IF EXISTS Users, LocalUsers, FederatedUsers, Communities, Posts;
+SET FOREIGN_KEY_CHECKS = 1;

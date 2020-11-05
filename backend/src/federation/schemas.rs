@@ -1,14 +1,35 @@
 use serde::{Deserialize, Serialize};
+use std::convert::TryFrom;
 
 #[derive(Serialize, Deserialize)]
 pub(crate) struct UserID {
-    id: String,
-    host: String,
+    pub id: String,
+    pub host: String,
 }
 
 #[derive(Serialize, Deserialize)]
 pub(crate) enum PostContentType {
     Text,
+}
+
+impl TryFrom<u64> for PostContentType {
+    // TODO: Define error type here
+    type Error = ();
+
+    fn try_from(value: u64) -> Result<Self, Self::Error> {
+        match value {
+            0 => Ok(PostContentType::Text),
+            _ => Err(()),
+        }
+    }
+}
+
+impl From<PostContentType> for u64 {
+    fn from(value: PostContentType) -> Self {
+        match value {
+            PostContentType::Text => 0,
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize)]
