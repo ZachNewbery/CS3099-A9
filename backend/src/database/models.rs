@@ -1,22 +1,24 @@
 #[derive(Queryable)]
 pub struct User {
-    pub id: i32,
+    pub id: i64,
     pub username: String,
 }
 
 #[derive(Queryable)]
 pub struct Post {
-    pub id: i32,
-    pub author: i32,
-    pub content: String,
+    pub id: i64,
     pub uuid: String,
     pub title: String,
+    pub author: Option<i64>,
+    pub content: Option<String>,
     pub body: String,
+    pub created: chrono::NaiveDate,
+    pub modified: Option<chrono::NaiveDate>,
 }
 
 #[derive(Queryable)]
 pub struct Community {
-    pub id: i32,
+    pub id: i64,
     pub uuid: String,
     pub title: String,
     pub desc: String,

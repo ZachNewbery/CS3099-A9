@@ -8,10 +8,10 @@ table! {
 
 table! {
     Posts (id) {
-        id -> Unsigned<Bigint>,
+        id -> Bigint,
         uuid -> Varchar,
         title -> Varchar,
-        author -> Nullable<Unsigned<Bigint>>,
+        author -> Nullable<Bigint>,
         contType -> Nullable<Varchar>,
         body -> Varchar,
         created -> Date,

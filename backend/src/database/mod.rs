@@ -30,7 +30,10 @@ pub(crate) fn create_post(
 pub(crate) fn show_posts(_conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
     use schema::Posts::dsl::*;
 
-    // let result = Posts.limit(5).load::<Post>(_conn).expect("Error Getting Posts.");
+    let result = Posts
+        .limit(5)
+        .load::<Post>(_conn)
+        .expect("Error Getting Posts.");
 
     Ok(())
 }
