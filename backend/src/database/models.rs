@@ -22,9 +22,11 @@ pub struct Community {
     pub desc: String,
 }
 
-// #[derive(Insertable)]
-// #[table_name = "Posts"]
-// pub struct DBNewPost<'a> {
-//     pub title: &'a str,
-//     pub body: &'a str,
-// }
+use super::schema::Posts;
+
+#[derive(Insertable)]
+#[table_name = "Posts"]
+pub struct DBNewPost<'a> {
+    pub title: &'a str,
+    pub body: &'a str,
+}

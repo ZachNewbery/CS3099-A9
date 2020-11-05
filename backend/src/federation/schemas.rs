@@ -21,11 +21,11 @@ pub(crate) struct Community {
 
 #[derive(Serialize, Deserialize)]
 pub(crate) struct NewPost {
-    parent: String, // Should be UUID v4?
-    title: String,
-    content_type: PostContentType,
-    body: String,
-    author: UserID,
+    pub parent: String, // Should be UUID v4?
+    pub title: String,
+    pub content_type: PostContentType,
+    pub body: String,
+    pub author: UserID,
 }
 
 #[derive(Serialize, Deserialize)]
