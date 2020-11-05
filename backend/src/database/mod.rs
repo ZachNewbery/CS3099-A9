@@ -18,13 +18,13 @@ pub(crate) fn create_post(
     // TODO: Make it tell the difference between a federated post and local post
     let db_new_post = DBNewPost::from(new_post);
 
-    conn.transaction(|| {
+    conn.transaction::<(), diesel::result::Error, _>(|| {
         diesel::insert_into(Posts::table)
             .values(&db_new_post)
-            .execute(conn)
-    })?;
+            .execute(conn)?;
 
-    Ok(())
+        Ok(())
+    })
 }
 
 // #[allow(dead_code)]
