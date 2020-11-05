@@ -1,4 +1,5 @@
 use chrono::NaiveDateTime;
+use either::Either;
 use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
 use uuid::Uuid;
@@ -63,7 +64,7 @@ pub(crate) struct UpdatePost {
 #[derive(Serialize, Deserialize)]
 pub(crate) struct Post {
     id: Uuid,
-    parent: Option<Uuid>, // TODO: Check if this should be uuid or string, ambiguous
+    parent: Option<Either<Uuid, String>>,
     children: Vec<Uuid>,
     #[serde(alias = "contentType")]
     content_type: PostContentType,
