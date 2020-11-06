@@ -1,7 +1,7 @@
 pub mod authentication;
 
-use actix_web::{post, HttpResponse};
 use actix_web::Result;
+use actix_web::{post, HttpResponse};
 
 #[post("/new_user")]
 pub(crate) async fn new_user() -> Result<HttpResponse> {

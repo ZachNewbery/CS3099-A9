@@ -1,6 +1,6 @@
-use serde::{Serialize, Deserialize};
-use uuid::Uuid;
 use jsonwebtoken::TokenData;
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 // TODO: Write some static code for the token
 
