@@ -1,9 +1,9 @@
 table! {
     Communities (id) {
         id -> Unsigned<Bigint>,
-        uuid -> Varchar,
-        description -> Varchar,
-        title -> Varchar,
+        uuid -> Text,
+        description -> Text,
+        title -> Text,
     }
 }
 
@@ -11,7 +11,7 @@ table! {
     FederatedUsers (id) {
         id -> Unsigned<Bigint>,
         userId -> Unsigned<Bigint>,
-        host -> Varchar,
+        host -> Text,
     }
 }
 
@@ -19,20 +19,22 @@ table! {
     LocalUsers (id) {
         id -> Unsigned<Bigint>,
         userId -> Unsigned<Bigint>,
-        password -> Varchar,
+        email -> Varchar,
+        password -> Text,
+        createdAt -> Timestamp,
     }
 }
 
 table! {
     Posts (id) {
         id -> Unsigned<Bigint>,
-        uuid -> Varchar,
-        title -> Varchar,
+        uuid -> Text,
+        title -> Text,
         author -> Unsigned<Bigint>,
         contentType -> Unsigned<Bigint>,
-        body -> Varchar,
-        created -> Datetime,
-        modified -> Datetime,
+        body -> Text,
+        created -> Timestamp,
+        modified -> Timestamp,
     }
 }
 
@@ -47,4 +49,10 @@ joinable!(FederatedUsers -> Users (userId));
 joinable!(LocalUsers -> Users (userId));
 joinable!(Posts -> Users (author));
 
-allow_tables_to_appear_in_same_query!(Communities, FederatedUsers, LocalUsers, Posts, Users,);
+allow_tables_to_appear_in_same_query!(
+    Communities,
+    FederatedUsers,
+    LocalUsers,
+    Posts,
+    Users,
+);

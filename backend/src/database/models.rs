@@ -16,7 +16,10 @@ pub struct LocalUser {
     pub id: u64,
     #[column_name = "userId"]
     pub user_id: u64,
+    pub email: String,
     pub password: String,
+    #[column_name = "createdAt"]
+    pub created_at: NaiveDateTime
 }
 
 #[derive(Queryable, Identifiable, Associations)]
