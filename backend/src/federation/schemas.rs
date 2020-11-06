@@ -1,28 +1,50 @@
+use actix_web::dev::HttpResponseBuilder;
+use actix_web::http::StatusCode;
+use actix_web::{HttpResponse, ResponseError};
 use chrono::NaiveDateTime;
 use either::Either;
 use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
+use thiserror::Error;
 use uuid::Uuid;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Error, Debug, Copy, Clone)]
+#[error("bad request")]
+pub enum FederationSchemaError {
+    #[error("unknown post content type")]
+    PostContentType,
+}
+
+impl ResponseError for FederationSchemaError {
+    fn status_code(&self) -> StatusCode {
+        StatusCode::BAD_REQUEST
+    }
+
+    fn error_response(&self) -> HttpResponse {
+        HttpResponseBuilder::new(self.status_code()).finish()
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct UserID {
     pub id: String,
     pub host: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
+#[serde(rename_all = "camelCase")]
 pub(crate) enum PostContentType {
     Text,
 }
 
 impl TryFrom<u64> for PostContentType {
-    // TODO: Define error type here
-    type Error = ();
+    type Error = FederationSchemaError;
 
     fn try_from(value: u64) -> Result<Self, Self::Error> {
         match value {
             0 => Ok(PostContentType::Text),
-            _ => Err(()),
+            _ => Err(FederationSchemaError::PostContentType),
         }
     }
 }
@@ -35,7 +57,8 @@ impl From<PostContentType> for u64 {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct Community {
     id: String,
     title: String,
@@ -43,30 +66,30 @@ pub(crate) struct Community {
     admins: Vec<UserID>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct NewPost {
     pub parent: Uuid,
     pub title: String,
-    #[serde(alias = "contentType")]
     pub content_type: PostContentType,
     pub body: String,
     pub author: UserID,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct UpdatePost {
     title: Option<String>,
-    #[serde(alias = "contentType")]
     content_type: Option<PostContentType>,
     body: Option<String>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct Post {
     id: Uuid,
     parent: Option<Either<Uuid, String>>,
     children: Vec<Uuid>,
-    #[serde(alias = "contentType")]
     content_type: PostContentType,
     body: String,
     author: UserID,
@@ -74,7 +97,8 @@ pub(crate) struct Post {
     modified: NaiveDateTime,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct PostTimeStamp {
     id: Uuid,
     modified: Option<NaiveDateTime>,
