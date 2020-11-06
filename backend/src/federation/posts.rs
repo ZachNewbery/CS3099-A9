@@ -1,9 +1,19 @@
 use crate::federation::schemas::NewPost;
 use actix_web::Result;
 use actix_web::{delete, get, post, put, web, HttpResponse};
+use chrono::NaiveDateTime;
+use serde::Deserialize;
+
+#[allow(dead_code)]
+#[derive(Deserialize)]
+pub struct PostsParameters {
+    limit: Option<u64>,
+    community: Option<String>,
+    min_date: Option<NaiveDateTime>,
+}
 
 #[get("/")]
-pub(crate) async fn posts() -> Result<HttpResponse> {
+pub(crate) async fn posts(_parameters: web::Query<PostsParameters>) -> Result<HttpResponse> {
     Ok(HttpResponse::NotImplemented().finish())
 }
 
