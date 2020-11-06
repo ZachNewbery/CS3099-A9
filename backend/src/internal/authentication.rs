@@ -22,12 +22,10 @@ pub struct Token {
 
 impl Token {
     pub fn generate_token() -> String {
-        // TODO: Use JWT + Secret to generate a token
-        todo!()
+        todo!("use JWT + secret to generate token")
     }
 
     pub fn decode_token() -> jsonwebtoken::errors::Result<TokenData<Token>> {
-        // TODO: Use JWT + Secret to decode the token
-        todo!()
+        todo!("Use JWT + Secret to decode token")
     }
 }
