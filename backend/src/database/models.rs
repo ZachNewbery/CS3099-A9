@@ -37,7 +37,8 @@ pub struct Post {
     pub uuid: String,
     pub title: String,
     pub author: u64,
-    pub content: String,
+    #[column_name = "contentType"]
+    pub content_type: u64, // TODO: Check how we can convert this into a PostContentType
     pub body: String,
     pub created: NaiveDateTime,
     pub modified: NaiveDateTime,

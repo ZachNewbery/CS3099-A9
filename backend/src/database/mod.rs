@@ -8,14 +8,13 @@ use crate::federation::schemas::NewPost;
 use diesel::prelude::*;
 
 #[allow(dead_code)]
-pub(crate) fn create_post(
+pub(crate) fn create_federated_post(
     conn: &MysqlConnection,
     new_post: NewPost,
 ) -> Result<(), diesel::result::Error> {
     use schema::Posts;
 
-    // WARNING: This uses a default of "0" and will definitely break if you try to do anything with it.
-    // TODO: Make it tell the difference between a federated post and local post
+    // TODO: Write database action to insert-or-get user, remove default
     let db_new_post = DBNewPost::from(new_post);
 
     conn.transaction::<(), diesel::result::Error, _>(|| {

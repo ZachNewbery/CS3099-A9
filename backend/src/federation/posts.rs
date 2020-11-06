@@ -1,4 +1,6 @@
+use crate::database::create_federated_post;
 use crate::federation::schemas::NewPost;
+use crate::DBPool;
 use actix_web::Result;
 use actix_web::{delete, get, post, put, web, HttpResponse};
 use chrono::NaiveDateTime;
@@ -18,8 +20,22 @@ pub(crate) async fn posts(_parameters: web::Query<PostsParameters>) -> Result<Ht
 }
 
 #[post("/")]
-pub(crate) async fn new_post(_post: web::Json<NewPost>) -> Result<HttpResponse> {
-    Ok(HttpResponse::NotImplemented().finish())
+pub(crate) async fn new_post(
+    pool: web::Data<DBPool>,
+    new_post: web::Json<NewPost>,
+) -> Result<HttpResponse> {
+    let conn = pool
+        .get()
+        .map_err(|_| HttpResponse::InternalServerError().finish())?;
+
+    web::block(move || {
+        create_federated_post(&conn, new_post.clone())?;
+        Ok::<(), diesel::result::Error>(())
+    })
+    .await
+    .map_err(|_| HttpResponse::InternalServerError().finish())?;
+
+    Ok(HttpResponse::Ok().finish())
 }
 
 #[post("/{id}")]
