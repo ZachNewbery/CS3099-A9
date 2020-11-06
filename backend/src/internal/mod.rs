@@ -20,7 +20,7 @@ pub(crate) async fn new_user(
     // TODO: Implement new user
     // Check email/username against database
     // Insert new record into database
-    unimplemented!()
+    todo!()
 }
 
 // TODO: Determine if login should be email+pw or user+pw?
@@ -31,7 +31,7 @@ pub(crate) async fn login() -> Result<HttpResponse> {
     // Generate new session
     // Update database session
     // Generate JWT Token
-    unimplemented!()
+    todo!()
 }
 
 #[post("/logout")]
@@ -39,5 +39,5 @@ pub(crate) async fn logout(_request: HttpRequest) -> Result<HttpResponse> {
     // TODO: Implement logout function
     // Verify token validity
     // Invalidate token by blanking out session
-    unimplemented!()
+    todo!()
 }
