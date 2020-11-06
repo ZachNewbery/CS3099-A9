@@ -1,9 +1,9 @@
 pub mod authentication;
 
-use actix_web::{Result, web, HttpRequest};
-use actix_web::{post, HttpResponse};
-use serde::{Serialize, Deserialize};
 use crate::DBPool;
+use actix_web::{post, HttpResponse};
+use actix_web::{web, HttpRequest, Result};
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct NewUser {
@@ -15,7 +15,7 @@ pub struct NewUser {
 #[post("/new_user")]
 pub(crate) async fn new_user(
     _pool: web::Data<DBPool>,
-    _new_user: web::Json<NewUser>
+    _new_user: web::Json<NewUser>,
 ) -> Result<HttpResponse> {
     // TODO: Implement new user
     // Check email/username against database
@@ -35,9 +35,7 @@ pub(crate) async fn login() -> Result<HttpResponse> {
 }
 
 #[post("/logout")]
-pub(crate) async fn logout(
-    _request: HttpRequest
-) -> Result<HttpResponse> {
+pub(crate) async fn logout(_request: HttpRequest) -> Result<HttpResponse> {
     // TODO: Implement logout function
     // Verify token validity
     // Invalidate token by blanking out session

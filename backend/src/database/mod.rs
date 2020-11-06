@@ -27,12 +27,17 @@ pub(crate) fn create_federated_post(
 }
 
 pub(crate) fn update_session(
-    _conn: &MysqlConnection,
-    _user: &User,
-    _session: String,
+    conn: &MysqlConnection,
+    user: &LocalUser,
+    new_session: &str,
 ) -> Result<(), diesel::result::Error> {
-    // TODO: Write database action that updates session
-    unimplemented!()
+    conn.transaction::<(), diesel::result::Error, _>(|| {
+        use crate::database::schema::LocalUsers::dsl::*;
+        diesel::update(LocalUsers.filter(id.eq(user.id)))
+            .set(session.eq(new_session))
+            .execute(conn)?;
+        Ok(())
+    })
 }
 
 pub(crate) fn is_valid_session(
@@ -41,6 +46,21 @@ pub(crate) fn is_valid_session(
 ) -> Result<bool, diesel::result::Error> {
     // TODO: Write database action that validates a session
     unimplemented!()
+}
+
+pub(crate) fn get_local_user_by_username(
+    conn: &MysqlConnection,
+    username_ck: &str,
+) -> Result<Option<LocalUser>, diesel::result::Error> {
+    use crate::database::schema::LocalUsers::dsl::*;
+    use crate::database::schema::Users::dsl::*;
+
+    Ok(Users
+        .inner_join(LocalUsers)
+        .filter(username.eq(username_ck))
+        .select(LocalUsers::all_columns())
+        .first::<LocalUser>(conn)
+        .optional()?)
 }
 
 // #[allow(dead_code)]

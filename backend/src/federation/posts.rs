@@ -4,7 +4,7 @@ use crate::DBPool;
 use actix_web::Result;
 use actix_web::{delete, get, post, put, web, HttpResponse};
 use chrono::NaiveDateTime;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[allow(dead_code)]
 #[derive(Serialize, Deserialize, Clone, Debug)]
