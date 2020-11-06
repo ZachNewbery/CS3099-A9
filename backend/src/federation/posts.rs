@@ -4,10 +4,10 @@ use crate::DBPool;
 use actix_web::Result;
 use actix_web::{delete, get, post, put, web, HttpResponse};
 use chrono::NaiveDateTime;
-use serde::Deserialize;
+use serde::{Serialize, Deserialize};
 
 #[allow(dead_code)]
-#[derive(Deserialize)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PostsParameters {
     limit: Option<u64>,
     community: Option<String>,
