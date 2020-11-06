@@ -6,8 +6,8 @@ pub mod schema;
 use self::models::*;
 use crate::federation::schemas::NewPost;
 use diesel::prelude::*;
+use crate::internal::authentication::Token;
 
-#[allow(dead_code)]
 pub(crate) fn create_federated_post(
     conn: &MysqlConnection,
     new_post: NewPost,
@@ -24,6 +24,23 @@ pub(crate) fn create_federated_post(
 
         Ok(())
     })
+}
+
+pub(crate) fn update_session(
+    _conn: &MysqlConnection,
+    _user: &User,
+    _session: String
+) -> Result<(), diesel::result::Error> {
+    // TODO: Write database action that updates session
+    unimplemented!()
+}
+
+pub(crate) fn is_valid_session(
+    _conn: &MysqlConnection,
+    _token: &Token
+) -> Result<bool, diesel::result::Error> {
+    // TODO: Write database action that validates a session
+    unimplemented!()
 }
 
 // #[allow(dead_code)]
