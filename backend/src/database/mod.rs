@@ -6,6 +6,7 @@ pub mod schema;
 use self::models::*;
 use crate::federation::schemas::NewPost;
 use crate::internal::authentication::Token;
+use diesel::expression::count::count_star;
 use diesel::prelude::*;
 
 pub(crate) fn create_federated_post(
@@ -41,11 +42,20 @@ pub(crate) fn update_session(
 }
 
 pub(crate) fn is_valid_session(
-    _conn: &MysqlConnection,
-    _token: &Token,
+    conn: &MysqlConnection,
+    token_ck: &Token,
 ) -> Result<bool, diesel::result::Error> {
-    // TODO: Write database action that validates a session
-    unimplemented!()
+    use crate::database::schema::LocalUsers::dsl::*;
+    use crate::database::schema::Users::dsl::*;
+
+    Ok(Users
+        .inner_join(LocalUsers)
+        .filter(username.eq(&token_ck.username))
+        .filter(session.eq(&token_ck.session))
+        .select(count_star())
+        .first::<i64>(conn)
+        .optional()?
+        .is_some())
 }
 
 pub(crate) fn get_local_user_by_username(
