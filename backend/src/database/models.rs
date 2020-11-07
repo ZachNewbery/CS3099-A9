@@ -2,14 +2,14 @@ use crate::database::schema::{Communities, FederatedUsers, LocalUsers, Posts, Us
 use crate::federation::schemas::NewPost;
 use chrono::{NaiveDateTime, Utc};
 
-#[derive(Queryable, Identifiable)]
+#[derive(Queryable, Identifiable, Debug, Clone)]
 #[table_name = "Users"]
 pub struct User {
     pub id: u64,
     pub username: String,
 }
 
-#[derive(Queryable, Identifiable, Associations)]
+#[derive(Queryable, Identifiable, Associations, Debug, Clone)]
 #[belongs_to(User, foreign_key = "userId")]
 #[table_name = "LocalUsers"]
 pub struct LocalUser {
@@ -23,7 +23,7 @@ pub struct LocalUser {
     pub session: String,
 }
 
-#[derive(Queryable, Identifiable, Associations)]
+#[derive(Queryable, Identifiable, Associations, Debug, Clone)]
 #[belongs_to(User, foreign_key = "userId")]
 #[table_name = "FederatedUsers"]
 pub struct FederatedUser {
@@ -33,7 +33,7 @@ pub struct FederatedUser {
     pub host: String,
 }
 
-#[derive(Queryable, Identifiable, Associations)]
+#[derive(Queryable, Identifiable, Associations, Debug, Clone)]
 #[table_name = "Posts"]
 #[belongs_to(User, foreign_key = "author")]
 pub struct Post {
@@ -48,7 +48,7 @@ pub struct Post {
     pub modified: NaiveDateTime,
 }
 
-#[derive(Queryable, Identifiable)]
+#[derive(Queryable, Identifiable, Debug, Clone)]
 #[table_name = "Communities"]
 pub struct Community {
     pub id: u64,
@@ -57,7 +57,7 @@ pub struct Community {
     pub desc: String,
 }
 
-#[derive(Insertable)]
+#[derive(Insertable, Debug, Clone)]
 #[table_name = "Posts"]
 pub struct DBNewPost {
     pub uuid: String,
@@ -81,4 +81,21 @@ impl From<NewPost> for DBNewPost {
             created: NaiveDateTime::from_timestamp(Utc::now().timestamp(), 0),
         }
     }
+}
+
+#[derive(Insertable, Debug, Clone)]
+#[table_name = "Users"]
+pub struct DBNewUser {
+    pub username: String,
+}
+
+#[derive(Insertable, Debug, Clone)]
+#[table_name = "LocalUsers"]
+pub struct DBNewLocalUser {
+    pub id: u64,
+    pub email: String,
+    pub password: String,
+    #[column_name = "createdAt"]
+    pub created_at: NaiveDateTime,
+    pub session: String,
 }

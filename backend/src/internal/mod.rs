@@ -1,5 +1,6 @@
 pub mod authentication;
 
+use crate::database::{get_local_user_by_username, insert_new_local_user};
 use crate::DBPool;
 use actix_web::{post, HttpResponse};
 use actix_web::{web, HttpRequest, Result};
@@ -14,12 +15,28 @@ pub struct NewUser {
 
 #[post("/new_user")]
 pub(crate) async fn new_user(
-    _pool: web::Data<DBPool>,
-    _new_user: web::Json<NewUser>,
+    pool: web::Data<DBPool>,
+    new_user: web::Json<NewUser>,
 ) -> Result<HttpResponse> {
-    // Check email/username against database
+    let conn = pool
+        .get()
+        .map_err(|_| HttpResponse::InternalServerError().finish())?;
+
+    web::block(move || {
+        // Check email/username against database
+        // TODO: What if the email matches?
+        if get_local_user_by_username(&conn, new_user.username.as_str())?.is_none() {
+            insert_new_local_user(&conn, &new_user)?;
+        }
+
+        Ok::<(), diesel::result::Error>(())
+    })
+    .await
+    .map_err(|_| HttpResponse::InternalServerError().finish())?;
+
+    Ok(HttpResponse::Ok().finish())
     // Insert new record into database
-    todo!("implement new user")
+    // todo!("implement new user")
 }
 
 // TODO: Determine if login should be email+pw or user+pw?
