@@ -81,3 +81,27 @@ impl From<NewPost> for DBNewPost {
         }
     }
 }
+
+#[derive(Insertable, Debug, Clone)]
+#[table_name = "Users"]
+pub struct DBNewUser {
+    pub username: String,
+}
+
+#[derive(Insertable, Debug, Clone)]
+#[table_name = "LocalUsers"]
+pub struct DBNewLocalUser {
+    pub id: u64,
+    pub email: String,
+    pub password: String,
+    #[column_name = "createdAt"]
+    pub created_at: NaiveDateTime,
+    pub session: String,
+}
+
+#[derive(Insertable, Debug, Clone)]
+#[table_name = "FederatedUsers"]
+pub struct DBNewFedUser {
+    pub id: u64,
+    pub host: String,
+}
