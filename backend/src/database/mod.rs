@@ -33,21 +33,26 @@ pub(crate) fn create_federated_post(
 
 pub(crate) fn get_federated_user(
     conn: &MysqlConnection,
-    id_ck: &u64,
+    username_ck: &str,
     host_ck: &str,
 ) -> Result<Option<FederatedUser>, diesel::result::Error> {
     use crate::database::schema::FederatedUsers::dsl::*;
+    use crate::database::schema::Users::dsl::*;
 
-    Ok(FederatedUsers
-        .filter(userId.eq(id_ck).and(host.eq(host_ck)))
-        .select(FederatedUsers::all_columns())
-        .first::<FederatedUser>(conn)
-        .optional()?)
+    Ok(
+        Users
+            .inner_join(FederatedUsers)
+            .filter(username.eq(username_ck))
+            .filter(host.eq(host_ck))
+            .select(FederatedUsers::all_columns())
+            .first::<FederatedUser>(conn)
+            .optional()?
+    )
 }
 
 pub(crate) fn insert_federated_user(
     conn: &MysqlConnection,
-    id_ck: &u64,
+    id_ck: &str,
     host_ck: &str,
 ) -> Result<(), diesel::result::Error> {
     conn.transaction::<(), diesel::result::Error, _>(|| {

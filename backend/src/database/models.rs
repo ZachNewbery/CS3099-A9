@@ -96,7 +96,6 @@ pub struct DBNewLocalUser {
     pub password: String,
     #[column_name = "createdAt"]
     pub created_at: NaiveDateTime,
-    pub session: String,
 }
 
 #[derive(Insertable, Debug, Clone)]
