@@ -99,10 +99,3 @@ pub struct DBNewLocalUser {
     pub created_at: NaiveDateTime,
     pub session: String,
 }
-
-#[derive(Insertable, Debug, Clone)]
-#[table_name = "FederatedUsers"]
-pub struct DBNewFedUser {
-    pub id: u64,
-    pub host: String,
-}

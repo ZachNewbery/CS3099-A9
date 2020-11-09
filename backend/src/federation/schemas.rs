@@ -28,7 +28,7 @@ impl ResponseError for FederationSchemaError {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct UserID {
-    pub id: u64,
+    pub id: String,
     pub host: String,
 }
 
