@@ -5,38 +5,11 @@ import { useParams, useHistory } from "react-router-dom";
 import { useAsync } from "react-async";
 import { fetchData } from "../helpers";
 import { StyledBlock, StyledContent, renderContent } from "./PostContent";
+import { Comments, CreateComment } from "./Comments";
 
 const loadSinglePost = async ({ id }) => {
   return fetchData(`${process.env.REACT_APP_API_URL}/posts/${id}`);
 }
-
-const loadComments = async ({ postId }) => {
-  return fetchData(`${process.env.REACT_APP_API_URL}/posts/${postId}/comments`);
-}
-
-const StyledComments = styled.div`
-  margin: 0;
-  font-size: 0.8em;
-  & > div {
-    padding: 5px 10px;
-    cursor: auto;
-    background-color: #F8F9F9;
-  }
-  .user {
-    flex: 1;
-    font-weight: bold;
-    margin: 0;
-    color: #676767;
-  }
-  .date-time {
-    font-size: 0.9em;
-    flex-flow: row nowrap;
-  }
-  img {
-    height: 100px !important;
-    width: auto !important;
-  }
-`;
 
 const StyledPostContainer = styled.div`
   width: 500px;
@@ -53,40 +26,6 @@ const StyledPostContainer = styled.div`
     }
   }
 `;
-
-const Comment = ({ body, timestamp, likesCount, edited }) => {
-  return (
-    <StyledContent>
-      {body.map((block, i) => (
-        <StyledBlock key={i} style={{ padding: "0.3em 0", fontSize: "1.1em" }}>
-          {renderContent(block)}
-        </StyledBlock>
-      ))}
-      <hr />
-      <div className="header">
-        <p className="user">Bob</p>
-        <div className="date-time">
-          <p className="date" style={{marginRight: "0.5em" }}>{`${edited ? "Edited" : ""} ${moment(timestamp).fromNow()}`}</p>
-          <p className="time">{`${likesCount} likes`}</p>
-        </div>
-      </div>
-    </StyledContent>
-  )
-}
-
-const Comments = ({ postId }) => {
-  const { data, isLoading } = useAsync(loadComments, { postId });
-
-  if (isLoading) {
-    return <h1>Loading</h1>
-  }
-  
-  return (
-    <StyledComments>
-      {data.map(comment => <Comment key={comment.id} {...comment} />)}
-    </StyledComments>
-  )
-}
 
 export const Post = ({ id, title, body, user, timestamp, commentsCount, likesCount }) => {
   const history = useHistory();
@@ -117,7 +56,7 @@ export const SinglePost = () => {
   const { postId } = useParams();
   const history = useHistory();
 
-  const { data, isLoading } = useAsync(loadSinglePost, { id: postId });
+  const { data, isLoading, reload } = useAsync(loadSinglePost, { id: postId });
 
   if (isLoading) {
     return <h1>Loading</h1>
@@ -127,6 +66,7 @@ export const SinglePost = () => {
     <StyledPostContainer>
       <button className="back" onClick={() => history.goBack()}>Back</button>
       <Post {...data} />
+      <CreateComment postId={data.id} refresh={reload} />
       <Comments postId={data.id} />
     </StyledPostContainer>
   )
