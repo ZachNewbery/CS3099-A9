@@ -1,3 +1,6 @@
+use actix_web::http::header::Header as ActixHeader;
+use actix_web::{HttpRequest, HttpResponse};
+use actix_web_httpauth::headers::authorization::{Authorization, Bearer};
 use chrono::Utc;
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, TokenData, Validation};
 use serde::{Deserialize, Serialize};
@@ -17,10 +20,13 @@ pub fn generate_session() -> String {
 //     unimplemented!()
 // }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Token {
+    #[serde(rename = "iat")]
     pub issued_at: i64,
+    #[serde(rename = "exp")]
     pub expiration: i64,
+    // Claims
     pub user_id: u64,
     pub session: String,
 }
@@ -43,11 +49,16 @@ impl Token {
         )
     }
 
-    pub fn decode_token(token: &str) -> jsonwebtoken::errors::Result<TokenData<Self>> {
+    pub fn decode_token(token: &str) -> jsonwebtoken::errors::Result<TokenData<Token>> {
         jsonwebtoken::decode(
             token,
             &DecodingKey::from_secret(&JWT_SECRET_KEY),
             &Validation::default(),
         )
     }
+}
+
+pub fn authenticate(request: HttpRequest) -> actix_web::Result<TokenData<Token>> {
+    let auth = Authorization::<Bearer>::parse(&request)?.into_scheme();
+    Token::decode_token(auth.token()).map_err(|_| HttpResponse::Unauthorized().finish().into())
 }

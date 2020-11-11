@@ -3,7 +3,7 @@ pub mod authentication;
 use crate::database::{
     get_local_user, get_local_user_by_email_password, insert_new_local_user, update_session,
 };
-use crate::internal::authentication::{generate_session, Token};
+use crate::internal::authentication::{authenticate, generate_session, Token};
 use crate::{database, DBPool};
 use actix_web::{post, HttpResponse};
 use actix_web::{web, HttpRequest, Result};
@@ -92,8 +92,10 @@ pub(crate) async fn login(
 }
 
 #[post("/logout")]
-pub(crate) async fn logout(_request: HttpRequest) -> Result<HttpResponse> {
+pub(crate) async fn logout(request: HttpRequest) -> Result<HttpResponse> {
     // Verify token validity
+    let token = authenticate(request)?;
+
+    Ok(HttpResponse::Ok().finish())
     // Invalidate token by blanking out session
-    todo!("implement logout function")
 }
