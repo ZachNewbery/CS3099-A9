@@ -1,5 +1,8 @@
+use crate::database::naive_date_time_now;
 use crate::database::schema::{Communities, FederatedUsers, LocalUsers, Posts, Users};
 use crate::federation::schemas::NewPost;
+use crate::internal::authentication::generate_session;
+use crate::internal::NewUser;
 use chrono::{NaiveDateTime, Utc};
 
 #[derive(Queryable, Identifiable, Debug, Clone)]
@@ -89,6 +92,14 @@ pub struct DBNewUser {
     pub username: String,
 }
 
+impl From<NewUser> for DBNewUser {
+    fn from(value: NewUser) -> Self {
+        Self {
+            username: value.username,
+        }
+    }
+}
+
 #[derive(Insertable, Debug, Clone)]
 #[table_name = "LocalUsers"]
 pub struct DBNewLocalUser {
@@ -98,4 +109,17 @@ pub struct DBNewLocalUser {
     #[column_name = "createdAt"]
     pub created_at: NaiveDateTime,
     pub session: String,
+}
+
+impl From<(User, NewUser)> for DBNewLocalUser {
+    fn from(value: (User, NewUser)) -> Self {
+        let (user, new_user) = value;
+        Self {
+            id: user.id,
+            email: new_user.email,
+            password: new_user.password,
+            created_at: naive_date_time_now(),
+            session: generate_session(),
+        }
+    }
 }

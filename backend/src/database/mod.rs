@@ -79,37 +79,43 @@ pub(crate) fn get_local_user_by_username(
         .optional()?)
 }
 
+pub(crate) fn get_local_user_by_email(
+    conn: &MysqlConnection,
+    email_ck: &str,
+) -> Result<Option<LocalUser>, diesel::result::Error> {
+    use crate::database::schema::LocalUsers::dsl::*;
+    use crate::database::schema::Users::dsl::*;
+
+    Ok(Users
+        .inner_join(LocalUsers)
+        .filter(email.eq(email_ck))
+        .select(LocalUsers::all_columns())
+        .first::<LocalUser>(conn)
+        .optional()?)
+}
+
 pub(crate) fn insert_new_local_user(
     conn: &MysqlConnection,
-    new_user: &NewUser,
+    new_user: NewUser,
 ) -> Result<(), diesel::result::Error> {
     conn.transaction::<(), diesel::result::Error, _>(|| {
         use crate::database::schema::LocalUsers::dsl::*;
         use crate::database::schema::Users::dsl::*;
 
-        // FIXME: Remove placeholder values
-        let db_new_user = DBNewUser {
-            username: "REPLACE_ME".to_string(),
-        };
+        let db_new_user: DBNewUser = new_user.clone().into();
 
         diesel::insert_into(Users)
             .values(db_new_user.clone())
             .execute(conn)?;
 
-        // Unfortunately MySQL does not support RETURN statements. We will have to make a second query to fetch the new user id.
+        // Unfortunately MySQL does not support RETURN statements.
+        // We will have to make a second query to fetch the new user id.
         // TODO: Look into extracting function
         let inserted_user: User = Users
             .filter(username.eq(&db_new_user.username))
             .first::<User>(conn)?;
 
-        // FIXME: Remove placeholder values
-        let db_new_local_user = DBNewLocalUser {
-            id: inserted_user.id,
-            email: "REPLACE_ME".to_string(),
-            password: "REPLACE_ME".to_string(),
-            created_at: naive_date_time_now(),
-            session: "REPLACE_ME".to_string(),
-        };
+        let db_new_local_user: DBNewLocalUser = (inserted_user, new_user).into();
 
         diesel::insert_into(LocalUsers)
             .values(db_new_local_user)
