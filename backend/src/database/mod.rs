@@ -7,9 +7,12 @@ use self::models::*;
 use crate::federation::schemas::NewPost;
 use crate::internal::authentication::Token;
 use crate::internal::NewUser;
+use crate::DBPool;
+use actix_web::{web, HttpResponse};
 use chrono::{NaiveDateTime, Utc};
 use diesel::expression::count::count_star;
 use diesel::prelude::*;
+use diesel::r2d2::{ConnectionManager, PooledConnection};
 
 fn naive_date_time_now() -> NaiveDateTime {
     NaiveDateTime::from_timestamp(Utc::now().timestamp(), 0)
@@ -56,7 +59,7 @@ pub(crate) fn is_valid_session(
 
     Ok(Users
         .inner_join(LocalUsers)
-        .filter(username.eq(&token_ck.username))
+        .filter(userId.eq(&token_ck.user_id))
         .filter(session.eq(&token_ck.session))
         .select(count_star())
         .first::<i64>(conn)
@@ -136,3 +139,11 @@ pub(crate) fn insert_new_local_user(
 //
 //     Ok(())
 // }
+
+// TODO: Refactor all other endpoints to use this!
+pub fn get_conn_from_pool(
+    pool: web::Data<DBPool>,
+) -> actix_web::Result<PooledConnection<ConnectionManager<MysqlConnection>>> {
+    pool.get()
+        .map_err(|_| HttpResponse::ServiceUnavailable().finish().into())
+}

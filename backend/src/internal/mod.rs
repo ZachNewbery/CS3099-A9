@@ -1,7 +1,10 @@
 pub mod authentication;
 
-use crate::database::{get_local_user_by_email, get_local_user_by_username, insert_new_local_user};
-use crate::DBPool;
+use crate::database::{
+    get_local_user_by_email, get_local_user_by_username, insert_new_local_user, update_session,
+};
+use crate::internal::authentication::{generate_session, Token};
+use crate::{database, DBPool};
 use actix_web::{post, HttpResponse};
 use actix_web::{web, HttpRequest, Result};
 use serde::{Deserialize, Serialize};
@@ -40,13 +43,51 @@ pub(crate) async fn new_user(
     Ok(HttpResponse::Ok().finish())
 }
 
+// We will use email + password for this
+#[derive(Serialize, Deserialize)]
+pub struct Login {
+    pub email: String,
+    pub password: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct LoginOutput {
+    pub token: String,
+    pub token_type: String,
+}
+
 #[post("/login")]
-pub(crate) async fn login() -> Result<HttpResponse> {
+pub(crate) async fn login(
+    pool: web::Data<DBPool>,
+    login_info: web::Json<Login>,
+) -> Result<HttpResponse> {
+    let conn = database::get_conn_from_pool(pool.clone())?;
+
     // Check credentials against database
-    // Generate new session
-    // Update database session
+    let local_user = web::block(move || {
+        get_local_user_by_email(&conn, &login_info.email)?.ok_or(diesel::NotFound)
+    })
+    .await
+    .map_err(|_| HttpResponse::InternalServerError().finish())?;
+
+    let new_session = generate_session();
+
     // Generate JWT Token
-    todo!("implement login function")
+    let token = Token::new(local_user.user_id, &new_session)
+        .generate_token()
+        .map_err(|_| HttpResponse::InternalServerError().finish())?;
+
+    let conn = database::get_conn_from_pool(pool)?;
+
+    // Invalidate the old session
+    web::block(move || update_session(&conn, &local_user, &new_session))
+        .await
+        .map_err(|_| HttpResponse::InternalServerError().finish())?;
+
+    Ok(HttpResponse::Ok().json(LoginOutput {
+        token,
+        token_type: String::from("bearer"),
+    }))
 }
 
 #[post("/logout")]
