@@ -53,7 +53,7 @@ async fn main() -> std::io::Result<()> {
                             .service(post_by_id)
                             .service(edit_post)
                             .service(delete_post),
-                    )
+                    ),
             )
             .service(
                 web::scope("/internal")

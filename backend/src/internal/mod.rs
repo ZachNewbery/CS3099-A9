@@ -1,7 +1,7 @@
 pub mod authentication;
 
 use crate::database::{
-    get_local_user_by_email, get_local_user_by_username, insert_new_local_user, update_session,
+    get_local_user, get_local_user_by_email_password, insert_new_local_user, update_session,
 };
 use crate::internal::authentication::{generate_session, Token};
 use crate::{database, DBPool};
@@ -27,10 +27,7 @@ pub(crate) async fn new_user(
 
     web::block(move || {
         // Check email and username against database
-        if get_local_user_by_username(&conn, new_user.username.as_str())?
-            .and_then(|_| get_local_user_by_email(&conn, new_user.email.as_str()).ok()?)
-            .is_none()
-        {
+        if get_local_user(&conn, &new_user.username, &new_user.email)?.is_none() {
             // Insert new record into database
             insert_new_local_user(&conn, new_user.clone())?;
         }
@@ -38,7 +35,10 @@ pub(crate) async fn new_user(
         Ok::<(), diesel::result::Error>(())
     })
     .await
-    .map_err(|_| HttpResponse::InternalServerError().finish())?;
+    .map_err(|e| {
+        eprintln!("{}", e);
+        HttpResponse::InternalServerError().finish()
+    })?;
 
     Ok(HttpResponse::Ok().finish())
 }
@@ -50,7 +50,7 @@ pub struct Login {
     pub password: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct LoginOutput {
     pub token: String,
     pub token_type: String,
@@ -65,10 +65,11 @@ pub(crate) async fn login(
 
     // Check credentials against database
     let local_user = web::block(move || {
-        get_local_user_by_email(&conn, &login_info.email)?.ok_or(diesel::NotFound)
+        get_local_user_by_email_password(&conn, &login_info.email, &login_info.password)
     })
     .await
-    .map_err(|_| HttpResponse::InternalServerError().finish())?;
+    .map_err(|_| HttpResponse::InternalServerError().finish())?
+    .ok_or_else(|| HttpResponse::Unauthorized().finish())?; // User not found
 
     let new_session = generate_session();
 

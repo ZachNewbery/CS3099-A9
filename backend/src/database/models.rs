@@ -103,7 +103,7 @@ impl From<NewUser> for DBNewUser {
 #[derive(Insertable, Debug, Clone)]
 #[table_name = "LocalUsers"]
 pub struct DBNewLocalUser {
-    pub id: u64,
+    pub userId: u64,
     pub email: String,
     pub password: String,
     #[column_name = "createdAt"]
@@ -115,7 +115,7 @@ impl From<(User, NewUser)> for DBNewLocalUser {
     fn from(value: (User, NewUser)) -> Self {
         let (user, new_user) = value;
         Self {
-            id: user.id,
+            userId: user.id,
             email: new_user.email,
             password: new_user.password,
             created_at: naive_date_time_now(),

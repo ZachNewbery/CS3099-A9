@@ -41,13 +41,12 @@ pub(crate) fn update_session(
     user: &LocalUser,
     new_session: &str,
 ) -> Result<(), diesel::result::Error> {
-    conn.transaction::<(), diesel::result::Error, _>(|| {
-        use crate::database::schema::LocalUsers::dsl::*;
-        diesel::update(LocalUsers.filter(id.eq(user.id)))
-            .set(session.eq(new_session))
-            .execute(conn)?;
-        Ok(())
-    })
+    use crate::database::schema::LocalUsers::dsl::*;
+
+    diesel::update(LocalUsers.filter(id.eq(user.id)))
+        .set(session.eq(new_session))
+        .execute(conn)?;
+    Ok(())
 }
 
 pub(crate) fn is_valid_session(
@@ -67,23 +66,9 @@ pub(crate) fn is_valid_session(
         .is_some())
 }
 
-pub(crate) fn get_local_user_by_username(
+pub(crate) fn get_local_user(
     conn: &MysqlConnection,
     username_ck: &str,
-) -> Result<Option<LocalUser>, diesel::result::Error> {
-    use crate::database::schema::LocalUsers::dsl::*;
-    use crate::database::schema::Users::dsl::*;
-
-    Ok(Users
-        .inner_join(LocalUsers)
-        .filter(username.eq(username_ck))
-        .select(LocalUsers::all_columns())
-        .first::<LocalUser>(conn)
-        .optional()?)
-}
-
-pub(crate) fn get_local_user_by_email(
-    conn: &MysqlConnection,
     email_ck: &str,
 ) -> Result<Option<LocalUser>, diesel::result::Error> {
     use crate::database::schema::LocalUsers::dsl::*;
@@ -91,8 +76,24 @@ pub(crate) fn get_local_user_by_email(
 
     Ok(Users
         .inner_join(LocalUsers)
+        .filter(username.eq(username_ck))
         .filter(email.eq(email_ck))
         .select(LocalUsers::all_columns())
+        .first::<LocalUser>(conn)
+        .optional()?)
+}
+
+// FIXME: I cannot emphasize just how insecure this is. MUST fix before pushing to production
+pub(crate) fn get_local_user_by_email_password(
+    conn: &MysqlConnection,
+    email_ck: &str,
+    password_ck: &str,
+) -> Result<Option<LocalUser>, diesel::result::Error> {
+    use crate::database::schema::LocalUsers::dsl::*;
+
+    Ok(LocalUsers
+        .filter(email.eq(email_ck))
+        .filter(password.eq(password_ck))
         .first::<LocalUser>(conn)
         .optional()?)
 }
