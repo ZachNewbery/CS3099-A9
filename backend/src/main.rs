@@ -54,14 +54,14 @@ async fn main() -> std::io::Result<()> {
                             .service(edit_post)
                             .service(delete_post),
                     )
-                    .service(
-                        web::scope("/internal")
-                            .service(new_user)
-                            .service(login)
-                            .service(logout),
-                    )
-                    .service(federation::hello), // Hello!
             )
+            .service(
+                web::scope("/internal")
+                    .service(new_user)
+                    .service(login)
+                    .service(logout),
+            )
+            .service(federation::hello) // Hello!
     })
     .bind(bind)?
     .run()
