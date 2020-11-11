@@ -1,7 +1,7 @@
 pub mod authentication;
 
 use crate::database::{
-    get_local_user, get_local_user_by_email_password, insert_new_local_user, update_session,
+    get_local_user, login_local_user, insert_new_local_user, update_session,
 };
 use crate::internal::authentication::{authenticate, generate_session, Token};
 use crate::{database, DBPool};
@@ -65,7 +65,7 @@ pub(crate) async fn login(
 
     // Check credentials against database
     let local_user = web::block(move || {
-        get_local_user_by_email_password(&conn, &login_info.email, &login_info.password)
+        login_local_user(&conn, &login_info.email, &login_info.password)
     })
     .await
     .map_err(|_| HttpResponse::InternalServerError().finish())?

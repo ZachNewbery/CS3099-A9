@@ -84,7 +84,7 @@ pub(crate) fn get_local_user(
 }
 
 // FIXME: I cannot emphasize just how insecure this is. MUST fix before pushing to production
-pub(crate) fn get_local_user_by_email_password(
+pub(crate) fn login_local_user(
     conn: &MysqlConnection,
     email_ck: &str,
     password_ck: &str,
