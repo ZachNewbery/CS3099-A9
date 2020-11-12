@@ -20,7 +20,7 @@ pub(crate) async fn posts(_parameters: web::Query<PostsParameters>) -> Result<Ht
 }
 
 #[post("/")]
-pub(crate) async fn new_post(
+pub(crate) async fn new_post_fed(
     pool: web::Data<DBPool>,
     new_post: web::Json<NewPost>,
 ) -> Result<HttpResponse> {

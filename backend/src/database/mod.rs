@@ -5,12 +5,13 @@ pub mod schema;
 
 use self::models::*;
 use crate::federation::schemas::NewPost;
-use crate::internal::NewUser;
+use crate::internal::{LocalNewPost, NewUser};
 use crate::DBPool;
 use actix_web::{web, HttpResponse};
 use chrono::{NaiveDateTime, Utc};
 use diesel::prelude::*;
 use diesel::r2d2::{ConnectionManager, PooledConnection};
+use uuid::Uuid;
 
 fn naive_date_time_now() -> NaiveDateTime {
     NaiveDateTime::from_timestamp(Utc::now().timestamp(), 0)
@@ -36,6 +37,31 @@ pub(crate) fn create_federated_post(
 
         Ok(())
     })
+}
+
+// FIXME: This is here for MVP purposes
+pub(crate) fn create_local_post(
+    conn: &MysqlConnection,
+    new_post: LocalNewPost,
+    local_user: LocalUser,
+) -> Result<(), diesel::result::Error> {
+    use schema::Posts::dsl::*;
+
+    let db_new_post = DBNewPost {
+        uuid: Uuid::new_v4().to_string(),
+        title: new_post.title,
+        body: new_post.body,
+        author: local_user.user_id,
+        content_type: 0,
+        created: NaiveDateTime::from_timestamp(Utc::now().timestamp(), 0),
+        modified: NaiveDateTime::from_timestamp(Utc::now().timestamp(), 0),
+    };
+
+    diesel::insert_into(Posts)
+        .values(db_new_post)
+        .execute(conn)?;
+
+    Ok(())
 }
 
 pub(crate) fn get_federated_user(
@@ -179,17 +205,11 @@ pub(crate) fn insert_new_local_user(
     })
 }
 
-// #[allow(dead_code)]
-// pub(crate) fn show_all_posts(_conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
-//     use schema::Posts::dsl::*;
-//
-//     let result = Posts
-//         .limit(5)
-//         .load::<Post>(_conn)
-//         .expect("Error Getting Posts.");
-//
-//     Ok(())
-// }
+pub(crate) fn show_all_posts(conn: &MysqlConnection) -> Result<Vec<Post>, diesel::result::Error> {
+    use schema::Posts::dsl::*;
+
+    Posts.load::<Post>(conn)
+}
 
 // #[allow(dead_code)]
 // pub(crate) fn get_posts_by_user(

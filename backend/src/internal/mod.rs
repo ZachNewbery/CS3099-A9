@@ -1,12 +1,15 @@
 pub mod authentication;
 
+use crate::database::models::Post;
 use crate::database::{
-    get_conn_from_pool, get_local_user, insert_new_local_user, login_local_user, update_session,
+    create_local_post, get_conn_from_pool, get_local_user, insert_new_local_user, login_local_user,
+    show_all_posts, update_session,
 };
 use crate::internal::authentication::{authenticate, generate_session, Token};
 use crate::{database, DBPool};
 use actix_web::{post, HttpResponse};
 use actix_web::{web, HttpRequest, Result};
+use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -99,4 +102,79 @@ pub(crate) async fn logout(request: HttpRequest, pool: web::Data<DBPool>) -> Res
         .map_err(|_| HttpResponse::InternalServerError().finish())?;
 
     Ok(HttpResponse::Ok().finish())
+}
+
+// FIXME: This is a basic local post without communities
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct LocalNewPost {
+    pub title: String,
+    pub body: String,
+}
+
+#[post("/new_post")]
+pub(crate) async fn new_post_local(
+    request: HttpRequest,
+    pool: web::Data<DBPool>,
+    local_new_post: web::Json<LocalNewPost>,
+) -> Result<HttpResponse> {
+    let (_, local_user) = authenticate(pool.clone(), request)?;
+    let conn = get_conn_from_pool(pool)?;
+
+    web::block(move || create_local_post(&conn, local_new_post.0, local_user))
+        .await
+        .map_err(|e| {
+            println!("{:?}", e);
+            HttpResponse::InternalServerError().finish()
+        })?;
+
+    Ok(HttpResponse::Ok().finish())
+}
+
+// FIXME: Tailor this for federation as well
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct OutputPost {
+    pub uuid: String,
+    pub title: String,
+    pub author: u64,
+    pub content_type: u64,
+    pub body: String,
+    pub created: NaiveDateTime,
+    pub modified: NaiveDateTime,
+}
+
+impl From<Post> for OutputPost {
+    fn from(value: Post) -> Self {
+        Self {
+            uuid: value.uuid,
+            title: value.title,
+            author: value.author,
+            content_type: 0,
+            body: value.body,
+            created: value.created,
+            modified: value.modified,
+        }
+    }
+}
+
+// FIXME: This really doesn't need authentication but it's here. Also, should this aliased to the federation endpoint instead?
+#[post("/get_posts")]
+pub(crate) async fn get_posts(
+    request: HttpRequest,
+    pool: web::Data<DBPool>,
+) -> Result<HttpResponse> {
+    let (_, _) = authenticate(pool.clone(), request)?;
+    let conn = get_conn_from_pool(pool)?;
+
+    let posts = web::block(move || show_all_posts(&conn))
+        .await
+        .map_err(|e| {
+            println!("{:?}", e);
+            HttpResponse::InternalServerError().finish()
+        })?
+        .into_iter()
+        .map(|p| p.into())
+        .collect::<Vec<OutputPost>>();
+
+    Ok(HttpResponse::Ok().json(posts))
 }
