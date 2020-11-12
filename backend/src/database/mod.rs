@@ -14,7 +14,6 @@ pub(crate) fn create_federated_post(
 ) -> Result<(), diesel::result::Error> {
     use schema::Posts;
 
-    // TODO: Write database action to insert-or-get user, remove default
     if get_federated_user(&conn, &new_post.author.id, &new_post.author.host)?.is_none() {
         // Update both Users and FederatedUsers table.
         insert_federated_user(&conn, &new_post.author.id, &new_post.author.host)?;
@@ -39,15 +38,13 @@ pub(crate) fn get_federated_user(
     use crate::database::schema::FederatedUsers::dsl::*;
     use crate::database::schema::Users::dsl::*;
 
-    Ok(
-        Users
-            .inner_join(FederatedUsers)
-            .filter(username.eq(username_ck))
-            .filter(host.eq(host_ck))
-            .select(FederatedUsers::all_columns())
-            .first::<FederatedUser>(conn)
-            .optional()?
-    )
+    Ok(Users
+        .inner_join(FederatedUsers)
+        .filter(username.eq(username_ck))
+        .filter(host.eq(host_ck))
+        .select(FederatedUsers::all_columns())
+        .first::<FederatedUser>(conn)
+        .optional()?)
 }
 
 pub(crate) fn insert_federated_user(
@@ -59,10 +56,8 @@ pub(crate) fn insert_federated_user(
         use crate::database::schema::FederatedUsers::dsl::*;
         use crate::database::schema::Users::dsl::*;
 
-        // how do we get usernames from UserID struct?
-        // TODO: replace username placeholder
         let db_new_user = DBNewUser {
-            username: "placeholder".to_string(),
+            username: id_ck.to_string(),
         };
 
         diesel::insert_into(Users)
@@ -73,7 +68,6 @@ pub(crate) fn insert_federated_user(
             .filter(username.eq(&db_new_user.username))
             .first::<User>(conn)?;
 
-        // TODO: Fix user id vs row id.
         let db_new_fed_user = DBNewFedUser {
             id: inserted_user.id,
             host: host_ck.to_string(),
@@ -88,7 +82,7 @@ pub(crate) fn insert_federated_user(
 }
 
 // #[allow(dead_code)]
-// pub(crate) fn show_posts(_conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
+// pub(crate) fn show_all_posts(_conn: &MysqlConnection) -> Result<(), diesel::result::Error> {
 //     use schema::Posts::dsl::*;
 //
 //     let result = Posts
@@ -97,4 +91,12 @@ pub(crate) fn insert_federated_user(
 //         .expect("Error Getting Posts.");
 //
 //     Ok(())
+// }
+
+// #[allow(dead_code)]
+// pub(crate) fn get_posts_by_user(
+//     conn: &MysqlConnection,
+//     username: &str,
+// ) -> Result<Option<Post>, diesel::result::Error> {
+//      Ok(())
 // }
