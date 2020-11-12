@@ -6,6 +6,7 @@ build-backend-rust-latest:
   image: rust:latest
   script:
     - cd backend
+    - head -c16 /dev/urandom > jwt_secret.key   # This is here so compilation can proceed
     - rustc --version
     - cargo --version
     - cargo test
@@ -21,6 +22,7 @@ build-backend-rust-nightly:
   image: rustlang/rust:nightly
   script:
     - cd backend
+    - head -c16 /dev/urandom > jwt_secret.key   # This is here so compilation can proceed
     - rustc --version
     - cargo --version
     - cargo test

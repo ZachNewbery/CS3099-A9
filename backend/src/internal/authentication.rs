@@ -9,7 +9,6 @@ use jsonwebtoken::{DecodingKey, EncodingKey, Header, TokenData, Validation};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-// TODO: Update pipeline to generate "random" bytes
 pub static JWT_SECRET_KEY: [u8; 16] = *include_bytes!("../../jwt_secret.key");
 
 // Timeout of one week in seconds
