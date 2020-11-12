@@ -2,8 +2,8 @@
 extern crate diesel;
 
 use crate::federation::communities::{communities, community_by_id, community_by_id_timestamps};
-use crate::federation::posts::{delete_post, edit_post, new_post, post_by_id, posts};
-use crate::internal::{login, logout, new_user};
+use crate::federation::posts::{delete_post, edit_post, new_post_fed, post_by_id, posts};
+use crate::internal::{get_posts, login, logout, new_post_local, new_user};
 use actix_web::{middleware, web, App, HttpServer};
 use diesel::prelude::*;
 use diesel::r2d2::ConnectionManager;
@@ -49,7 +49,7 @@ async fn main() -> std::io::Result<()> {
                     .service(
                         web::scope("/posts")
                             .service(posts)
-                            .service(new_post)
+                            .service(new_post_fed)
                             .service(post_by_id)
                             .service(edit_post)
                             .service(delete_post),
@@ -59,7 +59,9 @@ async fn main() -> std::io::Result<()> {
                 web::scope("/internal")
                     .service(new_user)
                     .service(login)
-                    .service(logout),
+                    .service(logout)
+                    .service(new_post_local)
+                    .service(get_posts),
             )
             .service(federation::hello) // Hello!
     })

@@ -70,6 +70,7 @@ pub struct DBNewPost {
     #[column_name = "contentType"]
     pub content_type: u64,
     pub created: NaiveDateTime,
+    pub modified: NaiveDateTime,
 }
 
 // TODO: Replace the placeholder user id!
@@ -82,6 +83,7 @@ impl From<NewPost> for DBNewPost {
             author: 0,
             content_type: value.content_type.into(),
             created: NaiveDateTime::from_timestamp(Utc::now().timestamp(), 0),
+            modified: NaiveDateTime::from_timestamp(Utc::now().timestamp(), 0),
         }
     }
 }
@@ -90,6 +92,13 @@ impl From<NewPost> for DBNewPost {
 #[table_name = "Users"]
 pub struct DBNewUser {
     pub username: String,
+}
+
+#[derive(Insertable, Debug, Clone)]
+#[table_name = "FederatedUsers"]
+pub struct DBNewFedUser {
+    pub id: u64,
+    pub host: String,
 }
 
 impl From<NewUser> for DBNewUser {
