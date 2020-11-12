@@ -105,27 +105,27 @@ export const Registration = () => {
           <label>
             Forename:
             <input type="text" name="firstName" />
-            <p class="error">{errors.firstName}</p>
+            <p className="error">{errors.firstName}</p>
           </label>
           <label>
             Surname:
             <input type="text" name="lastName" />
-            <p class="error">{errors.lastName}</p>
+            <p className="error">{errors.lastName}</p>
           </label>
           <label>
             Username:
             <input type="text" name="userName" />
-            <p class="error">{errors.userName}</p>
+            <p className="error">{errors.userName}</p>
           </label>
           <label>
             Password:
             <input type="password" name="password" />
-            <p class="error">{errors.password}</p>
+            <p className="error">{errors.password}</p>
           </label>
           <label>
             Confirm Password:
             <input type="password" name="confirmPassword" />
-            <p class="error">{errors.confirmPassword}</p>
+            <p className="error">{errors.confirmPassword}</p>
           </label>
           <button onClick={handleSubmit}>Register</button>
         </form>

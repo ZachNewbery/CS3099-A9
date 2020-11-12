@@ -65,12 +65,12 @@ export const Login = () => {
         <label>
           Username:
           <input type="text" ref={userNameRef} name="userName" />
-          <p class="error">{errors.userName}</p>
+          <p className="error">{errors.userName}</p>
         </label>
         <label>
           Password:
           <input type="password" ref={passwordRef} name="password" />
-          <p class="error">{errors.password}</p>
+          <p className="error">{errors.password}</p>
         </label>
         <button onClick={handleSubmit}>Login</button>
         <p><Link to="/registration">Create an account</Link></p>
