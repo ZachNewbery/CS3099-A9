@@ -48,7 +48,7 @@ const Header = () => {
   )
 }
 
-export const Home = () => {
+export const Home = () => {  
   if (!isAuthenticated()) return <Redirect to='/login' />;
 
   return (

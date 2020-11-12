@@ -1,7 +1,22 @@
 {
+  "communities": [
+    {
+      "id": "0",
+      "title": "Computer Science",
+      "description": "This is the CS community 🎉",
+      "userIds": ["0", "1"]
+    },
+    {
+      "id": "1",
+      "title": "Maths",
+      "description": "This is the Maths community 🧮",
+      "userIds": ["tHQYE8r", "mh_fVnS"]
+    }
+  ],
   "posts": [
     {
       "id": "0",
+      "communityId": "0",
       "title": "First Post",
       "body": [
         {
@@ -23,6 +38,7 @@
     },
     {
       "id": "1",
+      "communityId": "0",
       "title": "Second post",
       "body": [
         {
@@ -37,6 +53,7 @@
     },
     {
       "title": "This is a test post",
+      "communityId": "1",
       "body": [
         {
           "content": "here is the test content",
