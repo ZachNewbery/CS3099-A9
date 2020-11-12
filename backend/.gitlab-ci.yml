@@ -1,0 +1,33 @@
+stages:
+  - build
+
+build-backend-rust-latest:
+  stage: build
+  image: rust:latest
+  script:
+    - cd backend
+    - rustc --version
+    - cargo --version
+    - cargo test
+    - rustup component add rustfmt
+    - cargo fmt -- --check
+    - rustup component add clippy
+    - cargo clippy -- -D warnings
+    - cargo install cargo-audit
+    - cargo audit
+
+build-backend-rust-nightly:
+  stage: build
+  image: rustlang/rust:nightly
+  script:
+    - cd backend
+    - rustc --version
+    - cargo --version
+    - cargo test
+    - rustup component add rustfmt
+    - cargo fmt -- --check
+    - rustup component add clippy
+    - cargo clippy -- -D warnings
+    - cargo install cargo-audit
+    - cargo audit
+  allow_failure: true
