@@ -22,6 +22,7 @@ table! {
         email -> Varchar,
         password -> Text,
         createdAt -> Timestamp,
+        session -> Varchar,
     }
 }
 
