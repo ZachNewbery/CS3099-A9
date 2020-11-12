@@ -1,5 +1,6 @@
+use crate::database::get_conn_from_pool;
+use crate::database::local::validate_session;
 use crate::database::models::LocalUser;
-use crate::database::{get_conn_from_pool, validate_session};
 use crate::DBPool;
 use actix_web::http::header::Header as ActixHeader;
 use actix_web::{web, HttpRequest, HttpResponse};
@@ -18,9 +19,6 @@ pub fn generate_session() -> String {
     Uuid::new_v4().to_simple().to_string()
 }
 
-// pub fn validate_token() -> jsonwebtoken::errors::Result<TokenData<Token>> {
-//     unimplemented!()
-// }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Token {

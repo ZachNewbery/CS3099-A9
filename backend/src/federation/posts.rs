@@ -1,4 +1,4 @@
-use crate::database::create_federated_post;
+use crate::database::federation::create_federated_post;
 use crate::federation::schemas::NewPost;
 use crate::DBPool;
 use actix_web::Result;
