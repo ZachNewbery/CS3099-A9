@@ -123,10 +123,7 @@ pub(crate) async fn new_post_local(
 
     web::block(move || create_local_post(&conn, local_new_post.0, local_user))
         .await
-        .map_err(|e| {
-            println!("{:?}", e);
-            HttpResponse::InternalServerError().finish()
-        })?;
+        .map_err(|_| HttpResponse::InternalServerError().finish())?;
 
     Ok(HttpResponse::Ok().finish())
 }
@@ -168,10 +165,7 @@ pub(crate) async fn get_posts(
 
     let posts = web::block(move || show_all_posts(&conn))
         .await
-        .map_err(|e| {
-            println!("{:?}", e);
-            HttpResponse::InternalServerError().finish()
-        })?
+        .map_err(|_| HttpResponse::InternalServerError().finish())?
         .into_iter()
         .map(|p| p.into())
         .collect::<Vec<OutputPost>>();
