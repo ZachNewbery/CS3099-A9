@@ -3,12 +3,14 @@ extern crate diesel;
 
 use crate::federation::communities::{communities, community_by_id, community_by_id_timestamps};
 use crate::federation::posts::{delete_post, edit_post, new_post, post_by_id, posts};
+use crate::internal::{login, logout, new_user};
 use actix_web::{middleware, web, App, HttpServer};
 use diesel::prelude::*;
 use diesel::r2d2::ConnectionManager;
 
 pub mod database;
 pub mod federation;
+pub mod internal;
 
 type DBPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 
@@ -51,9 +53,15 @@ async fn main() -> std::io::Result<()> {
                             .service(post_by_id)
                             .service(edit_post)
                             .service(delete_post),
-                    )
-                    .service(federation::hello), // Hello!
+                    ),
             )
+            .service(
+                web::scope("/internal")
+                    .service(new_user)
+                    .service(login)
+                    .service(logout),
+            )
+            .service(federation::hello) // Hello!
     })
     .bind(bind)?
     .run()

@@ -15,3 +15,6 @@ target/
 
 # Do not share the database password config. It is stored in .env, but setup.env will contain the config we need
 .env
+
+# Keep the JWT secret key a secret. Refer to README.md on how to generate a fresh one for local testing.
+jwt_secret.key
