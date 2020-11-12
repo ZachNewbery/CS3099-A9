@@ -8,6 +8,15 @@ const StyledContainer = styled.div`
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  padding: 10em;
+  background-color: #f8f9f9;
+`;
+
+const StyledLogin = styled.div`
+  align-items: flex-start;
+  .error {
+    color: red;
+  }
 `;
 
 const authenticate = async ({ userName, password }) => {
@@ -51,18 +60,21 @@ export const Login = () => {
 
   return (
     <StyledContainer>
-      <label>
-        userName:
-        <input type="text" ref={userNameRef} name="userName" />
-        <p>{errors.userName}</p>
-      </label>
-      <label>
-        Password:
-        <input type="password" ref={passwordRef} name="password" />
-        <p>{errors.password}</p>
-      </label>
-      <button onClick={handleSubmit}>Login</button>
-      <Link to="/registration">Create an account</Link>
+      <StyledLogin>
+        <h1>Login</h1>
+        <label>
+          Username:
+          <input type="text" ref={userNameRef} name="userName" />
+          <p class="error">{errors.userName}</p>
+        </label>
+        <label>
+          Password:
+          <input type="password" ref={passwordRef} name="password" />
+          <p class="error">{errors.password}</p>
+        </label>
+        <button onClick={handleSubmit}>Login</button>
+        <p><Link to="/registration">Create an account</Link></p>
+      </StyledLogin>
     </StyledContainer>
   );
 };

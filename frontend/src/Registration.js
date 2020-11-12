@@ -23,14 +23,16 @@ const StyledContainer = styled.div`
   flex-direction: column;
   justify-content: center;
   align-items: center;
-
-  form {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-  }
+  padding: 10em;
+  background-color: #f8f9f9;
 `;
+
+const StyledRegistration = styled.div`
+  align-items: flex-start;
+  .error {
+    color: red;
+  }
+`; 
 
 export const Registration = () => {
   const formRef = useRef(null);
@@ -54,6 +56,23 @@ export const Registration = () => {
     userName = userName.value;
     password = password.value;
     confirmPassword = confirmPassword.value;
+
+    if (firstName.length < 2) {
+      currentErrors.firstName = "First name too short";
+    }
+
+    if (lastName.length < 2) {
+      currentErrors.lastName = "Last name too short";
+    }
+
+    if (userName.length < 2) {
+      currentErrors.userName = "Username too short";
+    }
+    
+    if (password.length < 5) {
+      currentErrors.password = "Password too short";
+      currentErrors.confirmPassword = currentErrors.password;
+    }
 
     if (password !== confirmPassword) {
       currentErrors.confirmPassword = "Passwords don't match";
@@ -80,31 +99,38 @@ export const Registration = () => {
 
   return (
     <StyledContainer>
-      <form ref={formRef}>
-        <label>
-          Forename:
-          <input type="text" name="firstName" />
-        </label>
-        <label>
-          Surname:
-          <input type="text" name="lastName" />
-        </label>
-        <label>
-          Username:
-          <input type="text" name="userName" />
-        </label>
-        <label>
-          Password:
-          <input type="password" name="password" />
-        </label>
-        <label>
-          Confirm Password:
-          <input type="password" name="confirmPassword" />
-          <p>{errors.confirmPassword}</p>
-        </label>
-        <button onClick={handleSubmit}>Register</button>
-      </form>
-      <Link to="/login">Already registered?</Link>
+      <StyledRegistration>
+        <h1>Registration</h1>
+        <form ref={formRef}>
+          <label>
+            Forename:
+            <input type="text" name="firstName" />
+            <p class="error">{errors.firstName}</p>
+          </label>
+          <label>
+            Surname:
+            <input type="text" name="lastName" />
+            <p class="error">{errors.lastName}</p>
+          </label>
+          <label>
+            Username:
+            <input type="text" name="userName" />
+            <p class="error">{errors.userName}</p>
+          </label>
+          <label>
+            Password:
+            <input type="password" name="password" />
+            <p class="error">{errors.password}</p>
+          </label>
+          <label>
+            Confirm Password:
+            <input type="password" name="confirmPassword" />
+            <p class="error">{errors.confirmPassword}</p>
+          </label>
+          <button onClick={handleSubmit}>Register</button>
+        </form>
+        <Link to="/login">Already registered?</Link>
+      </StyledRegistration>
     </StyledContainer>
   );
 };
