@@ -35,10 +35,7 @@ pub(crate) async fn new_user(
         Ok::<(), diesel::result::Error>(())
     })
     .await
-    .map_err(|e| {
-        eprintln!("{}", e);
-        HttpResponse::InternalServerError().finish()
-    })?;
+    .map_err(|_| HttpResponse::InternalServerError().finish())?;
 
     Ok(HttpResponse::Ok().finish())
 }
