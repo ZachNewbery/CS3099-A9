@@ -92,6 +92,13 @@ pub struct DBNewUser {
     pub username: String,
 }
 
+#[derive(Insertable, Debug, Clone)]
+#[table_name = "FederatedUsers"]
+pub struct DBNewFedUser {
+    pub id: u64,
+    pub host: String,
+}
+
 impl From<NewUser> for DBNewUser {
     fn from(value: NewUser) -> Self {
         Self {
