@@ -5,12 +5,10 @@ pub mod schema;
 
 use self::models::*;
 use crate::federation::schemas::NewPost;
-use crate::internal::authentication::Token;
 use crate::internal::NewUser;
 use crate::DBPool;
 use actix_web::{web, HttpResponse};
 use chrono::{NaiveDateTime, Utc};
-use diesel::expression::count::count_star;
 use diesel::prelude::*;
 use diesel::r2d2::{ConnectionManager, PooledConnection};
 
@@ -49,21 +47,18 @@ pub(crate) fn update_session(
     Ok(())
 }
 
-pub(crate) fn is_valid_session(
+pub(crate) fn validate_session(
     conn: &MysqlConnection,
-    token_ck: &Token,
-) -> Result<bool, diesel::result::Error> {
+    id_ck: u64,
+    session_ck: &str,
+) -> Result<Option<LocalUser>, diesel::result::Error> {
     use crate::database::schema::LocalUsers::dsl::*;
-    use crate::database::schema::Users::dsl::*;
 
-    Ok(Users
-        .inner_join(LocalUsers)
-        .filter(userId.eq(&token_ck.user_id))
-        .filter(session.eq(&token_ck.session))
-        .select(count_star())
-        .first::<i64>(conn)
-        .optional()?
-        .is_some())
+    Ok(LocalUsers
+        .filter(id.eq(id_ck))
+        .filter(session.eq(session_ck))
+        .first::<LocalUser>(conn)
+        .optional()?)
 }
 
 pub(crate) fn get_local_user(

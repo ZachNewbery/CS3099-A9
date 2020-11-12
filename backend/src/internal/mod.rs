@@ -1,7 +1,7 @@
 pub mod authentication;
 
 use crate::database::{
-    get_local_user, login_local_user, insert_new_local_user, update_session,
+    get_conn_from_pool, get_local_user, insert_new_local_user, login_local_user, update_session,
 };
 use crate::internal::authentication::{authenticate, generate_session, Token};
 use crate::{database, DBPool};
@@ -64,17 +64,16 @@ pub(crate) async fn login(
     let conn = database::get_conn_from_pool(pool.clone())?;
 
     // Check credentials against database
-    let local_user = web::block(move || {
-        login_local_user(&conn, &login_info.email, &login_info.password)
-    })
-    .await
-    .map_err(|_| HttpResponse::InternalServerError().finish())?
-    .ok_or_else(|| HttpResponse::Unauthorized().finish())?; // User not found
+    let local_user =
+        web::block(move || login_local_user(&conn, &login_info.email, &login_info.password))
+            .await
+            .map_err(|_| HttpResponse::InternalServerError().finish())?
+            .ok_or_else(|| HttpResponse::Unauthorized().finish())?; // User not found
 
     let new_session = generate_session();
 
     // Generate JWT Token
-    let token = Token::new(local_user.user_id, &new_session)
+    let token = Token::new(local_user.id, &new_session)
         .generate_token()
         .map_err(|_| HttpResponse::InternalServerError().finish())?;
 
@@ -92,10 +91,15 @@ pub(crate) async fn login(
 }
 
 #[post("/logout")]
-pub(crate) async fn logout(request: HttpRequest) -> Result<HttpResponse> {
+pub(crate) async fn logout(request: HttpRequest, pool: web::Data<DBPool>) -> Result<HttpResponse> {
     // Verify token validity
-    let token = authenticate(request)?;
+    let (_, local_user) = authenticate(pool.clone(), request)?;
+
+    // Invalidate token by blanking out session
+    let conn = get_conn_from_pool(pool)?;
+    web::block(move || update_session(&conn, &local_user, ""))
+        .await
+        .map_err(|_| HttpResponse::InternalServerError().finish())?;
 
     Ok(HttpResponse::Ok().finish())
-    // Invalidate token by blanking out session
 }

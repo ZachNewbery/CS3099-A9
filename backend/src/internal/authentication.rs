@@ -1,5 +1,8 @@
+use crate::database::models::LocalUser;
+use crate::database::{get_conn_from_pool, validate_session};
+use crate::DBPool;
 use actix_web::http::header::Header as ActixHeader;
-use actix_web::{HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest, HttpResponse};
 use actix_web_httpauth::headers::authorization::{Authorization, Bearer};
 use chrono::Utc;
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, TokenData, Validation};
@@ -27,16 +30,18 @@ pub struct Token {
     #[serde(rename = "exp")]
     pub expiration: i64,
     // Claims
-    pub user_id: u64,
+    // This is the id (i.e. pk of LocalUsers)
+    pub id: u64,
+    // Session
     pub session: String,
 }
 
 impl Token {
-    pub fn new(user_id: u64, session: &str) -> Self {
+    pub fn new(id: u64, session: &str) -> Self {
         Self {
             issued_at: Utc::now().timestamp(),
             expiration: Utc::now().timestamp() + TIMEOUT,
-            user_id,
+            id,
             session: session.to_string(),
         }
     }
@@ -58,7 +63,20 @@ impl Token {
     }
 }
 
-pub fn authenticate(request: HttpRequest) -> actix_web::Result<TokenData<Token>> {
+pub fn authenticate(
+    pool: web::Data<DBPool>,
+    request: HttpRequest,
+) -> actix_web::Result<(TokenData<Token>, LocalUser)> {
+    let conn = get_conn_from_pool(pool)?;
+
     let auth = Authorization::<Bearer>::parse(&request)?.into_scheme();
-    Token::decode_token(auth.token()).map_err(|_| HttpResponse::Unauthorized().finish().into())
+
+    let token =
+        Token::decode_token(auth.token()).map_err(|_| HttpResponse::Unauthorized().finish())?;
+
+    let local_user = validate_session(&conn, token.claims.id, &token.claims.session)
+        .map_err(|_| HttpResponse::InternalServerError().finish())?
+        .ok_or_else(|| HttpResponse::Unauthorized().finish())?;
+
+    Ok((token, local_user))
 }
