@@ -36,6 +36,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "actix-cors"
+version = "0.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e5d7e35c80bb6472cddc7d26e9f61a28758a823ac526eb6188f738d172387bcf"
+dependencies = [
+ "actix-web",
+ "derive_more",
+ "futures-util",
+ "log",
+ "once_cell",
+ "tinyvec 1.0.1",
+]
+
+[[package]]
 name = "actix-http"
 version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -343,6 +357,7 @@ dependencies = [
 name = "backend"
 version = "0.1.0"
 dependencies = [
+ "actix-cors",
  "actix-web",
  "actix-web-httpauth",
  "chrono",

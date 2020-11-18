@@ -7,6 +7,7 @@ use crate::internal::{get_posts, login, logout, new_post_local, new_user};
 use actix_web::{middleware, web, App, HttpServer};
 use diesel::prelude::*;
 use diesel::r2d2::ConnectionManager;
+use actix_cors::Cors;
 
 pub mod database;
 pub mod federation;
@@ -37,6 +38,10 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .wrap(middleware::Logger::default())
+            .wrap(
+                Cors::permissive()
+                    .allowed_origin("http://localhost:3000")    // FIXME: This will not work in production
+            )
             .data(pool.clone())
             .service(
                 web::scope("/federation")
