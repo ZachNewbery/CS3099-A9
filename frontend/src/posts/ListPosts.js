@@ -40,7 +40,7 @@ const StyledCommunityPicker = styled.select`
 `;
 
 const ALL_COMMUNITY = {
-  title: "all communities",
+  title: "All Communities",
   id: "-1",
   userIds: []
 }

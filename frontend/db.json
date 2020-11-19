@@ -4,13 +4,19 @@
       "id": "0",
       "title": "Computer Science",
       "description": "This is the CS community 🎉",
-      "userIds": ["0", "1"]
+      "userIds": [
+        "0",
+        "1"
+      ]
     },
     {
       "id": "1",
       "title": "Maths",
       "description": "This is the Maths community 🧮",
-      "userIds": ["tHQYE8r", "mh_fVnS"]
+      "userIds": [
+        "tHQYE8r",
+        "mh_fVnS"
+      ]
     }
   ],
   "posts": [
@@ -65,6 +71,34 @@
       "timestamp": "2020-11-09T13:26:45.913Z",
       "userId": "1",
       "id": "YiNUFEF"
+    },
+    {
+      "title": "testing ",
+      "body": [
+        {
+          "content": "testing",
+          "contentType": "text"
+        }
+      ],
+      "commentsCount": 0,
+      "likesCount": 0,
+      "timestamp": "2020-11-19T10:40:26.284Z",
+      "user": "1",
+      "id": "ZsIl_Oc"
+    },
+    {
+      "title": "Demo Post",
+      "body": [
+        {
+          "content": "some amazing content",
+          "contentType": "text"
+        }
+      ],
+      "commentsCount": 0,
+      "likesCount": 0,
+      "timestamp": "2020-11-19T13:27:51.012Z",
+      "user": "1",
+      "id": "g0926UB"
     }
   ],
   "comments": [
@@ -191,6 +225,76 @@
       "userId": "0",
       "edited": false,
       "id": "wYavcnQ"
+    },
+    {
+      "postId": "YiNUFEF",
+      "timestamp": "2020-11-12T21:22:06.310Z",
+      "body": [
+        {
+          "content": "Another test comment",
+          "contentType": "text"
+        }
+      ],
+      "likesCount": 0,
+      "userId": "0",
+      "edited": false,
+      "id": "7ucHo5A"
+    },
+    {
+      "postId": "1",
+      "timestamp": "2020-11-17T14:18:37.416Z",
+      "body": [
+        {
+          "content": "third comment",
+          "contentType": "text"
+        }
+      ],
+      "likesCount": 0,
+      "userId": "0",
+      "edited": false,
+      "id": "VJxlWYS"
+    },
+    {
+      "postId": "0",
+      "timestamp": "2020-11-19T10:40:17.685Z",
+      "body": [
+        {
+          "content": "testing",
+          "contentType": "text"
+        }
+      ],
+      "likesCount": 0,
+      "userId": "0",
+      "edited": false,
+      "id": "Qlqqi0U"
+    },
+    {
+      "postId": "0",
+      "timestamp": "2020-11-19T13:27:26.328Z",
+      "body": [
+        {
+          "content": "demo comment",
+          "contentType": "text"
+        }
+      ],
+      "likesCount": 0,
+      "userId": "0",
+      "edited": false,
+      "id": "274d-K_"
+    },
+    {
+      "postId": "g0926UB",
+      "timestamp": "2020-11-19T13:28:10.024Z",
+      "body": [
+        {
+          "content": "demo comment",
+          "contentType": "text"
+        }
+      ],
+      "likesCount": 0,
+      "userId": "0",
+      "edited": false,
+      "id": "gt9pnq_"
     }
   ],
   "users": [
@@ -221,6 +325,13 @@
       "userName": "bob.smith",
       "password": "password",
       "id": "tHQYE8r"
+    },
+    {
+      "firstName": "test",
+      "lastName": "test",
+      "userName": "test",
+      "password": "testing",
+      "id": "BrIwyua"
     }
   ]
 }

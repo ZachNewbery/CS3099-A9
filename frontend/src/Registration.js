@@ -3,16 +3,15 @@ import { Link, Redirect, useHistory } from "react-router-dom";
 import { isAuthenticated, fetchData } from "./helpers";
 import styled from "styled-components";
 
-const createUser = ({ firstName, lastName, userName, password }) => {
+const createUser = ({ username, email, password }) => {
   const user = {
-    firstName,
-    lastName,
-    userName,
+    username,
+    email,
     password
   };
 
   return fetchData(
-    `${process.env.REACT_APP_API_URL}/users`,
+    `${process.env.REACT_APP_REAL_API}/internal/new_user`,
     JSON.stringify(user),
     "POST"
   );
@@ -44,29 +43,23 @@ export const Registration = () => {
     let currentErrors = {};
 
     let {
-      firstName,
-      lastName,
-      userName,
+      username,
+      email,
       password,
       confirmPassword,
     } = formRef.current;
 
-    firstName = firstName.value;
-    lastName = lastName.value;
-    userName = userName.value;
+    username = username.value;
+    email = email.value;
     password = password.value;
     confirmPassword = confirmPassword.value;
 
-    if (firstName.length < 2) {
-      currentErrors.firstName = "First name too short";
+    if (username.length < 2) {
+      currentErrors.username = "Username too short";
     }
 
-    if (lastName.length < 2) {
-      currentErrors.lastName = "Last name too short";
-    }
-
-    if (userName.length < 2) {
-      currentErrors.userName = "Username too short";
+    if (email.length < 6) { // TODO Regex?
+      currentErrors.email = "Email invalid"
     }
     
     if (password.length < 5) {
@@ -79,14 +72,12 @@ export const Registration = () => {
     }
 
     if (Object.keys(currentErrors).length === 0) {
-      try {
-        const user = await createUser({ firstName, lastName, userName, password });
-        localStorage.setItem("access-token", "hithere");
-        localStorage.setItem("firstName", user.firstName);
-        localStorage.setItem("lastName", user.lastName);
-        localStorage.setItem("userName", user.userName);
-        localStorage.setItem("userId", user.id);
-        history.push("/");
+      try { 
+        const user = await createUser({ username, email, password });
+        console.log(user);
+        localStorage.setItem("username", username);
+        localStorage.setItem("email", email);
+        history.push("/login");
       } catch (error) {
         currentErrors.firstName = error.message
       }
@@ -103,19 +94,14 @@ export const Registration = () => {
         <h1>Registration</h1>
         <form ref={formRef}>
           <label>
-            Forename:
-            <input type="text" name="firstName" />
-            <p className="error">{errors.firstName}</p>
-          </label>
-          <label>
-            Surname:
-            <input type="text" name="lastName" />
-            <p className="error">{errors.lastName}</p>
-          </label>
-          <label>
             Username:
-            <input type="text" name="userName" />
-            <p className="error">{errors.userName}</p>
+            <input type="text" name="username" />
+            <p className="error">{errors.username}</p>
+          </label>
+          <label>
+            Email:
+            <input type="text" name="email" />
+            <p className="error">{errors.email}</p>
           </label>
           <label>
             Password:

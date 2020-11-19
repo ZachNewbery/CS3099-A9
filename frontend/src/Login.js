@@ -19,16 +19,34 @@ const StyledLogin = styled.div`
   }
 `;
 
-const authenticate = async ({ userName, password }) => {
-  const [user] = await fetchData(
-    `${process.env.REACT_APP_API_URL}/users?userName=${userName}`
-  );
+const getUserToken = async ({ email, password }) => {
+  const details = {
+    email,
+    password
+  };
 
-  return user && user.password === password;
+  let token = "";
+  let json = {};
+
+  try {
+    json = await fetchData(
+    `${process.env.REACT_APP_REAL_API}/internal/login`,
+    JSON.stringify(details),
+    "POST"
+  );
+  } catch (error) {
+    console.log(error);
+  }
+
+  if (json.success) {
+    token = json.token;
+  }
+
+  return token;
 };
 
 export const Login = () => {
-  const userNameRef = useRef(null);
+  const emailRef = useRef(null);
   const passwordRef = useRef(null);
   const [errors, setErrors] = useState({});
   const history = useHistory();
@@ -36,20 +54,20 @@ export const Login = () => {
   const handleSubmit = async () => {
     let currentErrors = {};
 
-    const userName = userNameRef.current.value;
+    const email = emailRef.current.value;
     const password = passwordRef.current.value;
 
     if (Object.keys(currentErrors).length === 0) {
       try {
-        const isAuthenticated = await authenticate({ userName, password });
-        if (isAuthenticated) {
-          localStorage.setItem("access-token", "hithere");
+        const token = await getUserToken({ email, password });
+        if (token.length !== 0) {
+          localStorage.setItem("access-token", token);
           return history.push("/");
         } else {
           currentErrors.password = "Please check username or password is entered correctly";
         }
       } catch (error) {
-        currentErrors.userName = error.message;
+        currentErrors.email = error.message;
       }
     }
 
@@ -63,9 +81,9 @@ export const Login = () => {
       <StyledLogin>
         <h1>Login</h1>
         <label>
-          Username:
-          <input type="text" ref={userNameRef} name="userName" />
-          <p className="error">{errors.userName}</p>
+          Username (email):
+          <input type="text" ref={emailRef} name="email" />
+          <p className="error">{errors.email}</p>
         </label>
         <label>
           Password:

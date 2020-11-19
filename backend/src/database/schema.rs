@@ -50,4 +50,10 @@ joinable!(FederatedUsers -> Users (userId));
 joinable!(LocalUsers -> Users (userId));
 joinable!(Posts -> Users (author));
 
-allow_tables_to_appear_in_same_query!(Communities, FederatedUsers, LocalUsers, Posts, Users,);
+allow_tables_to_appear_in_same_query!(
+    Communities,
+    FederatedUsers,
+    LocalUsers,
+    Posts,
+    Users,
+);

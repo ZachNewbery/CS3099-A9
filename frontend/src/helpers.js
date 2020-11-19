@@ -13,14 +13,24 @@ export const fetchData = async (path, body, method, contentType) => {
   const response = await fetch(path, getRequestOptions(method, body, contentType));
   let json = {};
   if (response.status === 401) {
-    window.location.href = `${window.location.origin}/logout`;
-  }
-  if (response.status !== 204) {
-    json = await response.json();
-  }
-  if (!response.ok) {
+    //window.location.href = `${window.location.origin}/logout`;
+    json.success = false;
     return Promise.reject(json);
   }
+  try {
+    json = await response.json();
+    json.success = true;
+  } catch (error) {
+    console.log(error);
+  }
+/*   if (response.status !== 204) {
+    
+  } */
+  if (!response.ok) {
+    json.success = false;
+    return Promise.reject(json);
+  }
+  json.success = true;
   return Promise.resolve(json);
 };
 
