@@ -19,7 +19,6 @@ pub fn generate_session() -> String {
     Uuid::new_v4().to_simple().to_string()
 }
 
-
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Token {
     #[serde(rename = "iat")]

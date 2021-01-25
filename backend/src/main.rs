@@ -4,10 +4,10 @@ extern crate diesel;
 use crate::federation::communities::{communities, community_by_id, community_by_id_timestamps};
 use crate::federation::posts::{delete_post, edit_post, new_post_fed, post_by_id, posts};
 use crate::internal::{get_posts, login, logout, new_post_local, new_user};
+use actix_cors::Cors;
 use actix_web::{middleware, web, App, HttpServer};
 use diesel::prelude::*;
 use diesel::r2d2::ConnectionManager;
-use actix_cors::Cors;
 
 pub mod database;
 pub mod federation;
@@ -39,8 +39,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(middleware::Logger::default())
             .wrap(
-                Cors::permissive()
-                    .allowed_origin("http://localhost:3000")    // FIXME: This will not work in production
+                Cors::permissive().allowed_origin("http://localhost:3000"), // FIXME: This will not work in production
             )
             .data(pool.clone())
             .service(
