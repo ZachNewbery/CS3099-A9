@@ -1,0 +1,26 @@
+image: node
+
+stages:
+- build
+- deploy
+
+build:
+  image: node
+  stage: build
+  script:
+    - npm install
+    - npm run build
+  artifacts:
+    paths:
+      - build
+
+deploy:
+  image: alpine
+  stage: deploy
+  script:
+    - apk add --no-cache rsync openssh
+    - mkdir -p ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" >> ~/.ssh/id_dsa
+    - chmod 600 ~/.ssh/id_dsa
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+    - rsync -rav --delete build/ fm205@cs3099user-a9.host.cs.st-andrews.ac.uk:/cs/home/cs3099user-a9/nginx_default/frontend/build
