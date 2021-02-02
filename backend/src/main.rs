@@ -70,7 +70,9 @@ async fn main() -> std::io::Result<()> {
                     .service(new_post_local)
                     .service(get_posts),
             )
-            .service(federation::hello) // Hello!
+            .service(federation::hello)
+            .service(federation::key)
+            .service(federation::discover)
     })
     .bind(bind)?
     .run()
