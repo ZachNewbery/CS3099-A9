@@ -1,13 +1,15 @@
-use actix_web::{HttpResponse, post};
-use actix_web::{HttpRequest, Result, web};
+use actix_web::{post, HttpResponse};
+use actix_web::{web, HttpRequest, Result};
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 
-use crate::{database, DBPool};
-use crate::database::actions::local::{create_local_post, get_local_user, insert_new_local_user, login_local_user, update_session};
+use crate::database::actions::local::{
+    create_local_post, get_local_user, insert_new_local_user, login_local_user, update_session,
+};
 use crate::database::get_conn_from_pool;
 use crate::database::models::DatabasePost;
 use crate::internal::authentication::{authenticate, generate_session, Token};
+use crate::{database, DBPool};
 
 pub mod authentication;
 

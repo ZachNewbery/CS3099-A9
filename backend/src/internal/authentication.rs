@@ -1,5 +1,5 @@
-use actix_web::{HttpRequest, HttpResponse, web};
 use actix_web::http::header::Header as ActixHeader;
+use actix_web::{web, HttpRequest, HttpResponse};
 use actix_web_httpauth::headers::authorization::{Authorization, Bearer};
 use chrono::Utc;
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, TokenData, Validation};

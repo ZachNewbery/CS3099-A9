@@ -60,7 +60,7 @@ pub struct DatabasePost {
     pub body: String,
     pub created: NaiveDateTime,
     pub modified: NaiveDateTime,
-    pub parent: Option<u64>
+    pub parent: Option<u64>,
 }
 
 #[derive(Insertable, Debug, Clone)]

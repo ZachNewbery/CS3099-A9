@@ -1,14 +1,14 @@
 #![allow(non_snake_case)]
 
-use actix_web::{HttpResponse, web};
+use actix_web::{web, HttpResponse};
 use chrono::{NaiveDateTime, Utc};
 use diesel::prelude::*;
 use diesel::r2d2::{ConnectionManager, PooledConnection};
 use uuid::Uuid;
 
-use crate::DBPool;
 use crate::federation::schemas::NewPost;
 use crate::internal::{LocalNewPost, NewUser};
+use crate::DBPool;
 
 use self::models::*;
 

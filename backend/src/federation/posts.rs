@@ -1,12 +1,12 @@
-use actix_web::{delete, get, HttpRequest, post, put, web};
+use actix_web::{delete, get, post, put, web, HttpRequest};
 use actix_web::{HttpResponse, Result};
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::DBPool;
 use crate::federation::schemas::NewPost;
 use crate::util::header_error::HeaderError;
+use crate::DBPool;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]

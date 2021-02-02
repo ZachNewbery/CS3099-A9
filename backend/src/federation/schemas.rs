@@ -1,8 +1,8 @@
 use std::convert::TryFrom;
 
-use actix_web::{HttpResponse, ResponseError};
 use actix_web::dev::HttpResponseBuilder;
 use actix_web::http::StatusCode;
+use actix_web::{HttpResponse, ResponseError};
 use chrono::NaiveDateTime;
 use either::Either;
 use serde::{Deserialize, Serialize};
