@@ -19,6 +19,9 @@ pub(crate) async fn user_by_id(web::Path(_id): web::Path<String>) -> Result<Http
 }
 
 #[post("/{id}")]
-pub(crate) async fn send_user_message(_parameters: web::Query<MessageParameters>, web::Path(_id): web::Path<String>) -> Result<HttpResponse> {
+pub(crate) async fn send_user_message(
+    _parameters: web::Query<MessageParameters>,
+    web::Path(_id): web::Path<String>,
+) -> Result<HttpResponse> {
     Ok(HttpResponse::NotImplemented().finish())
 }

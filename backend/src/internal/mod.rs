@@ -1,10 +1,11 @@
 pub mod authentication;
 
-use crate::database::models::Post;
-use crate::database::{
-    create_local_post, get_conn_from_pool, get_local_user, insert_new_local_user, login_local_user,
-    show_all_posts, update_session,
+use crate::database::get_conn_from_pool;
+use crate::database::local::{
+    create_local_post, get_local_user, insert_new_local_user, login_local_user, show_all_posts,
+    update_session,
 };
+use crate::database::models::Post;
 use crate::internal::authentication::{authenticate, generate_session, Token};
 use crate::{database, DBPool};
 use actix_web::{post, HttpResponse};

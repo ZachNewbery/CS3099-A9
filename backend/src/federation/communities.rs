@@ -1,14 +1,15 @@
-use actix_web::{Result, HttpRequest};
-use actix_web::{get, web, HttpResponse};
 use crate::util::RouteError;
 use crate::DBPool;
+use actix_web::{get, web, HttpResponse};
+use actix_web::{HttpRequest, Result};
 
 #[get("/")]
 pub(crate) async fn communities(
     _pool: web::Data<DBPool>,
-    req: HttpRequest
+    req: HttpRequest,
 ) -> Result<HttpResponse> {
-    let client_host = req.headers()
+    let client_host = req
+        .headers()
         .get("Client-Host")
         .ok_or(RouteError::MissingClientHost)?;
     // TODO: Parse the client host
@@ -19,10 +20,11 @@ pub(crate) async fn communities(
 #[get("/{id}")]
 pub(crate) async fn community_by_id(
     _pool: web::Data<DBPool>,
-    req: HttpResponse,
-    web::Path(_id): web::Path<String>
+    req: HttpRequest,
+    web::Path(_id): web::Path<String>,
 ) -> Result<HttpResponse> {
-    let client_host = req.headers()
+    let client_host = req
+        .headers()
         .get("Client-Host")
         .ok_or(RouteError::MissingClientHost)?;
     // TODO: Parse the client host
@@ -33,10 +35,11 @@ pub(crate) async fn community_by_id(
 #[get("/{id}/timestamps")]
 pub(crate) async fn community_by_id_timestamps(
     _pool: web::Data<DBPool>,
-    req: HttpResponse,
+    req: HttpRequest,
     web::Path(_id): web::Path<String>,
 ) -> Result<HttpResponse> {
-    let client_host = req.headers()
+    let client_host = req
+        .headers()
         .get("Client-Host")
         .ok_or(RouteError::MissingClientHost)?;
     // TODO: Parse the client host
