@@ -1,22 +1,31 @@
-use actix_web::{get, HttpResponse, web};
+use actix_web::{get, web, HttpResponse};
 use actix_web::{HttpRequest, Result};
 
-use crate::DBPool;
+use crate::database::actions::communities::get_communities;
+use crate::database::get_conn_from_pool;
 use crate::util::header_error::HeaderError;
+use crate::DBPool;
 
 #[get("/")]
-pub(crate) async fn communities(
-    _pool: web::Data<DBPool>,
-    req: HttpRequest,
-) -> Result<HttpResponse> {
+pub(crate) async fn communities(pool: web::Data<DBPool>, req: HttpRequest) -> Result<HttpResponse> {
     let client_host = req
         .headers()
         .get("Client-Host")
         .ok_or(HeaderError::MissingClientHost)?;
     // TODO: Parse the client host
-    // TODO: Implement /fed/communities
-    // Return type: Vec<String>
-    Ok(HttpResponse::NotImplemented().finish())
+
+    let conn = get_conn_from_pool(pool.clone())?;
+
+    let communities = web::block(move || get_communities(&conn))
+        .await
+        .map_err(|_| HttpResponse::InternalServerError().finish())?; // TODO: Error types here
+
+    Ok(HttpResponse::Ok().json(
+        communities
+            .into_iter()
+            .map(|c| c.title)
+            .collect::<Vec<String>>(),
+    ))
 }
 
 #[get("/{id}")]
