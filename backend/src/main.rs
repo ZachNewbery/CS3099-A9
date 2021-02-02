@@ -1,13 +1,14 @@
 #[macro_use]
 extern crate diesel;
 
-use crate::federation::communities::{communities, community_by_id, community_by_id_timestamps};
-use crate::federation::posts::{delete_post, edit_post, new_post_federated, post_by_id, posts};
-use crate::federation::users::{search_users, send_user_message, user_by_id};
-use crate::internal::{get_posts, login, logout, new_post_local, new_user};
-use actix_web::{middleware, web, App, HttpServer};
+use actix_web::{App, HttpServer, middleware, web};
 use diesel::prelude::*;
 use diesel::r2d2::ConnectionManager;
+
+use crate::federation::communities::{communities, community_by_id, community_by_id_timestamps};
+use crate::federation::posts::{delete_post, edit_post, new_post_federated, post_by_id, post_matching_filters};
+use crate::federation::users::{search_users, send_user_message, user_by_id};
+use crate::internal::{get_posts, login, logout, new_post_local, new_user};
 
 pub mod database;
 pub mod federation;
@@ -50,7 +51,7 @@ async fn main() -> std::io::Result<()> {
                     )
                     .service(
                         web::scope("/posts")
-                            .service(posts)
+                            .service(post_matching_filters)
                             .service(new_post_federated)
                             .service(post_by_id)
                             .service(edit_post)

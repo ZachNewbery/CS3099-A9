@@ -15,6 +15,7 @@ pub(crate) async fn communities(
         .ok_or(HeaderError::MissingClientHost)?;
     // TODO: Parse the client host
     // TODO: Implement /fed/communities
+    // Return type: Vec<String>
     Ok(HttpResponse::NotImplemented().finish())
 }
 
@@ -30,6 +31,7 @@ pub(crate) async fn community_by_id(
         .ok_or(HeaderError::MissingClientHost)?;
     // TODO: Parse the client host
     // TODO: Implement /fed/communities/id
+    // Return type: Community
     Ok(HttpResponse::NotImplemented().finish())
 }
 
@@ -45,5 +47,7 @@ pub(crate) async fn community_by_id_timestamps(
         .ok_or(HeaderError::MissingClientHost)?;
     // TODO: Parse the client host
     // TODO: Implement /fed/communities/id/timestamps
+    // TODO: Define return type
+    // Return type: { uuid, modified }
     Ok(HttpResponse::NotImplemented().finish())
 }

@@ -1,10 +1,11 @@
+use std::convert::TryFrom;
+
+use actix_web::{HttpResponse, ResponseError};
 use actix_web::dev::HttpResponseBuilder;
 use actix_web::http::StatusCode;
-use actix_web::{HttpResponse, ResponseError};
 use chrono::NaiveDateTime;
 use either::Either;
 use serde::{Deserialize, Serialize};
-use std::convert::TryFrom;
 use thiserror::Error;
 use uuid::Uuid;
 
@@ -27,7 +28,7 @@ impl ResponseError for FederationSchemaError {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct UserID {
+pub(crate) struct User {
     pub id: String,
     pub host: String,
 }
@@ -63,17 +64,16 @@ pub(crate) struct Community {
     id: String,
     title: String,
     description: String,
-    admins: Vec<UserID>,
+    admins: Vec<User>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct NewPost {
-    pub parent: Uuid,
+    pub community: String,
+    pub parent_post: Option<Uuid>,
     pub title: String,
-    pub content_type: PostContentType,
-    pub body: String,
-    pub author: UserID,
+    pub content: Vec<String>, // TODO: PostContentText or PostContentMarkdown
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -86,20 +86,22 @@ pub(crate) struct UpdatePost {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct Post {
+pub(crate) struct PostTimeStamp {
     id: Uuid,
-    parent: Option<Either<Uuid, String>>,
-    children: Vec<Uuid>,
-    content_type: PostContentType,
-    body: String,
-    author: UserID,
-    created: NaiveDateTime,
-    modified: NaiveDateTime,
+    modified: Option<NaiveDateTime>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct PostTimeStamp {
+pub(crate) struct Post {
     id: Uuid,
-    modified: Option<NaiveDateTime>,
+    community: String,
+    parent_post: Uuid,
+    children: Vec<Uuid>,
+    title: String,
+    content: Vec<String>,
+    // TODO: PostContentText or PostContentMarkdown
+    author: User,
+    modified: NaiveDateTime,
+    created: NaiveDateTime,
 }

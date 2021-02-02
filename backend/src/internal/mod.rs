@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use crate::{database, DBPool};
 use crate::database::actions::local::{create_local_post, get_local_user, insert_new_local_user, login_local_user, update_session};
 use crate::database::get_conn_from_pool;
-use crate::database::models::Post;
+use crate::database::models::DatabasePost;
 use crate::internal::authentication::{authenticate, generate_session, Token};
 
 pub mod authentication;
@@ -139,8 +139,8 @@ pub struct OutputPost {
     pub modified: NaiveDateTime,
 }
 
-impl From<Post> for OutputPost {
-    fn from(value: Post) -> Self {
+impl From<DatabasePost> for OutputPost {
+    fn from(value: DatabasePost) -> Self {
         Self {
             uuid: value.uuid,
             title: value.title,
@@ -162,12 +162,14 @@ pub(crate) async fn get_posts(
     let (_, _) = authenticate(pool.clone(), request)?;
     let conn = get_conn_from_pool(pool)?;
 
-    let posts = web::block(move || show_all_posts(&conn))
-        .await
-        .map_err(|_| HttpResponse::InternalServerError().finish())?
-        .into_iter()
-        .map(|p| p.into())
-        .collect::<Vec<OutputPost>>();
+    Ok(HttpResponse::NotImplemented().finish())
 
-    Ok(HttpResponse::Ok().json(posts))
+    // let posts = web::block(move || show_all_posts(&conn))
+    //     .await
+    //     .map_err(|_| HttpResponse::InternalServerError().finish())?
+    //     .into_iter()
+    //     .map(|p| p.into())
+    //     .collect::<Vec<OutputPost>>();
+    //
+    // Ok(HttpResponse::Ok().json(posts))
 }

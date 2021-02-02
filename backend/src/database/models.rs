@@ -1,21 +1,22 @@
+use chrono::{NaiveDateTime, Utc};
+
 use crate::database::naive_date_time_now;
 use crate::database::schema::{Communities, FederatedUsers, LocalUsers, Posts, Users};
 use crate::federation::schemas::NewPost;
 use crate::internal::authentication::generate_session;
 use crate::internal::NewUser;
-use chrono::{NaiveDateTime, Utc};
 
 #[derive(Queryable, Identifiable, Debug, Clone)]
 #[table_name = "Users"]
-pub struct User {
+pub struct DatabaseUser {
     pub id: u64,
     pub username: String,
 }
 
 #[derive(Queryable, Identifiable, Associations, Debug, Clone)]
-#[belongs_to(User, foreign_key = "userId")]
+#[belongs_to(DatabaseUser, foreign_key = "userId")]
 #[table_name = "LocalUsers"]
-pub struct LocalUser {
+pub struct DatabaseLocalUser {
     pub id: u64,
     #[column_name = "userId"]
     pub user_id: u64,
@@ -27,81 +28,69 @@ pub struct LocalUser {
 }
 
 #[derive(Queryable, Identifiable, Associations, Debug, Clone)]
-#[belongs_to(User, foreign_key = "userId")]
+#[belongs_to(DatabaseUser, foreign_key = "userId")]
 #[table_name = "FederatedUsers"]
-pub struct FederatedUser {
+pub struct DatabaseFederatedUser {
     pub id: u64,
     #[column_name = "userId"]
     pub user_id: u64,
     pub host: String,
 }
 
+#[derive(Queryable, Identifiable, Debug, Clone)]
+#[table_name = "Communities"]
+pub struct DatabaseCommunity {
+    pub id: u64,
+    pub uuid: String,
+    pub desc: String,
+    pub title: String,
+}
+
 #[derive(Queryable, Identifiable, Associations, Debug, Clone)]
 #[table_name = "Posts"]
-#[belongs_to(User, foreign_key = "author")]
-pub struct Post {
+#[belongs_to(DatabaseUser, foreign_key = "author")]
+pub struct DatabasePost {
     pub id: u64,
     pub uuid: String,
     pub title: String,
     pub author: u64,
     #[column_name = "contentType"]
-    pub content_type: u64, // TODO: Check how we can convert this into a PostContentType
+    pub content_type: u64,
+    // TODO: Check how we can convert this into a PostContentType
     pub body: String,
     pub created: NaiveDateTime,
     pub modified: NaiveDateTime,
-}
-
-#[derive(Queryable, Identifiable, Debug, Clone)]
-#[table_name = "Communities"]
-pub struct Community {
-    pub id: u64,
-    pub uuid: String,
-    pub title: String,
-    pub desc: String,
+    pub parent: Option<u64>
 }
 
 #[derive(Insertable, Debug, Clone)]
 #[table_name = "Posts"]
-pub struct DBNewPost {
+pub struct DatabaseNewPost {
     pub uuid: String,
     pub title: String,
-    pub body: String,
     pub author: u64,
     #[column_name = "contentType"]
     pub content_type: u64,
+    pub body: String,
     pub created: NaiveDateTime,
     pub modified: NaiveDateTime,
-}
-
-// TODO: Replace the placeholder user id!
-impl From<NewPost> for DBNewPost {
-    fn from(value: NewPost) -> Self {
-        Self {
-            uuid: ::uuid::Uuid::new_v4().to_string(),
-            title: value.title,
-            body: value.body,
-            author: 0,
-            content_type: value.content_type.into(),
-            created: NaiveDateTime::from_timestamp(Utc::now().timestamp(), 0),
-            modified: NaiveDateTime::from_timestamp(Utc::now().timestamp(), 0),
-        }
-    }
+    pub parent: Option<u64>,
 }
 
 #[derive(Insertable, Debug, Clone)]
 #[table_name = "Users"]
-pub struct DBNewUser {
+pub struct DatabaseNewUser {
     pub username: String,
 }
 
 #[derive(Insertable, Debug, Clone)]
 #[table_name = "FederatedUsers"]
-pub struct DBNewFedUser {
+pub struct DatabaseNewFederatedUser {
     pub id: u64,
     pub host: String,
 }
 
-impl From<NewUser> for DBNewUser {
+impl From<NewUser> for DatabaseNewUser {
     fn from(value: NewUser) -> Self {
         Self {
             username: value.username,
@@ -111,7 +100,7 @@ impl From<NewUser> for DBNewUser {
 
 #[derive(Insertable, Debug, Clone)]
 #[table_name = "LocalUsers"]
-pub struct DBNewLocalUser {
+pub struct DatabaseNewLocalUser {
     pub userId: u64,
     pub email: String,
     pub password: String,
@@ -120,8 +109,8 @@ pub struct DBNewLocalUser {
     pub session: String,
 }
 
-impl From<(User, NewUser)> for DBNewLocalUser {
-    fn from(value: (User, NewUser)) -> Self {
+impl From<(DatabaseUser, NewUser)> for DatabaseNewLocalUser {
+    fn from(value: (DatabaseUser, NewUser)) -> Self {
         let (user, new_user) = value;
         Self {
             userId: user.id,

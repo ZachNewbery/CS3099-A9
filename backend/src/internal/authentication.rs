@@ -8,7 +8,7 @@ use uuid::Uuid;
 
 use crate::database::actions::local::validate_session;
 use crate::database::get_conn_from_pool;
-use crate::database::models::LocalUser;
+use crate::database::models::DatabaseLocalUser;
 use crate::DBPool;
 
 pub static JWT_SECRET_KEY: [u8; 16] = *include_bytes!("../../jwt_secret.key");
@@ -67,7 +67,7 @@ impl Token {
 pub fn authenticate(
     pool: web::Data<DBPool>,
     request: HttpRequest,
-) -> actix_web::Result<(TokenData<Token>, LocalUser)> {
+) -> actix_web::Result<(TokenData<Token>, DatabaseLocalUser)> {
     let conn = get_conn_from_pool(pool)?;
 
     let auth = Authorization::<Bearer>::parse(&request)?.into_scheme();

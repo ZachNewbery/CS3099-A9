@@ -1,11 +1,11 @@
 use diesel::{MysqlConnection, RunQueryDsl};
 
-use crate::database::models::Community;
+use crate::database::models::DatabaseCommunity;
 
 pub(crate) fn get_communities(
     conn: &MysqlConnection,
-) -> Result<Vec<Community>, diesel::result::Error> {
+) -> Result<Vec<DatabaseCommunity>, diesel::result::Error> {
     use crate::database::schema::Communities::dsl::*;
 
-    Communities.load::<Community>(conn)
+    Communities.load::<DatabaseCommunity>(conn)
 }

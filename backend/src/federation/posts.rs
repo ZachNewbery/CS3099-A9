@@ -9,7 +9,8 @@ use crate::federation::schemas::NewPost;
 use crate::util::header_error::HeaderError;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct PostsParameters {
+#[serde(rename_all = "camelCase")]
+pub struct PostFilters {
     limit: Option<u64>,
     community: Option<String>,
     min_date: Option<NaiveDateTime>,
@@ -21,10 +22,10 @@ pub struct PostsParameters {
 }
 
 #[get("/")]
-pub(crate) async fn posts(
+pub(crate) async fn post_matching_filters(
     _pool: web::Data<DBPool>,
     req: HttpRequest,
-    _parameters: web::Query<PostsParameters>,
+    _parameters: web::Query<PostFilters>,
 ) -> Result<HttpResponse> {
     let client_host = req
         .headers()
@@ -39,6 +40,7 @@ pub(crate) async fn posts(
     // TODO: Parse the user id
 
     // TODO: Implement /fed/posts (GET)
+    // Return type: Vec<Post>
     Ok(HttpResponse::NotImplemented().finish())
 }
 
@@ -66,6 +68,8 @@ pub(crate) async fn new_post_federated(
     // .await
     // .map_err(|_| HttpResponse::InternalServerError().finish())?;
 
+    // Return type: Post
+
     Ok(HttpResponse::NotImplemented().finish())
 }
 
@@ -88,6 +92,8 @@ pub(crate) async fn post_by_id(
     // TODO: Parse the user id
 
     // TODO: Implement /fed/posts/id (POST)
+
+    // Return type: Post
     Ok(HttpResponse::NotImplemented().finish())
 }
 
@@ -117,6 +123,8 @@ pub(crate) async fn edit_post(
     // TODO: Parse the user id
 
     // TODO: Implement /fed/posts/id (PUT)
+
+    // Nothing to return
     Ok(HttpResponse::NotImplemented().finish())
 }
 
@@ -145,5 +153,7 @@ pub(crate) async fn delete_post(
     // TODO: Parse the user id
 
     // TODO: Implement /fed/posts/id (DEL)
+
+    // Nothing to return
     Ok(HttpResponse::NotImplemented().finish())
 }
