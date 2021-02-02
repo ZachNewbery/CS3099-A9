@@ -3,6 +3,7 @@ extern crate diesel;
 
 use crate::federation::communities::{communities, community_by_id, community_by_id_timestamps};
 use crate::federation::posts::{delete_post, edit_post, new_post_fed, post_by_id, posts};
+use crate::federation::users::{search_users, user_by_id, send_user_message};
 use crate::internal::{get_posts, login, logout, new_post_local, new_user};
 use actix_web::{middleware, web, App, HttpServer};
 use diesel::prelude::*;
@@ -53,6 +54,12 @@ async fn main() -> std::io::Result<()> {
                             .service(post_by_id)
                             .service(edit_post)
                             .service(delete_post),
+                    )
+                    .service(
+                        web::scope("/users")
+                            .service(search_users)
+                            .service(user_by_id)
+                            .service(send_user_message),
                     ),
             )
             .service(
