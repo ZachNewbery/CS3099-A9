@@ -1,7 +1,8 @@
+use diesel::MysqlConnection;
+use diesel::prelude::*;
+
 use crate::database::models::{LocalUser, Post};
 use crate::internal::{LocalNewPost, NewUser};
-use diesel::prelude::*;
-use diesel::MysqlConnection;
 
 // FIXME: This is here for MVP purposes
 pub(crate) fn create_local_post(
@@ -119,10 +120,4 @@ pub(crate) fn insert_new_local_user(
 
         Ok(())
     })
-}
-
-pub(crate) fn show_all_posts(conn: &MysqlConnection) -> Result<Vec<Post>, diesel::result::Error> {
-    use crate::database::schema::Posts::dsl::*;
-
-    Posts.load::<Post>(conn)
 }

@@ -1,5 +1,5 @@
-use actix_web::http::StatusCode;
 use actix_web::{HttpResponse, ResponseError};
+use actix_web::http::StatusCode;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -9,25 +9,25 @@ pub struct BadResponse {
 }
 
 #[derive(thiserror::Error, Debug)]
-pub enum RouteError {
+pub enum HeaderError {
     #[error("missing Client-Host")]
     MissingClientHost,
     #[error("missing User-ID")]
     MissingUserID,
 }
 
-impl ResponseError for RouteError {
+impl ResponseError for HeaderError {
     fn status_code(&self) -> StatusCode {
         match self {
-            RouteError::MissingClientHost => StatusCode::BAD_REQUEST,
-            RouteError::MissingUserID => StatusCode::BAD_REQUEST,
+            HeaderError::MissingClientHost => StatusCode::BAD_REQUEST,
+            HeaderError::MissingUserID => StatusCode::BAD_REQUEST,
         }
     }
 
     fn error_response(&self) -> HttpResponse {
         let title_message = match self {
-            RouteError::MissingClientHost => "missing Client-Host".to_string(),
-            RouteError::MissingUserID => "missing User-ID".to_string(),
+            HeaderError::MissingClientHost => "missing Client-Host".to_string(),
+            HeaderError::MissingUserID => "missing User-ID".to_string(),
         };
 
         HttpResponse::BadRequest().json(BadResponse {

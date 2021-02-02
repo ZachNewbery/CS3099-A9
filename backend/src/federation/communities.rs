@@ -1,7 +1,8 @@
-use crate::util::RouteError;
-use crate::DBPool;
-use actix_web::{get, web, HttpResponse};
+use actix_web::{get, HttpResponse, web};
 use actix_web::{HttpRequest, Result};
+
+use crate::DBPool;
+use crate::util::header_error::HeaderError;
 
 #[get("/")]
 pub(crate) async fn communities(
@@ -11,7 +12,7 @@ pub(crate) async fn communities(
     let client_host = req
         .headers()
         .get("Client-Host")
-        .ok_or(RouteError::MissingClientHost)?;
+        .ok_or(HeaderError::MissingClientHost)?;
     // TODO: Parse the client host
     // TODO: Implement /fed/communities
     Ok(HttpResponse::NotImplemented().finish())
@@ -26,7 +27,7 @@ pub(crate) async fn community_by_id(
     let client_host = req
         .headers()
         .get("Client-Host")
-        .ok_or(RouteError::MissingClientHost)?;
+        .ok_or(HeaderError::MissingClientHost)?;
     // TODO: Parse the client host
     // TODO: Implement /fed/communities/id
     Ok(HttpResponse::NotImplemented().finish())
@@ -41,7 +42,7 @@ pub(crate) async fn community_by_id_timestamps(
     let client_host = req
         .headers()
         .get("Client-Host")
-        .ok_or(RouteError::MissingClientHost)?;
+        .ok_or(HeaderError::MissingClientHost)?;
     // TODO: Parse the client host
     // TODO: Implement /fed/communities/id/timestamps
     Ok(HttpResponse::NotImplemented().finish())

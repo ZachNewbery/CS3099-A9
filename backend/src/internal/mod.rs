@@ -1,17 +1,15 @@
-pub mod authentication;
-
-use crate::database::get_conn_from_pool;
-use crate::database::local::{
-    create_local_post, get_local_user, insert_new_local_user, login_local_user, show_all_posts,
-    update_session,
-};
-use crate::database::models::Post;
-use crate::internal::authentication::{authenticate, generate_session, Token};
-use crate::{database, DBPool};
-use actix_web::{post, HttpResponse};
-use actix_web::{web, HttpRequest, Result};
+use actix_web::{HttpResponse, post};
+use actix_web::{HttpRequest, Result, web};
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
+
+use crate::{database, DBPool};
+use crate::database::actions::local::{create_local_post, get_local_user, insert_new_local_user, login_local_user, update_session};
+use crate::database::get_conn_from_pool;
+use crate::database::models::Post;
+use crate::internal::authentication::{authenticate, generate_session, Token};
+
+pub mod authentication;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct NewUser {

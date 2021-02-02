@@ -1,14 +1,15 @@
-use crate::database::get_conn_from_pool;
-use crate::database::local::validate_session;
-use crate::database::models::LocalUser;
-use crate::DBPool;
+use actix_web::{HttpRequest, HttpResponse, web};
 use actix_web::http::header::Header as ActixHeader;
-use actix_web::{web, HttpRequest, HttpResponse};
 use actix_web_httpauth::headers::authorization::{Authorization, Bearer};
 use chrono::Utc;
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, TokenData, Validation};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+
+use crate::database::actions::local::validate_session;
+use crate::database::get_conn_from_pool;
+use crate::database::models::LocalUser;
+use crate::DBPool;
 
 pub static JWT_SECRET_KEY: [u8; 16] = *include_bytes!("../../jwt_secret.key");
 

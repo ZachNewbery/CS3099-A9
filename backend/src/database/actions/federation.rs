@@ -1,7 +1,8 @@
+use diesel::{Connection, MysqlConnection, RunQueryDsl};
+use diesel::prelude::*;
+
 use crate::database::models::FederatedUser;
 use crate::federation::schemas::NewPost;
-use diesel::prelude::*;
-use diesel::{Connection, MysqlConnection, RunQueryDsl};
 
 pub(crate) fn create_federated_post(
     conn: &MysqlConnection,

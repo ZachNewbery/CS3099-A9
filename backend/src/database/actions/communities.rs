@@ -1,5 +1,6 @@
-use crate::database::models::Community;
 use diesel::{MysqlConnection, RunQueryDsl};
+
+use crate::database::models::Community;
 
 pub(crate) fn get_communities(
     conn: &MysqlConnection,

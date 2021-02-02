@@ -1,11 +1,12 @@
-use crate::federation::schemas::NewPost;
-use crate::util::RouteError;
-use crate::DBPool;
-use actix_web::{delete, get, post, put, web, HttpRequest};
+use actix_web::{delete, get, HttpRequest, post, put, web};
 use actix_web::{HttpResponse, Result};
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+
+use crate::DBPool;
+use crate::federation::schemas::NewPost;
+use crate::util::header_error::HeaderError;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PostsParameters {
@@ -28,13 +29,13 @@ pub(crate) async fn posts(
     let client_host = req
         .headers()
         .get("Client-Host")
-        .ok_or(RouteError::MissingClientHost)?;
+        .ok_or(HeaderError::MissingClientHost)?;
     // TODO: Parse the client host
 
     let user_id = req
         .headers()
         .get("User-ID")
-        .ok_or(RouteError::MissingUserID)?;
+        .ok_or(HeaderError::MissingUserID)?;
     // TODO: Parse the user id
 
     // TODO: Implement /fed/posts (GET)
@@ -50,7 +51,7 @@ pub(crate) async fn new_post_federated(
     let client_host = req
         .headers()
         .get("Client-Host")
-        .ok_or(RouteError::MissingClientHost)?;
+        .ok_or(HeaderError::MissingClientHost)?;
     // TODO: Parse the client host
 
     // TODO: Check /fed/posts (POST)
@@ -77,13 +78,13 @@ pub(crate) async fn post_by_id(
     let client_host = req
         .headers()
         .get("Client-Host")
-        .ok_or(RouteError::MissingClientHost)?;
+        .ok_or(HeaderError::MissingClientHost)?;
     // TODO: Parse the client host
 
     let user_id = req
         .headers()
         .get("User-ID")
-        .ok_or(RouteError::MissingUserID)?;
+        .ok_or(HeaderError::MissingUserID)?;
     // TODO: Parse the user id
 
     // TODO: Implement /fed/posts/id (POST)
@@ -106,13 +107,13 @@ pub(crate) async fn edit_post(
     let client_host = req
         .headers()
         .get("Client-Host")
-        .ok_or(RouteError::MissingClientHost)?;
+        .ok_or(HeaderError::MissingClientHost)?;
     // TODO: Parse the client host
 
     let user_id = req
         .headers()
         .get("User-ID")
-        .ok_or(RouteError::MissingUserID)?;
+        .ok_or(HeaderError::MissingUserID)?;
     // TODO: Parse the user id
 
     // TODO: Implement /fed/posts/id (PUT)
@@ -134,13 +135,13 @@ pub(crate) async fn delete_post(
     let client_host = req
         .headers()
         .get("Client-Host")
-        .ok_or(RouteError::MissingClientHost)?;
+        .ok_or(HeaderError::MissingClientHost)?;
     // TODO: Parse the client host
 
     let user_id = req
         .headers()
         .get("User-ID")
-        .ok_or(RouteError::MissingUserID)?;
+        .ok_or(HeaderError::MissingUserID)?;
     // TODO: Parse the user id
 
     // TODO: Implement /fed/posts/id (DEL)
