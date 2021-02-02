@@ -1,10 +1,31 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { App } from './App';
+import { BrowserRouter as Router, Route, Switch } from 'react-router-dom'
+import { Home } from './Home';
+import { Login } from './Login';
+import { Logout } from './Logout';
+import { Registration } from './Registration';
+import { GlobalStyle } from "./helpers";
 
 ReactDOM.render(
   <React.StrictMode>
-    <App text="override!"/>
+    <GlobalStyle />
+    <Router>
+      <Switch>
+        <Route path='/registration'>
+          <Registration />
+        </Route>
+        <Route path="/login">
+          <Login />
+        </Route>
+        <Route path="/logout">
+          <Logout />
+        </Route>
+        <Route path="/">
+          <Home />
+        </Route>
+      </Switch>
+    </Router>
   </React.StrictMode>,
   document.getElementById('root')
 );

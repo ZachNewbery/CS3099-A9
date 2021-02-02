@@ -12,3 +12,12 @@ trigger_backend:
   rules:
     - changes:
         - backend/**/*
+
+trigger_frontend:
+  stage: triggers
+  trigger:
+    include: frontend/.gitlab-ci.yml
+    strategy: depend
+  rules:
+   - changes:
+      - frontend/**/*

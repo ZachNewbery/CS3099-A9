@@ -1,0 +1,140 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2020-11-12T03:56:35.841Z",
+  "__export_source": "insomnia.desktop.app:v2020.4.2",
+  "resources": [
+    {
+      "_id": "req_0f9e831785834202a15fcf238c03e37a",
+      "parentId": "wrk_141fca6215934e77b7ed6ead739d8e2c",
+      "modified": 1605125706104,
+      "created": 1605125377051,
+      "url": "127.0.0.1:8000/internal/new_user",
+      "name": "",
+      "description": "",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n\t\"username\": \"emerald\",\n\t\"email\": \"emerald@example.com\",\n\t\"password\": \"helloworld\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json",
+          "id": "pair_5b10e2a6bbc34b919f43fa52bfea2534"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1605125377051,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "wrk_141fca6215934e77b7ed6ead739d8e2c",
+      "parentId": null,
+      "modified": 1605125331691,
+      "created": 1605125331691,
+      "name": "Insomnia",
+      "description": "",
+      "scope": null,
+      "_type": "workspace"
+    },
+    {
+      "_id": "req_fbe8f80b5e9f46519617851ce357c4d7",
+      "parentId": "wrk_141fca6215934e77b7ed6ead739d8e2c",
+      "modified": 1605153055941,
+      "created": 1605126013031,
+      "url": "127.0.0.1:8000/internal/login",
+      "name": "",
+      "description": "",
+      "method": "POST",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n\t\"email\": \"emerald@example.com\",\n\t\"password\": \"helloworld\"\n}"
+      },
+      "parameters": [],
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json",
+          "id": "pair_5b10e2a6bbc34b919f43fa52bfea2534"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": -1605125377001,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "req_abbefb6857cf448481fa4bfbea0f89da",
+      "parentId": "wrk_141fca6215934e77b7ed6ead739d8e2c",
+      "modified": 1605153070967,
+      "created": 1605128086811,
+      "url": "127.0.0.1:8000/internal/logout",
+      "name": "",
+      "description": "",
+      "method": "POST",
+      "body": {},
+      "parameters": [],
+      "headers": [],
+      "authentication": {
+        "type": "bearer",
+        "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE2MDUxNTI5NzgsImV4cCI6MTYwNTc1Nzc3OCwiaWQiOjEsInNlc3Npb24iOiJhYTFkMmU2ODZhNWE0NDIzOTU3MjY3MDU0MDMxOWRmOCJ9.xOhfbaoMnnhOA1K_NVWL8ckSm7EwnIrVixDeBVJ96FQ"
+      },
+      "metaSortKey": -1605125376951,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingDisableRenderRequestBody": false,
+      "settingEncodeUrl": true,
+      "settingRebuildPath": true,
+      "settingFollowRedirects": "global",
+      "_type": "request"
+    },
+    {
+      "_id": "env_ea73e9549c903d9b82a99ee94ce5248e9cb70e70",
+      "parentId": "wrk_141fca6215934e77b7ed6ead739d8e2c",
+      "modified": 1605125331743,
+      "created": 1605125331743,
+      "name": "Base Environment",
+      "data": {},
+      "dataPropertyOrder": null,
+      "color": null,
+      "isPrivate": false,
+      "metaSortKey": 1605125331743,
+      "_type": "environment"
+    },
+    {
+      "_id": "jar_ea73e9549c903d9b82a99ee94ce5248e9cb70e70",
+      "parentId": "wrk_141fca6215934e77b7ed6ead739d8e2c",
+      "modified": 1605125331746,
+      "created": 1605125331746,
+      "name": "Default Jar",
+      "cookies": [],
+      "_type": "cookie_jar"
+    },
+    {
+      "_id": "spc_acd3dcd34f414465995e8ea9ab371409",
+      "parentId": "wrk_141fca6215934e77b7ed6ead739d8e2c",
+      "modified": 1605125331691,
+      "created": 1605125331691,
+      "fileName": "Insomnia",
+      "contents": "",
+      "contentType": "yaml",
+      "_type": "api_spec"
+    }
+  ]
+}
