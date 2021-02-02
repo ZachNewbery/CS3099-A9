@@ -12,6 +12,7 @@ use diesel::r2d2::ConnectionManager;
 pub mod database;
 pub mod federation;
 pub mod internal;
+pub mod util;
 
 type DBPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 

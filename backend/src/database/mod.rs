@@ -2,6 +2,7 @@
 
 pub mod models;
 pub mod schema;
+pub mod communities;
 
 use self::models::*;
 use crate::federation::schemas::NewPost;
@@ -15,28 +16,6 @@ use uuid::Uuid;
 
 fn naive_date_time_now() -> NaiveDateTime {
     NaiveDateTime::from_timestamp(Utc::now().timestamp(), 0)
-}
-
-pub(crate) fn create_federated_post(
-    conn: &MysqlConnection,
-    new_post: NewPost,
-) -> Result<(), diesel::result::Error> {
-    use schema::Posts;
-
-    if get_federated_user(&conn, &new_post.author.id, &new_post.author.host)?.is_none() {
-        // Update both Users and FederatedUsers table.
-        insert_federated_user(&conn, &new_post.author.id, &new_post.author.host)?;
-    }
-
-    let db_new_post = DBNewPost::from(new_post);
-
-    conn.transaction::<(), diesel::result::Error, _>(|| {
-        diesel::insert_into(Posts::table)
-            .values(&db_new_post)
-            .execute(conn)?;
-
-        Ok(())
-    })
 }
 
 // FIXME: This is here for MVP purposes
@@ -64,22 +43,6 @@ pub(crate) fn create_local_post(
     Ok(())
 }
 
-pub(crate) fn get_federated_user(
-    conn: &MysqlConnection,
-    username_ck: &str,
-    host_ck: &str,
-) -> Result<Option<FederatedUser>, diesel::result::Error> {
-    use crate::database::schema::FederatedUsers::dsl::*;
-    use crate::database::schema::Users::dsl::*;
-
-    Ok(Users
-        .inner_join(FederatedUsers)
-        .filter(username.eq(username_ck))
-        .filter(host.eq(host_ck))
-        .select(FederatedUsers::all_columns())
-        .first::<FederatedUser>(conn)
-        .optional()?)
-}
 
 pub(crate) fn insert_federated_user(
     conn: &MysqlConnection,
@@ -113,65 +76,6 @@ pub(crate) fn insert_federated_user(
 
         Ok(())
     })
-}
-
-pub(crate) fn update_session(
-    conn: &MysqlConnection,
-    user: &LocalUser,
-    new_session: &str,
-) -> Result<(), diesel::result::Error> {
-    use crate::database::schema::LocalUsers::dsl::*;
-
-    diesel::update(LocalUsers.filter(id.eq(user.id)))
-        .set(session.eq(new_session))
-        .execute(conn)?;
-    Ok(())
-}
-
-pub(crate) fn validate_session(
-    conn: &MysqlConnection,
-    id_ck: u64,
-    session_ck: &str,
-) -> Result<Option<LocalUser>, diesel::result::Error> {
-    use crate::database::schema::LocalUsers::dsl::*;
-
-    Ok(LocalUsers
-        .filter(id.eq(id_ck))
-        .filter(session.eq(session_ck))
-        .first::<LocalUser>(conn)
-        .optional()?)
-}
-
-pub(crate) fn get_local_user(
-    conn: &MysqlConnection,
-    username_ck: &str,
-    email_ck: &str,
-) -> Result<Option<LocalUser>, diesel::result::Error> {
-    use crate::database::schema::LocalUsers::dsl::*;
-    use crate::database::schema::Users::dsl::*;
-
-    Ok(Users
-        .inner_join(LocalUsers)
-        .filter(username.eq(username_ck))
-        .filter(email.eq(email_ck))
-        .select(LocalUsers::all_columns())
-        .first::<LocalUser>(conn)
-        .optional()?)
-}
-
-// FIXME: I cannot emphasize just how insecure this is. MUST fix before pushing to production
-pub(crate) fn login_local_user(
-    conn: &MysqlConnection,
-    email_ck: &str,
-    password_ck: &str,
-) -> Result<Option<LocalUser>, diesel::result::Error> {
-    use crate::database::schema::LocalUsers::dsl::*;
-
-    Ok(LocalUsers
-        .filter(email.eq(email_ck))
-        .filter(password.eq(password_ck))
-        .first::<LocalUser>(conn)
-        .optional()?)
 }
 
 pub(crate) fn insert_new_local_user(
@@ -211,13 +115,6 @@ pub(crate) fn show_all_posts(conn: &MysqlConnection) -> Result<Vec<Post>, diesel
     Posts.load::<Post>(conn)
 }
 
-// #[allow(dead_code)]
-// pub(crate) fn get_posts_by_user(
-//     conn: &MysqlConnection,
-//     username: &str,
-// ) -> Result<Option<Post>, diesel::result::Error> {
-//      Ok(())
-// }
 
 // TODO: Refactor all other endpoints to use this!
 pub fn get_conn_from_pool(
