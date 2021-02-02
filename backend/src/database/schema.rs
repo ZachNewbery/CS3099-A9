@@ -1,4 +1,19 @@
 table! {
+    Comments (id) {
+        id -> Unsigned<Bigint>,
+        post -> Unsigned<Bigint>,
+        parent -> Nullable<Unsigned<Bigint>>,
+        uuid -> Text,
+        title -> Text,
+        author -> Unsigned<Bigint>,
+        contentType -> Unsigned<Bigint>,
+        body -> Text,
+        created -> Timestamp,
+        modified -> Timestamp,
+    }
+}
+
+table! {
     Communities (id) {
         id -> Unsigned<Bigint>,
         uuid -> Text,
@@ -36,6 +51,7 @@ table! {
         body -> Text,
         created -> Timestamp,
         modified -> Timestamp,
+        parent -> Nullable<Unsigned<Bigint>>,
     }
 }
 
@@ -46,8 +62,17 @@ table! {
     }
 }
 
+joinable!(Comments -> Posts (post));
+joinable!(Comments -> Users (author));
 joinable!(FederatedUsers -> Users (userId));
 joinable!(LocalUsers -> Users (userId));
 joinable!(Posts -> Users (author));
 
-allow_tables_to_appear_in_same_query!(Communities, FederatedUsers, LocalUsers, Posts, Users,);
+allow_tables_to_appear_in_same_query!(
+    Comments,
+    Communities,
+    FederatedUsers,
+    LocalUsers,
+    Posts,
+    Users,
+);

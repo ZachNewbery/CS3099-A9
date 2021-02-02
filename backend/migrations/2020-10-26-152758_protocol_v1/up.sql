@@ -37,5 +37,7 @@ CREATE TABLE IF NOT EXISTS Posts (
     body TEXT NOT NULL,
     CONSTRAINT FK_author FOREIGN KEY (author) REFERENCES Users(id),
     created TIMESTAMP NOT NULL,
-    modified TIMESTAMP NOT NULL
+    modified TIMESTAMP NOT NULL,
+    parent BIGINT UNSIGNED,
+    CONSTRAINT FK_parent FOREIGN KEY (parent) REFERENCES Posts(id)
 );
