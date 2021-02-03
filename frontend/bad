@@ -13,6 +13,9 @@ fi
 echo "INFO: Building Frontend"
 npm run build
 
+# Give read and write permissions to build folder before upload
+chmod -R 777 ./build
+
 # Deploy to host servers
 echo "INFO: Deploying to host servers"
 rsync -rav --delete build/ $1@cs3099user-a9.host.cs.st-andrews.ac.uk:/cs/home/cs3099user-a9/nginx_default/frontend/build
