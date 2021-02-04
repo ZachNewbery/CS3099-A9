@@ -15,10 +15,12 @@ pub enum RouteError {
     MissingClientHost,
     #[error("missing User-ID")]
     MissingUserID,
-    #[error("database error")]
+    #[error(transparent)]
     Diesel(#[from] diesel::result::Error),
-    #[error("not found")]
+    #[error("item not found in database")]
     NotFound,
+    #[error(transparent)]
+    UuidParse(#[from] uuid::Error),
 }
 
 impl ResponseError for RouteError {
@@ -28,6 +30,7 @@ impl ResponseError for RouteError {
             RouteError::MissingUserID => StatusCode::BAD_REQUEST,
             RouteError::Diesel(_) => StatusCode::INTERNAL_SERVER_ERROR,
             RouteError::NotFound => StatusCode::NOT_FOUND,
+            RouteError::UuidParse(_) => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 
@@ -40,6 +43,10 @@ impl ResponseError for RouteError {
                 "internal database error".to_string()
             }
             RouteError::NotFound => "not found".to_string(),
+            RouteError::UuidParse(e) => {
+                eprintln!("{}", e);
+                "internal server error".to_string()
+            }
         };
 
         match self {
@@ -47,6 +54,7 @@ impl ResponseError for RouteError {
             RouteError::MissingUserID => HttpResponse::BadRequest(),
             RouteError::Diesel(_) => HttpResponse::InternalServerError(),
             RouteError::NotFound => HttpResponse::NotFound(),
+            RouteError::UuidParse(_) => HttpResponse::InternalServerError(),
         }
         .json(BadResponse {
             title: title_message.clone(),
