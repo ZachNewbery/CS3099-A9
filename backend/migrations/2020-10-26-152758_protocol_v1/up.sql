@@ -48,5 +48,7 @@ CREATE TABLE IF NOT EXISTS Posts (
     created TIMESTAMP NOT NULL,
     modified TIMESTAMP NOT NULL,
     parent BIGINT UNSIGNED,
-    CONSTRAINT FK_parent FOREIGN KEY (parent) REFERENCES Posts(id)
+    CONSTRAINT FK_parent FOREIGN KEY (parent) REFERENCES Posts(id),
+    community BIGINT UNSIGNED NOT NULL,
+    CONSTRAINT FK_community FOREIGN KEY (community) REFERENCES Communities(id)
 );

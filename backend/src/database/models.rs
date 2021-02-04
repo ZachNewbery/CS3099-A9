@@ -62,6 +62,7 @@ pub struct DatabaseCommunitiesUser {
 #[derive(Queryable, Identifiable, Associations, Debug, Clone)]
 #[table_name = "Posts"]
 #[belongs_to(DatabaseUser, foreign_key = "author")]
+#[belongs_to(DatabaseCommunity, foreign_key = "community")]
 pub struct DatabasePost {
     pub id: u64,
     pub uuid: String,
@@ -74,6 +75,7 @@ pub struct DatabasePost {
     pub created: NaiveDateTime,
     pub modified: NaiveDateTime,
     pub parent: Option<u64>,
+    pub community: u64,
 }
 
 #[derive(Insertable, Debug, Clone)]

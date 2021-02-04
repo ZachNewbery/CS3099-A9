@@ -60,6 +60,7 @@ table! {
         created -> Timestamp,
         modified -> Timestamp,
         parent -> Nullable<Unsigned<Bigint>>,
+        community -> Unsigned<Bigint>,
     }
 }
 
@@ -76,6 +77,7 @@ joinable!(CommunitiesUsers -> Communities (communityId));
 joinable!(CommunitiesUsers -> Users (userId));
 joinable!(FederatedUsers -> Users (userId));
 joinable!(LocalUsers -> Users (userId));
+joinable!(Posts -> Communities (community));
 joinable!(Posts -> Users (author));
 
 allow_tables_to_appear_in_same_query!(
