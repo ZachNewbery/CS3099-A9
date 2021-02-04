@@ -20,7 +20,6 @@ fn naive_date_time_now() -> NaiveDateTime {
     NaiveDateTime::from_timestamp(Utc::now().timestamp(), 0)
 }
 
-// TODO: Refactor all other endpoints to use this!
 pub fn get_conn_from_pool(
     pool: web::Data<DBPool>,
 ) -> actix_web::Result<PooledConnection<ConnectionManager<MysqlConnection>>> {

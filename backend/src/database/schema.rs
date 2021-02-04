@@ -16,9 +16,17 @@ table! {
 table! {
     Communities (id) {
         id -> Unsigned<Bigint>,
-        uuid -> Text,
+        name -> Text,
         description -> Text,
         title -> Text,
+    }
+}
+
+table! {
+    CommunitiesUsers (id) {
+        id -> Unsigned<Bigint>,
+        communityId -> Unsigned<Bigint>,
+        userId -> Unsigned<Bigint>,
     }
 }
 
@@ -64,6 +72,8 @@ table! {
 
 joinable!(Comments -> Posts (post));
 joinable!(Comments -> Users (author));
+joinable!(CommunitiesUsers -> Communities (communityId));
+joinable!(CommunitiesUsers -> Users (userId));
 joinable!(FederatedUsers -> Users (userId));
 joinable!(LocalUsers -> Users (userId));
 joinable!(Posts -> Users (author));
@@ -71,6 +81,7 @@ joinable!(Posts -> Users (author));
 allow_tables_to_appear_in_same_query!(
     Comments,
     Communities,
+    CommunitiesUsers,
     FederatedUsers,
     LocalUsers,
     Posts,

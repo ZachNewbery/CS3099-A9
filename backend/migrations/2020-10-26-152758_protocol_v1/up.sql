@@ -23,9 +23,18 @@ CREATE TABLE IF NOT EXISTS FederatedUsers (
 
 CREATE TABLE IF NOT EXISTS Communities (
     id SERIAL PRIMARY KEY,
-    uuid TEXT NOT NULL,
+    name TEXT NOT NULL,
     description TEXT NOT NULL,
     title TEXT NOT NULL
+);
+
+# Admins
+CREATE TABLE IF NOT EXISTS CommunitiesUsers (
+    id SERIAL PRIMARY KEY,
+    communityId BIGINT UNSIGNED NOT NULL,
+    CONSTRAINT FK_communityId FOREIGN KEY (communityId) REFERENCES Communities(id),
+    userId BIGINT UNSIGNED NOT NULL,
+    CONSTRAINT FK_userId FOREIGN KEY (userId) REFERENCES Users(id)
 );
 
 CREATE TABLE IF NOT EXISTS Posts (

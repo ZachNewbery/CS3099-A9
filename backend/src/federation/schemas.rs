@@ -8,6 +8,7 @@ use either::Either;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use uuid::Uuid;
+use crate::database::models::DatabaseCommunity;
 
 #[derive(Error, Debug, Copy, Clone)]
 #[error("bad request")]
@@ -61,9 +62,9 @@ impl From<PostContentType> for u64 {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct Community {
-    id: String,
-    title: String,
-    description: String,
+    pub(crate) id: String,
+    pub(crate) title: String,
+    pub(crate) description: String,
     admins: Vec<User>,
 }
 
