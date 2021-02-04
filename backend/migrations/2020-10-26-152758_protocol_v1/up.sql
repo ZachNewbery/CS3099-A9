@@ -41,14 +41,14 @@ CREATE TABLE IF NOT EXISTS Posts (
     id SERIAL PRIMARY KEY,
     uuid TEXT NOT NULL,
     title TEXT NOT NULL,
-    author BIGINT UNSIGNED NOT NULL,
+    authorId BIGINT UNSIGNED NOT NULL,
+    CONSTRAINT FK_author FOREIGN KEY (authorId) REFERENCES Users(id),
     contentType BIGINT UNSIGNED NOT NULL,
     body TEXT NOT NULL,
-    CONSTRAINT FK_author FOREIGN KEY (author) REFERENCES Users(id),
     created TIMESTAMP NOT NULL,
     modified TIMESTAMP NOT NULL,
-    parent BIGINT UNSIGNED,
-    CONSTRAINT FK_parent FOREIGN KEY (parent) REFERENCES Posts(id),
-    community BIGINT UNSIGNED NOT NULL,
-    CONSTRAINT FK_community FOREIGN KEY (community) REFERENCES Communities(id)
+    parentId BIGINT UNSIGNED,
+    CONSTRAINT FK_parent FOREIGN KEY (parentId) REFERENCES Posts(id),
+    communityId BIGINT UNSIGNED NOT NULL,
+    CONSTRAINT FK_community FOREIGN KEY (communityId) REFERENCES Communities(id)
 );

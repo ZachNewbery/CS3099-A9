@@ -61,21 +61,24 @@ pub struct DatabaseCommunitiesUser {
 
 #[derive(Queryable, Identifiable, Associations, Debug, Clone)]
 #[table_name = "Posts"]
-#[belongs_to(DatabaseUser, foreign_key = "author")]
-#[belongs_to(DatabaseCommunity, foreign_key = "community")]
+#[belongs_to(DatabaseUser, foreign_key = "authorId")]
+#[belongs_to(DatabaseCommunity, foreign_key = "communityId")]
 pub struct DatabasePost {
     pub id: u64,
     pub uuid: String,
     pub title: String,
-    pub author: u64,
+    #[column_name = "authorId"]
+    pub author_id: u64,
     #[column_name = "contentType"]
     pub content_type: u64,
     // TODO: Check how we can convert this into a PostContentType
     pub body: String,
     pub created: NaiveDateTime,
     pub modified: NaiveDateTime,
-    pub parent: Option<u64>,
-    pub community: u64,
+    #[column_name = "parentId"]
+    pub parent_id: Option<u64>,
+    #[column_name = "communityId"]
+    pub community_id: u64,
 }
 
 #[derive(Insertable, Debug, Clone)]
@@ -83,13 +86,18 @@ pub struct DatabasePost {
 pub struct DatabaseNewPost {
     pub uuid: String,
     pub title: String,
-    pub author: u64,
+    #[column_name = "authorId"]
+    pub author_id: u64,
     #[column_name = "contentType"]
     pub content_type: u64,
+    // TODO: Check how we can convert this into a PostContentType
     pub body: String,
     pub created: NaiveDateTime,
     pub modified: NaiveDateTime,
-    pub parent: Option<u64>,
+    #[column_name = "parentId"]
+    pub parent_id: Option<u64>,
+    #[column_name = "communityId"]
+    pub community_id: u64,
 }
 
 #[derive(Insertable, Debug, Clone)]

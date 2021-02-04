@@ -54,13 +54,13 @@ table! {
         id -> Unsigned<Bigint>,
         uuid -> Text,
         title -> Text,
-        author -> Unsigned<Bigint>,
+        authorId -> Unsigned<Bigint>,
         contentType -> Unsigned<Bigint>,
         body -> Text,
         created -> Timestamp,
         modified -> Timestamp,
-        parent -> Nullable<Unsigned<Bigint>>,
-        community -> Unsigned<Bigint>,
+        parentId -> Nullable<Unsigned<Bigint>>,
+        communityId -> Unsigned<Bigint>,
     }
 }
 
@@ -77,8 +77,8 @@ joinable!(CommunitiesUsers -> Communities (communityId));
 joinable!(CommunitiesUsers -> Users (userId));
 joinable!(FederatedUsers -> Users (userId));
 joinable!(LocalUsers -> Users (userId));
-joinable!(Posts -> Communities (community));
-joinable!(Posts -> Users (author));
+joinable!(Posts -> Communities (communityId));
+joinable!(Posts -> Users (authorId));
 
 allow_tables_to_appear_in_same_query!(
     Comments,

@@ -146,7 +146,7 @@ impl From<DatabasePost> for OutputPost {
         Self {
             uuid: value.uuid,
             title: value.title,
-            author: value.author,
+            author: value.author_id,
             content_type: 0,
             body: value.body,
             created: value.created,
