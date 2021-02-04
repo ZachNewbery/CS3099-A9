@@ -1,7 +1,9 @@
 use chrono::{NaiveDateTime, Utc};
 
 use crate::database::naive_date_time_now;
-use crate::database::schema::{Communities, FederatedUsers, LocalUsers, Posts, Users, CommunitiesUsers};
+use crate::database::schema::{
+    Communities, CommunitiesUsers, FederatedUsers, LocalUsers, Posts, Users,
+};
 use crate::federation::schemas::NewPost;
 use crate::internal::authentication::generate_session;
 use crate::internal::NewUser;
@@ -54,7 +56,7 @@ pub struct DatabaseCommunitiesUser {
     #[column_name = "communityId"]
     pub community_id: u64,
     #[column_name = "userId"]
-    pub user_id: u64
+    pub user_id: u64,
 }
 
 #[derive(Queryable, Identifiable, Associations, Debug, Clone)]

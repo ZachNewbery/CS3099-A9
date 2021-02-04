@@ -3,11 +3,11 @@ use actix_web::{HttpRequest, Result};
 
 use crate::database::actions::communities::{get_communities, get_community_by_id};
 use crate::database::get_conn_from_pool;
+use crate::database::models::{DatabaseFederatedUser, DatabaseLocalUser};
+use crate::federation::schemas::{Community, User};
 use crate::util::route_error::RouteError;
 use crate::DBPool;
-use crate::database::models::{DatabaseFederatedUser, DatabaseLocalUser};
 use either::Either;
-use crate::federation::schemas::{User, Community};
 
 #[get("/")]
 pub(crate) async fn communities(pool: web::Data<DBPool>, req: HttpRequest) -> Result<HttpResponse> {
@@ -19,8 +19,7 @@ pub(crate) async fn communities(pool: web::Data<DBPool>, req: HttpRequest) -> Re
 
     let conn = get_conn_from_pool(pool.clone())?;
 
-    let communities = web::block(move || get_communities(&conn))
-        .await?;
+    let communities = web::block(move || get_communities(&conn)).await?;
 
     Ok(HttpResponse::Ok().json(
         communities
@@ -44,8 +43,7 @@ pub(crate) async fn community_by_id(
 
     let conn = get_conn_from_pool(_pool.clone())?;
 
-    let (community, admins) = web::block(move || get_community_by_id(&conn, &id))
-            .await?;
+    let (community, admins) = web::block(move || get_community_by_id(&conn, &id)).await?;
 
     let admins = admins
         .into_iter()
@@ -54,27 +52,23 @@ pub(crate) async fn community_by_id(
                 Either::Left(l) => {
                     User {
                         id: u.username,
-                        host: "REPLACE-ME.com".to_string()  // TODO: Hardcode this somewhere else!
+                        host: "REPLACE-ME.com".to_string(), // TODO: Hardcode this somewhere else!
                     }
                 }
-                Either::Right(f) => {
-                    User {
-                        id: u.username,
-                        host: f.host
-                    }
-                }
+                Either::Right(f) => User {
+                    id: u.username,
+                    host: f.host,
+                },
             }
         })
         .collect::<Vec<User>>();
-    
-    Ok(HttpResponse::Ok().json(
-        Community {
-            id: community.name,
-            title: community.title,
-            description: community.desc,
-            admins
-        }
-    ))
+
+    Ok(HttpResponse::Ok().json(Community {
+        id: community.name,
+        title: community.title,
+        description: community.desc,
+        admins,
+    }))
 }
 
 #[get("/{id}/timestamps")]

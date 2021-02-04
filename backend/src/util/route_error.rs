@@ -27,7 +27,7 @@ impl ResponseError for RouteError {
             RouteError::MissingClientHost => StatusCode::BAD_REQUEST,
             RouteError::MissingUserID => StatusCode::BAD_REQUEST,
             RouteError::Diesel(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            RouteError::NotFound => StatusCode::NOT_FOUND
+            RouteError::NotFound => StatusCode::NOT_FOUND,
         }
     }
 
@@ -39,24 +39,14 @@ impl ResponseError for RouteError {
                 eprintln!("{}", e);
                 "internal database error".to_string()
             }
-            RouteError::NotFound => {"not found".to_string()}
+            RouteError::NotFound => "not found".to_string(),
         };
 
-
-
         match self {
-            RouteError::MissingClientHost => {
-                HttpResponse::BadRequest()
-            }
-            RouteError::MissingUserID => {
-                HttpResponse::BadRequest()
-            }
-            RouteError::Diesel(_) => {
-                HttpResponse::InternalServerError()
-            }
-            RouteError::NotFound => {
-                HttpResponse::NotFound()
-            }
+            RouteError::MissingClientHost => HttpResponse::BadRequest(),
+            RouteError::MissingUserID => HttpResponse::BadRequest(),
+            RouteError::Diesel(_) => HttpResponse::InternalServerError(),
+            RouteError::NotFound => HttpResponse::NotFound(),
         }
         .json(BadResponse {
             title: title_message.clone(),

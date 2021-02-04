@@ -1,5 +1,6 @@
 use std::convert::TryFrom;
 
+use crate::database::models::DatabaseCommunity;
 use actix_web::dev::HttpResponseBuilder;
 use actix_web::http::StatusCode;
 use actix_web::{HttpResponse, ResponseError};
@@ -8,7 +9,6 @@ use either::Either;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 use uuid::Uuid;
-use crate::database::models::DatabaseCommunity;
 
 #[derive(Error, Debug, Copy, Clone)]
 #[error("bad request")]
