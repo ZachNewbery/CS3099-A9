@@ -138,7 +138,7 @@ pub(crate) async fn get_post_by_id(
         created: post.created,
     };
 
-    Ok(HttpResponse::Ok().json(p))
+    Ok(HttpResponse::Created().json(p))
 
     // Return type: Post
 }
