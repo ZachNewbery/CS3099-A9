@@ -11,14 +11,14 @@ CREATE TABLE IF NOT EXISTS LocalUsers (
     password TEXT NOT NULL DEFAULT 'hunter2',   -- TODO: Make this secure
     createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     session VARCHAR(36) NOT NULL DEFAULT '',    -- JWT
-    CONSTRAINT FK_local_user FOREIGN KEY (userId) REFERENCES Users(id)
+    CONSTRAINT FK_LocalUsers_userId FOREIGN KEY (userId) REFERENCES Users(id)
 );
 
 CREATE TABLE IF NOT EXISTS FederatedUsers (
     id SERIAL PRIMARY KEY,
     userId BIGINT UNSIGNED NOT NULL UNIQUE,
     host TEXT NOT NULL,
-    CONSTRAINT FK_federated_user FOREIGN KEY (userId) REFERENCES Users(id)
+    CONSTRAINT FK_FederatedUsers_userId FOREIGN KEY (userId) REFERENCES Users(id)
 );
 
 CREATE TABLE IF NOT EXISTS Communities (
@@ -32,9 +32,9 @@ CREATE TABLE IF NOT EXISTS Communities (
 CREATE TABLE IF NOT EXISTS CommunitiesUsers (
     id SERIAL PRIMARY KEY,
     communityId BIGINT UNSIGNED NOT NULL,
-    CONSTRAINT FK_communityId FOREIGN KEY (communityId) REFERENCES Communities(id),
+    CONSTRAINT FK_CommunitiesUsers_communityId FOREIGN KEY (communityId) REFERENCES Communities(id),
     userId BIGINT UNSIGNED NOT NULL,
-    CONSTRAINT FK_userId FOREIGN KEY (userId) REFERENCES Users(id)
+    CONSTRAINT FK_CommunitiesUsers_userId FOREIGN KEY (userId) REFERENCES Users(id)
 );
 
 CREATE TABLE IF NOT EXISTS Posts (
@@ -42,13 +42,26 @@ CREATE TABLE IF NOT EXISTS Posts (
     uuid TEXT NOT NULL,
     title TEXT NOT NULL,
     authorId BIGINT UNSIGNED NOT NULL,
-    CONSTRAINT FK_author FOREIGN KEY (authorId) REFERENCES Users(id),
-    contentType BIGINT UNSIGNED NOT NULL,
-    body TEXT NOT NULL,
+    CONSTRAINT FK_Posts_authorId FOREIGN KEY (authorId) REFERENCES Users(id),
+    contentType ENUM ('text', 'markdown') NOT NULL,
     created TIMESTAMP NOT NULL,
     modified TIMESTAMP NOT NULL,
     parentId BIGINT UNSIGNED,
-    CONSTRAINT FK_parent FOREIGN KEY (parentId) REFERENCES Posts(id),
+    CONSTRAINT FK_Posts_parentId FOREIGN KEY (parentId) REFERENCES Posts(id),
     communityId BIGINT UNSIGNED NOT NULL,
-    CONSTRAINT FK_community FOREIGN KEY (communityId) REFERENCES Communities(id)
+    CONSTRAINT FK_Posts_communityId FOREIGN KEY (communityId) REFERENCES Communities(id)
+);
+
+CREATE TABLE IF NOT EXISTS Text (
+    id SERIAL PRIMARY KEY,
+    content TEXT NOT NULL,
+    postId BIGINT UNSIGNED NOT NULL,
+    CONSTRAINT FK_Text_postId FOREIGN KEY (postId) REFERENCES Posts(id)
+);
+
+CREATE TABLE IF NOT EXISTS Markdown (
+    id SERIAL PRIMARY KEY,
+    content TEXT NOT NULL,
+    postId BIGINT UNSIGNED NOT NULL,
+    CONSTRAINT FK_Markdown_postId FOREIGN KEY (postId) REFERENCES Posts(id)
 );

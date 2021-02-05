@@ -2,8 +2,9 @@ use chrono::{NaiveDateTime, Utc};
 
 use crate::database::naive_date_time_now;
 use crate::database::schema::{
-    Communities, CommunitiesUsers, FederatedUsers, LocalUsers, Posts, Users,
+    Communities, CommunitiesUsers, FederatedUsers, LocalUsers, Markdown, Posts, Text, Users
 };
+use crate::database::sql_types::DatabaseContentType;
 use crate::federation::schemas::NewPost;
 use crate::internal::authentication::generate_session;
 use crate::internal::NewUser;
@@ -71,15 +72,33 @@ pub struct DatabasePost {
     #[column_name = "authorId"]
     pub author_id: u64,
     #[column_name = "contentType"]
-    pub content_type: u64,
-    // TODO: Check how we can convert this into a PostContentType
-    pub body: String,
+    pub content_type: DatabaseContentType,
     pub created: NaiveDateTime,
     pub modified: NaiveDateTime,
     #[column_name = "parentId"]
     pub parent_id: Option<u64>,
     #[column_name = "communityId"]
     pub community_id: u64,
+}
+
+#[derive(Queryable, Identifiable, Associations, Debug, Clone)]
+#[table_name = "Text"]
+#[belongs_to(DatabasePost, foreign_key = "postId")]
+pub struct DatabaseText {
+    pub id: u64,
+    pub content: String,
+    #[column_name = "postId"]
+    pub post_id: u64
+}
+
+#[derive(Queryable, Identifiable, Associations, Debug, Clone)]
+#[table_name = "Markdown"]
+#[belongs_to(DatabasePost, foreign_key = "postId")]
+pub struct DatabaseMarkdown {
+    pub id: u64,
+    pub content: String,
+    #[column_name = "postId"]
+    pub post_id: u64
 }
 
 #[derive(Insertable, Debug, Clone)]
@@ -90,9 +109,8 @@ pub struct DatabaseNewPost {
     #[column_name = "authorId"]
     pub author_id: u64,
     #[column_name = "contentType"]
-    pub content_type: u64,
+    pub content_type: DatabaseContentType,
     // TODO: Check how we can convert this into a PostContentType
-    pub body: String,
     pub created: NaiveDateTime,
     pub modified: NaiveDateTime,
     #[column_name = "parentId"]
