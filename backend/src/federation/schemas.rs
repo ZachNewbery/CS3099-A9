@@ -75,6 +75,7 @@ pub(crate) struct NewPost {
     pub parent_post: Option<Uuid>,
     pub title: String,
     pub content: Vec<String>, // TODO: PostContentText or PostContentMarkdown
+    pub user_id: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -95,14 +96,14 @@ pub(crate) struct PostTimeStamp {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct Post {
-    id: Uuid,
-    community: String,
-    parent_post: Uuid,
-    children: Vec<Uuid>,
-    title: String,
-    content: Vec<String>,
+    pub(crate) id: Uuid,
+    pub(crate) community: String,
+    pub(crate) parent_post: Uuid,
+    pub(crate) children: Vec<Uuid>,
+    pub(crate) title: String,
+    pub(crate) content: Vec<String>,
     // TODO: PostContentText or PostContentMarkdown
-    author: User,
-    modified: NaiveDateTime,
-    created: NaiveDateTime,
+    pub(crate) author: User,
+    pub(crate) modified: NaiveDateTime,
+    pub(crate) created: NaiveDateTime,
 }

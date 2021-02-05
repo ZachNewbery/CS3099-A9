@@ -63,6 +63,7 @@ pub struct DatabaseCommunitiesUser {
 #[table_name = "Posts"]
 #[belongs_to(DatabaseUser, foreign_key = "authorId")]
 #[belongs_to(DatabaseCommunity, foreign_key = "communityId")]
+#[belongs_to(DatabasePost, foreign_key = "parentId")]
 pub struct DatabasePost {
     pub id: u64,
     pub uuid: String,

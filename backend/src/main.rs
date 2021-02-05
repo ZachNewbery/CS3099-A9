@@ -7,7 +7,7 @@ use diesel::r2d2::ConnectionManager;
 
 use crate::federation::communities::{communities, community_by_id, community_by_id_timestamps};
 use crate::federation::posts::{
-    delete_post, edit_post, new_post_federated, post_by_id, post_matching_filters,
+    delete_post, edit_post, get_post_by_id, new_post_federated, post_matching_filters,
 };
 use crate::federation::users::{search_users, send_user_message, user_by_id};
 use crate::internal::{get_posts, login, logout, new_post_local, new_user};
@@ -55,7 +55,7 @@ async fn main() -> std::io::Result<()> {
                         web::scope("/posts")
                             .service(post_matching_filters)
                             .service(new_post_federated)
-                            .service(post_by_id)
+                            .service(get_post_by_id)
                             .service(edit_post)
                             .service(delete_post),
                     )

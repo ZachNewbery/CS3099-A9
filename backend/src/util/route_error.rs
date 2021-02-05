@@ -1,3 +1,4 @@
+use actix_web::http::header::ToStrError;
 use actix_web::http::StatusCode;
 use actix_web::{HttpResponse, ResponseError};
 use diesel::result::Error;
@@ -12,6 +13,7 @@ pub struct BadResponse {
 // Errors that may be encountered during the processing of a route.
 #[derive(thiserror::Error, Debug)]
 pub enum RouteError {
+    // TODO: Refactor this to use string
     #[error("missing Client-Host")]
     MissingClientHost,
     #[error("missing User-ID")]
@@ -22,6 +24,8 @@ pub enum RouteError {
     NotFound,
     #[error(transparent)]
     UuidParse(#[from] uuid::Error),
+    #[error(transparent)]
+    HeaderParse(#[from] ToStrError),
 }
 
 impl From<diesel::result::Error> for RouteError {
@@ -41,6 +45,7 @@ impl ResponseError for RouteError {
             RouteError::Diesel(_) => StatusCode::INTERNAL_SERVER_ERROR,
             RouteError::NotFound => StatusCode::NOT_FOUND,
             RouteError::UuidParse(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            RouteError::HeaderParse(_) => StatusCode::BAD_REQUEST,
         }
     }
 
@@ -57,6 +62,7 @@ impl ResponseError for RouteError {
                 eprintln!("{}", e);
                 "internal server error".to_string()
             }
+            RouteError::HeaderParse(_) => "bad headers".to_string(),
         };
 
         match self {
@@ -65,6 +71,7 @@ impl ResponseError for RouteError {
             RouteError::Diesel(_) => HttpResponse::InternalServerError(),
             RouteError::NotFound => HttpResponse::NotFound(),
             RouteError::UuidParse(_) => HttpResponse::InternalServerError(),
+            RouteError::HeaderParse(_) => HttpResponse::BadRequest(),
         }
         .json(BadResponse {
             title: title_message.clone(),
