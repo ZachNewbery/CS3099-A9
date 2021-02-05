@@ -1,5 +1,6 @@
 use actix_web::http::StatusCode;
 use actix_web::{HttpResponse, ResponseError};
+use diesel::result::Error;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -16,11 +17,20 @@ pub enum RouteError {
     #[error("missing User-ID")]
     MissingUserID,
     #[error(transparent)]
-    Diesel(#[from] diesel::result::Error),
+    Diesel(diesel::result::Error), // no "from" proc-macro here because we define it ourselves
     #[error("item not found in database")]
     NotFound,
     #[error(transparent)]
     UuidParse(#[from] uuid::Error),
+}
+
+impl From<diesel::result::Error> for RouteError {
+    fn from(value: Error) -> Self {
+        match value {
+            Error::NotFound => Self::NotFound,
+            _ => Self::Diesel(value),
+        }
+    }
 }
 
 impl ResponseError for RouteError {

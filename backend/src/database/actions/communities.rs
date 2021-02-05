@@ -69,9 +69,10 @@ pub(crate) fn get_community_admins(
 pub(crate) fn get_community(
     conn: &MysqlConnection,
     id_: &str,
-) -> Result<DatabaseCommunity, diesel::result::Error> {
+) -> Result<Option<DatabaseCommunity>, diesel::result::Error> {
     use crate::database::schema::Communities::dsl::*;
     Communities
         .filter(name.eq(id_))
         .first::<DatabaseCommunity>(conn)
+        .optional()
 }

@@ -48,7 +48,7 @@ pub(crate) async fn community_by_id(
     let conn = get_conn_from_pool(_pool.clone())?;
 
     let (community, admins) = web::block(move || {
-        let community = get_community(&conn, &id)?;
+        let community = get_community(&conn, &id)?.ok_or(diesel::NotFound)?;
         let admins = get_community_admins(&conn, &community)?;
         Ok::<(_, _), RouteError>((community, admins))
     })
@@ -101,7 +101,7 @@ pub(crate) async fn community_by_id_timestamps(
     let conn = get_conn_from_pool(pool.clone())?;
 
     let posts = web::block(move || {
-        let community = get_community(&conn, &id)?;
+        let community = get_community(&conn, &id)?.ok_or(diesel::NotFound)?;
         get_posts_of_community(&conn, &community)
     })
     .await?
@@ -118,5 +118,4 @@ pub(crate) async fn community_by_id_timestamps(
     Ok(HttpResponse::Ok().json(posts))
 
     // Return type: PostModified
-    // Ok(HttpResponse::NotImplemented().finish())
 }
