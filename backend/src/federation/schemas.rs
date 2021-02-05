@@ -20,12 +20,8 @@ pub(crate) struct User {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub(crate) enum ContentType {
-    Text {
-        text: String
-    },
-    Markdown {
-        text: String
-    }
+    Text { text: String },
+    Markdown { text: String },
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -70,7 +66,7 @@ pub(crate) struct Post {
     pub(crate) parent_post: Uuid,
     pub(crate) children: Vec<Uuid>,
     pub(crate) title: String,
-    pub(crate) content: Vec<String>,
+    pub(crate) content: Vec<ContentType>,
     // TODO: PostContentText or PostContentMarkdown
     pub(crate) author: User,
     pub(crate) modified: NaiveDateTime,

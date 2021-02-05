@@ -15,7 +15,6 @@ use self::models::*;
 pub mod actions;
 pub mod models;
 pub mod schema;
-pub mod sql_types;
 
 fn naive_date_time_now() -> NaiveDateTime {
     NaiveDateTime::from_timestamp(Utc::now().timestamp(), 0)

@@ -1,7 +1,4 @@
 table! {
-    use diesel::sql_types::*;
-    use crate::database::sql_types::*;
-
     Comments (id) {
         id -> Unsigned<Bigint>,
         post -> Unsigned<Bigint>,
@@ -17,9 +14,6 @@ table! {
 }
 
 table! {
-    use diesel::sql_types::*;
-    use crate::database::sql_types::*;
-
     Communities (id) {
         id -> Unsigned<Bigint>,
         name -> Text,
@@ -29,9 +23,6 @@ table! {
 }
 
 table! {
-    use diesel::sql_types::*;
-    use crate::database::sql_types::*;
-
     CommunitiesUsers (id) {
         id -> Unsigned<Bigint>,
         communityId -> Unsigned<Bigint>,
@@ -40,9 +31,6 @@ table! {
 }
 
 table! {
-    use diesel::sql_types::*;
-    use crate::database::sql_types::*;
-
     FederatedUsers (id) {
         id -> Unsigned<Bigint>,
         userId -> Unsigned<Bigint>,
@@ -51,9 +39,6 @@ table! {
 }
 
 table! {
-    use diesel::sql_types::*;
-    use crate::database::sql_types::*;
-
     LocalUsers (id) {
         id -> Unsigned<Bigint>,
         userId -> Unsigned<Bigint>,
@@ -65,9 +50,6 @@ table! {
 }
 
 table! {
-    use diesel::sql_types::*;
-    use crate::database::sql_types::*;
-
     Markdown (id) {
         id -> Unsigned<Bigint>,
         content -> Text,
@@ -76,15 +58,11 @@ table! {
 }
 
 table! {
-    use diesel::sql_types::*;
-    use crate::database::sql_types::*;
-
     Posts (id) {
         id -> Unsigned<Bigint>,
         uuid -> Text,
         title -> Text,
         authorId -> Unsigned<Bigint>,
-        contentType -> Enum,
         created -> Timestamp,
         modified -> Timestamp,
         parentId -> Nullable<Unsigned<Bigint>>,
@@ -93,9 +71,6 @@ table! {
 }
 
 table! {
-    use diesel::sql_types::*;
-    use crate::database::sql_types::*;
-
     Text (id) {
         id -> Unsigned<Bigint>,
         content -> Text,
@@ -104,9 +79,6 @@ table! {
 }
 
 table! {
-    use diesel::sql_types::*;
-    use crate::database::sql_types::*;
-
     Users (id) {
         id -> Unsigned<Bigint>,
         username -> Varchar,

@@ -7,7 +7,7 @@ use uuid::Uuid;
 use crate::database::actions::post::{get_children_posts_of, get_post};
 use crate::database::get_conn_from_pool;
 use crate::database::models::{DatabaseFederatedUser, DatabaseLocalUser};
-use crate::federation::schemas::{NewPost, Post, User};
+use crate::federation::schemas::{ContentType, NewPost, Post, User};
 use crate::util::route_error::RouteError;
 use crate::DBPool;
 use either::Either;
@@ -99,13 +99,12 @@ pub(crate) async fn get_post_by_id(
         .map_err(|e| RouteError::HeaderParse(e))?;
     // TODO: Parse the user id
 
-    // TODO: Implement /fed/posts/id (POST)
-
     let conn = get_conn_from_pool(pool.clone())?;
 
-    let (post, community, user, detail, parent) = web::block(move || get_post(&conn, &_id))
-        .await?
-        .ok_or(RouteError::NotFound)?;
+    let (post, content, community, user, detail, parent) =
+        web::block(move || get_post(&conn, &_id))
+            .await?
+            .ok_or(RouteError::NotFound)?;
 
     let conn = get_conn_from_pool(pool.clone())?;
 
@@ -123,10 +122,10 @@ pub(crate) async fn get_post_by_id(
         parent_post: parent.uuid.parse().map_err(|e| RouteError::UuidParse(e))?,
         children: children
             .into_iter()
-            .map(|(p, _, _, _)| Ok(p.uuid.parse()?))
+            .map(|p| Ok(p.0.uuid.parse()?))
             .collect::<Result<Vec<_>, RouteError>>()?,
         title: community.title,
-        content: vec![post.body], // TODO: array of PostContentText or something.
+        content,
         author: User {
             id: user.username,
             host: match detail {
@@ -146,7 +145,7 @@ pub(crate) async fn get_post_by_id(
 #[derive(Clone, Serialize, Deserialize)]
 pub struct EditPost {
     title: String,
-    content: String,
+    content: Vec<ContentType>,
 }
 
 #[put("/{id}")]
@@ -167,6 +166,8 @@ pub(crate) async fn edit_post(
         .get("User-ID")
         .ok_or(RouteError::MissingUserID)?;
     // TODO: Parse the user id
+
+    // TODO: Authenticate user
 
     // TODO: Implement /fed/posts/id (PUT)
 

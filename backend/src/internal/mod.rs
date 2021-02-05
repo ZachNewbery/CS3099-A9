@@ -129,32 +129,6 @@ pub(crate) async fn new_post_local(
     Ok(HttpResponse::Ok().finish())
 }
 
-// FIXME: Tailor this for federation as well
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct OutputPost {
-    pub uuid: String,
-    pub title: String,
-    pub author: u64,
-    pub content_type: u64,
-    pub body: String,
-    pub created: NaiveDateTime,
-    pub modified: NaiveDateTime,
-}
-
-impl From<DatabasePost> for OutputPost {
-    fn from(value: DatabasePost) -> Self {
-        Self {
-            uuid: value.uuid,
-            title: value.title,
-            author: value.author_id,
-            content_type: 0,
-            body: value.body,
-            created: value.created,
-            modified: value.modified,
-        }
-    }
-}
-
 // FIXME: This really doesn't need authentication but it's here. Also, should this aliased to the federation endpoint instead?
 #[post("/get_posts")]
 pub(crate) async fn get_posts(

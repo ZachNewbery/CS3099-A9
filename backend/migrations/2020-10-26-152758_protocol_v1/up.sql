@@ -43,7 +43,6 @@ CREATE TABLE IF NOT EXISTS Posts (
     title TEXT NOT NULL,
     authorId BIGINT UNSIGNED NOT NULL,
     CONSTRAINT FK_Posts_authorId FOREIGN KEY (authorId) REFERENCES Users(id),
-    contentType ENUM ('text', 'markdown') NOT NULL,
     created TIMESTAMP NOT NULL,
     modified TIMESTAMP NOT NULL,
     parentId BIGINT UNSIGNED,
