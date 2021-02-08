@@ -1,4 +1,4 @@
-use actix_web::{get, HttpResponse, post, Result, web};
+use actix_web::{get, post, web, HttpResponse, Result};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -13,18 +13,14 @@ pub struct SearchUsersParameters {
 }
 
 #[get("/")]
-pub(crate) async fn search_users(
-    query: web::Query<String>
-) -> Result<HttpResponse> {
+pub(crate) async fn search_users(query: web::Query<String>) -> Result<HttpResponse> {
     // TODO: /fed/users/
     // Return type: Vec<String>
     Ok(HttpResponse::NotImplemented().finish())
 }
 
 #[get("/{id}")]
-pub(crate) async fn user_by_id(
-    web::Path(_id): web::Path<String>
-) -> Result<HttpResponse> {
+pub(crate) async fn user_by_id(web::Path(_id): web::Path<String>) -> Result<HttpResponse> {
     // TODO: /fed/users/id (GET)
     // Return type: { id, posts }
     Ok(HttpResponse::NotImplemented().finish())

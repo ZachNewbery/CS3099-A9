@@ -1,53 +1,121 @@
-use actix_web::{get, HttpResponse, web};
+use actix_web::{get, web, HttpResponse};
 use actix_web::{HttpRequest, Result};
 
+use crate::database::actions::communities::{get_communities, get_community, get_community_admins};
+use crate::database::actions::post::get_posts_of_community;
+use crate::database::get_conn_from_pool;
+use crate::database::models::{DatabaseFederatedUser, DatabaseLocalUser};
+use crate::federation::schemas::{Community, User};
+use crate::util::route_error::RouteError;
 use crate::DBPool;
-use crate::util::header_error::HeaderError;
+use chrono::NaiveDateTime;
+use either::Either;
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
 
 #[get("/")]
-pub(crate) async fn communities(
-    _pool: web::Data<DBPool>,
-    req: HttpRequest,
-) -> Result<HttpResponse> {
+pub(crate) async fn communities(pool: web::Data<DBPool>, req: HttpRequest) -> Result<HttpResponse> {
     let client_host = req
         .headers()
         .get("Client-Host")
-        .ok_or(HeaderError::MissingClientHost)?;
+        .ok_or(RouteError::MissingClientHost)?;
     // TODO: Parse the client host
-    // TODO: Implement /fed/communities
-    // Return type: Vec<String>
-    Ok(HttpResponse::NotImplemented().finish())
+
+    let conn = get_conn_from_pool(pool.clone())?;
+
+    let communities = web::block(move || get_communities(&conn)).await?;
+
+    Ok(HttpResponse::Ok().json(
+        communities
+            .into_iter()
+            .map(|c| c.title)
+            .collect::<Vec<String>>(),
+    ))
 }
 
 #[get("/{id}")]
 pub(crate) async fn community_by_id(
     _pool: web::Data<DBPool>,
     req: HttpRequest,
-    web::Path(_id): web::Path<String>,
+    web::Path(id): web::Path<String>,
 ) -> Result<HttpResponse> {
     let client_host = req
         .headers()
         .get("Client-Host")
-        .ok_or(HeaderError::MissingClientHost)?;
+        .ok_or(RouteError::MissingClientHost)?;
     // TODO: Parse the client host
-    // TODO: Implement /fed/communities/id
-    // Return type: Community
-    Ok(HttpResponse::NotImplemented().finish())
+
+    let conn = get_conn_from_pool(_pool.clone())?;
+
+    let (community, admins) = web::block(move || {
+        let community = get_community(&conn, &id)?.ok_or(diesel::NotFound)?;
+        let admins = get_community_admins(&conn, &community)?;
+        Ok::<(_, _), RouteError>((community, admins))
+    })
+    .await?;
+
+    let admins = admins
+        .into_iter()
+        .map(|(u, x)| {
+            match x {
+                Either::Left(l) => {
+                    User {
+                        id: u.username,
+                        host: "REPLACE-ME.com".to_string(), // TODO: Hardcode this somewhere else!
+                    }
+                }
+                Either::Right(f) => User {
+                    id: u.username,
+                    host: f.host,
+                },
+            }
+        })
+        .collect::<Vec<User>>();
+
+    Ok(HttpResponse::Ok().json(Community {
+        id: community.name,
+        title: community.title,
+        description: community.desc,
+        admins,
+    }))
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+struct PostModified {
+    id: Uuid,
+    modified: NaiveDateTime, // TODO: we have to serialise this to unix time!
 }
 
 #[get("/{id}/timestamps")]
 pub(crate) async fn community_by_id_timestamps(
-    _pool: web::Data<DBPool>,
+    pool: web::Data<DBPool>,
     req: HttpRequest,
-    web::Path(_id): web::Path<String>,
+    web::Path(id): web::Path<String>,
 ) -> Result<HttpResponse> {
     let client_host = req
         .headers()
         .get("Client-Host")
-        .ok_or(HeaderError::MissingClientHost)?;
+        .ok_or(RouteError::MissingClientHost)?;
     // TODO: Parse the client host
-    // TODO: Implement /fed/communities/id/timestamps
-    // TODO: Define return type
-    // Return type: { uuid, modified }
-    Ok(HttpResponse::NotImplemented().finish())
+
+    let conn = get_conn_from_pool(pool.clone())?;
+
+    let posts = web::block(move || {
+        let community = get_community(&conn, &id)?.ok_or(diesel::NotFound)?;
+        get_posts_of_community(&conn, &community)
+    })
+    .await?
+    .unwrap_or_default()
+    .into_iter()
+    .map(|p| {
+        Ok(PostModified {
+            id: p.uuid.parse()?,
+            modified: p.modified,
+        })
+    })
+    .collect::<Result<Vec<PostModified>, RouteError>>()?;
+
+    Ok(HttpResponse::Ok().json(posts))
+
+    // Return type: PostModified
 }

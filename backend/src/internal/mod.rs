@@ -1,13 +1,15 @@
-use actix_web::{HttpResponse, post};
-use actix_web::{HttpRequest, Result, web};
+use actix_web::{post, HttpResponse};
+use actix_web::{web, HttpRequest, Result};
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 
-use crate::{database, DBPool};
-use crate::database::actions::local::{create_local_post, get_local_user, insert_new_local_user, login_local_user, update_session};
+use crate::database::actions::local::{
+    create_local_post, get_local_user, insert_new_local_user, login_local_user, update_session,
+};
 use crate::database::get_conn_from_pool;
 use crate::database::models::DatabasePost;
 use crate::internal::authentication::{authenticate, generate_session, Token};
+use crate::{database, DBPool};
 
 pub mod authentication;
 
@@ -125,32 +127,6 @@ pub(crate) async fn new_post_local(
         .map_err(|_| HttpResponse::InternalServerError().finish())?;
 
     Ok(HttpResponse::Ok().finish())
-}
-
-// FIXME: Tailor this for federation as well
-#[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct OutputPost {
-    pub uuid: String,
-    pub title: String,
-    pub author: u64,
-    pub content_type: u64,
-    pub body: String,
-    pub created: NaiveDateTime,
-    pub modified: NaiveDateTime,
-}
-
-impl From<DatabasePost> for OutputPost {
-    fn from(value: DatabasePost) -> Self {
-        Self {
-            uuid: value.uuid,
-            title: value.title,
-            author: value.author,
-            content_type: 0,
-            body: value.body,
-            created: value.created,
-            modified: value.modified,
-        }
-    }
 }
 
 // FIXME: This really doesn't need authentication but it's here. Also, should this aliased to the federation endpoint instead?

@@ -1,7 +1,9 @@
 use chrono::{NaiveDateTime, Utc};
 
 use crate::database::naive_date_time_now;
-use crate::database::schema::{Communities, FederatedUsers, LocalUsers, Posts, Users};
+use crate::database::schema::{
+    Communities, CommunitiesUsers, FederatedUsers, LocalUsers, Markdown, Posts, Text, Users,
+};
 use crate::federation::schemas::NewPost;
 use crate::internal::authentication::generate_session;
 use crate::internal::NewUser;
@@ -41,26 +43,59 @@ pub struct DatabaseFederatedUser {
 #[table_name = "Communities"]
 pub struct DatabaseCommunity {
     pub id: u64,
-    pub uuid: String,
+    pub name: String,
     pub desc: String,
     pub title: String,
 }
 
 #[derive(Queryable, Identifiable, Associations, Debug, Clone)]
+#[table_name = "CommunitiesUsers"]
+#[belongs_to(DatabaseCommunity, foreign_key = "communityId")]
+pub struct DatabaseCommunitiesUser {
+    pub id: u64,
+    #[column_name = "communityId"]
+    pub community_id: u64,
+    #[column_name = "userId"]
+    pub user_id: u64,
+}
+
+#[derive(Queryable, Identifiable, Associations, Debug, Clone)]
 #[table_name = "Posts"]
-#[belongs_to(DatabaseUser, foreign_key = "author")]
+#[belongs_to(DatabaseUser, foreign_key = "authorId")]
+#[belongs_to(DatabaseCommunity, foreign_key = "communityId")]
+#[belongs_to(DatabasePost, foreign_key = "parentId")]
 pub struct DatabasePost {
     pub id: u64,
     pub uuid: String,
     pub title: String,
-    pub author: u64,
-    #[column_name = "contentType"]
-    pub content_type: u64,
-    // TODO: Check how we can convert this into a PostContentType
-    pub body: String,
+    #[column_name = "authorId"]
+    pub author_id: u64,
     pub created: NaiveDateTime,
     pub modified: NaiveDateTime,
-    pub parent: Option<u64>
+    #[column_name = "parentId"]
+    pub parent_id: Option<u64>,
+    #[column_name = "communityId"]
+    pub community_id: u64,
+}
+
+#[derive(Queryable, Identifiable, Associations, Debug, Clone)]
+#[table_name = "Text"]
+#[belongs_to(DatabasePost, foreign_key = "postId")]
+pub struct DatabaseText {
+    pub id: u64,
+    pub content: String,
+    #[column_name = "postId"]
+    pub post_id: u64,
+}
+
+#[derive(Queryable, Identifiable, Associations, Debug, Clone)]
+#[table_name = "Markdown"]
+#[belongs_to(DatabasePost, foreign_key = "postId")]
+pub struct DatabaseMarkdown {
+    pub id: u64,
+    pub content: String,
+    #[column_name = "postId"]
+    pub post_id: u64,
 }
 
 #[derive(Insertable, Debug, Clone)]
@@ -68,13 +103,14 @@ pub struct DatabasePost {
 pub struct DatabaseNewPost {
     pub uuid: String,
     pub title: String,
-    pub author: u64,
-    #[column_name = "contentType"]
-    pub content_type: u64,
-    pub body: String,
+    #[column_name = "authorId"]
+    pub author_id: u64,
     pub created: NaiveDateTime,
     pub modified: NaiveDateTime,
-    pub parent: Option<u64>,
+    #[column_name = "parentId"]
+    pub parent_id: Option<u64>,
+    #[column_name = "communityId"]
+    pub community_id: u64,
 }
 
 #[derive(Insertable, Debug, Clone)]

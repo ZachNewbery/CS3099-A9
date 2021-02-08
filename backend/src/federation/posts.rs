@@ -1,12 +1,16 @@
-use actix_web::{delete, get, HttpRequest, post, put, web};
+use actix_web::{delete, get, post, put, web, HttpRequest};
 use actix_web::{HttpResponse, Result};
 use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+use crate::database::actions::post::{get_children_posts_of, get_post};
+use crate::database::get_conn_from_pool;
+use crate::database::models::{DatabaseFederatedUser, DatabaseLocalUser};
+use crate::federation::schemas::{ContentType, NewPost, Post, User};
+use crate::util::route_error::RouteError;
 use crate::DBPool;
-use crate::federation::schemas::NewPost;
-use crate::util::header_error::HeaderError;
+use either::Either;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -30,13 +34,13 @@ pub(crate) async fn post_matching_filters(
     let client_host = req
         .headers()
         .get("Client-Host")
-        .ok_or(HeaderError::MissingClientHost)?;
+        .ok_or(RouteError::MissingClientHost)?;
     // TODO: Parse the client host
 
     let user_id = req
         .headers()
         .get("User-ID")
-        .ok_or(HeaderError::MissingUserID)?;
+        .ok_or(RouteError::MissingUserID)?;
     // TODO: Parse the user id
 
     // TODO: Implement /fed/posts (GET)
@@ -53,7 +57,7 @@ pub(crate) async fn new_post_federated(
     let client_host = req
         .headers()
         .get("Client-Host")
-        .ok_or(HeaderError::MissingClientHost)?;
+        .ok_or(RouteError::MissingClientHost)?;
     // TODO: Parse the client host
 
     // TODO: Check /fed/posts (POST)
@@ -73,34 +77,75 @@ pub(crate) async fn new_post_federated(
     Ok(HttpResponse::NotImplemented().finish())
 }
 
-#[post("/{id}")]
-pub(crate) async fn post_by_id(
-    web::Path(_id): web::Path<String>,
+#[get("/{id}")]
+pub(crate) async fn get_post_by_id(
+    web::Path(_id): web::Path<Uuid>,
     pool: web::Data<DBPool>,
     req: HttpRequest,
 ) -> Result<HttpResponse> {
     let client_host = req
         .headers()
         .get("Client-Host")
-        .ok_or(HeaderError::MissingClientHost)?;
+        .ok_or(RouteError::MissingClientHost)?
+        .to_str()
+        .map_err(|e| RouteError::HeaderParse(e))?;
     // TODO: Parse the client host
 
     let user_id = req
         .headers()
         .get("User-ID")
-        .ok_or(HeaderError::MissingUserID)?;
+        .ok_or(RouteError::MissingUserID)?
+        .to_str()
+        .map_err(|e| RouteError::HeaderParse(e))?;
     // TODO: Parse the user id
 
-    // TODO: Implement /fed/posts/id (POST)
+    let conn = get_conn_from_pool(pool.clone())?;
+
+    let (post, content, community, user, detail, parent) =
+        web::block(move || get_post(&conn, &_id))
+            .await?
+            .ok_or(RouteError::NotFound)?;
+
+    let conn = get_conn_from_pool(pool.clone())?;
+
+    let parent_ = post.clone();
+    let children = web::block(move || get_children_posts_of(&conn, &parent_))
+        .await?
+        .unwrap_or_default();
+
+    let p = Post {
+        id: user
+            .username
+            .parse()
+            .map_err(|e| RouteError::UuidParse(e))?,
+        community: community.name,
+        parent_post: parent.uuid.parse().map_err(|e| RouteError::UuidParse(e))?,
+        children: children
+            .into_iter()
+            .map(|p| Ok(p.0.uuid.parse()?))
+            .collect::<Result<Vec<_>, RouteError>>()?,
+        title: community.title,
+        content,
+        author: User {
+            id: user.username,
+            host: match detail {
+                Either::Left(l) => "REPLACE-ME.com".to_string(),
+                Either::Right(f) => f.host,
+            },
+        },
+        modified: post.modified,
+        created: post.created,
+    };
+
+    Ok(HttpResponse::Created().json(p))
 
     // Return type: Post
-    Ok(HttpResponse::NotImplemented().finish())
 }
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct EditPost {
     title: String,
-    content: String,
+    content: Vec<ContentType>,
 }
 
 #[put("/{id}")]
@@ -113,14 +158,16 @@ pub(crate) async fn edit_post(
     let client_host = req
         .headers()
         .get("Client-Host")
-        .ok_or(HeaderError::MissingClientHost)?;
+        .ok_or(RouteError::MissingClientHost)?;
     // TODO: Parse the client host
 
     let user_id = req
         .headers()
         .get("User-ID")
-        .ok_or(HeaderError::MissingUserID)?;
+        .ok_or(RouteError::MissingUserID)?;
     // TODO: Parse the user id
+
+    // TODO: Authenticate user
 
     // TODO: Implement /fed/posts/id (PUT)
 
@@ -143,13 +190,13 @@ pub(crate) async fn delete_post(
     let client_host = req
         .headers()
         .get("Client-Host")
-        .ok_or(HeaderError::MissingClientHost)?;
+        .ok_or(RouteError::MissingClientHost)?;
     // TODO: Parse the client host
 
     let user_id = req
         .headers()
         .get("User-ID")
-        .ok_or(HeaderError::MissingUserID)?;
+        .ok_or(RouteError::MissingUserID)?;
     // TODO: Parse the user id
 
     // TODO: Implement /fed/posts/id (DEL)

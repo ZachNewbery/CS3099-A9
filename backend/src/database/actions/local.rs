@@ -1,5 +1,5 @@
-use diesel::MysqlConnection;
 use diesel::prelude::*;
+use diesel::MysqlConnection;
 
 use crate::database::models::{DatabaseLocalUser, DatabasePost};
 use crate::internal::{LocalNewPost, NewUser};

@@ -1,5 +1,5 @@
-use diesel::{Connection, MysqlConnection, RunQueryDsl};
 use diesel::prelude::*;
+use diesel::{Connection, MysqlConnection, RunQueryDsl};
 
 use crate::database::models::DatabaseFederatedUser;
 use crate::federation::schemas::NewPost;
