@@ -4,33 +4,6 @@ use diesel::MysqlConnection;
 use crate::database::models::{DatabaseLocalUser, DatabasePost};
 use crate::internal::{LocalNewPost, NewUser};
 
-// FIXME: This is here for MVP purposes
-pub(crate) fn create_local_post(
-    conn: &MysqlConnection,
-    new_post: LocalNewPost,
-    local_user: DatabaseLocalUser,
-) -> Result<(), diesel::result::Error> {
-    use crate::database::models::DatabaseNewPost;
-    use crate::database::schema::Posts::dsl::*;
-    use chrono::{NaiveDateTime, Utc};
-
-    let db_new_post = DatabaseNewPost {
-        uuid: ::uuid::Uuid::new_v4().to_string(),
-        title: new_post.title,
-        body: new_post.body,
-        author: local_user.user_id,
-        content_type: 0,
-        created: NaiveDateTime::from_timestamp(Utc::now().timestamp(), 0),
-        modified: NaiveDateTime::from_timestamp(Utc::now().timestamp(), 0),
-    };
-
-    diesel::insert_into(Posts)
-        .values(db_new_post)
-        .execute(conn)?;
-
-    Ok(())
-}
-
 pub(crate) fn update_session(
     conn: &MysqlConnection,
     user: &DatabaseLocalUser,
@@ -94,30 +67,28 @@ pub(crate) fn insert_new_local_user(
     conn: &MysqlConnection,
     new_user: NewUser,
 ) -> Result<(), diesel::result::Error> {
-    conn.transaction::<(), diesel::result::Error, _>(|| {
-        use crate::database::models::{DatabaseNewLocalUser, DatabaseNewUser, DatabaseUser};
-        use crate::database::schema::LocalUsers::dsl::*;
-        use crate::database::schema::Users::dsl::*;
+    use crate::database::models::{DatabaseNewLocalUser, DatabaseNewUser, DatabaseUser};
+    use crate::database::schema::LocalUsers::dsl::*;
+    use crate::database::schema::Users::dsl::*;
 
-        let db_new_user: DatabaseNewUser = new_user.clone().into();
+    let db_new_user: DatabaseNewUser = new_user.clone().into();
 
-        diesel::insert_into(Users)
-            .values(db_new_user.clone())
-            .execute(conn)?;
+    diesel::insert_into(Users)
+        .values(db_new_user.clone())
+        .execute(conn)?;
 
-        // Unfortunately MySQL does not support RETURN statements.
-        // We will have to make a second query to fetch the new user id.
-        // TODO: Look into extracting function
-        let inserted_user: DatabaseUser = Users
-            .filter(username.eq(&db_new_user.username))
-            .first::<DatabaseUser>(conn)?;
+    // Unfortunately MySQL does not support RETURN statements.
+    // We will have to make a second query to fetch the new user id.
+    // TODO: Look into extracting function
+    let inserted_user: DatabaseUser = Users
+        .filter(username.eq(&db_new_user.username))
+        .first::<DatabaseUser>(conn)?;
 
-        let db_new_local_user: DatabaseNewLocalUser = (inserted_user, new_user).into();
+    let db_new_local_user: DatabaseNewLocalUser = (inserted_user, new_user).into();
 
-        diesel::insert_into(LocalUsers)
-            .values(db_new_local_user)
-            .execute(conn)?;
+    diesel::insert_into(LocalUsers)
+        .values(db_new_local_user)
+        .execute(conn)?;
 
-        Ok(())
-    })
+    Ok(())
 }
