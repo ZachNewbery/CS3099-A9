@@ -4,13 +4,14 @@ use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::database::actions::post::{get_children_posts_of, get_post};
+use crate::database::actions::post::{get_children_posts_of, get_post, clear_post_contents, put_post_contents, modify_post_title, remove_post};
 use crate::database::get_conn_from_pool;
 use crate::database::models::{DatabaseFederatedUser, DatabaseLocalUser};
 use crate::federation::schemas::{ContentType, NewPost, Post, User};
 use crate::util::route_error::RouteError;
 use crate::DBPool;
 use either::Either;
+use diesel::Connection;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -151,7 +152,7 @@ pub struct EditPost {
 #[put("/{id}")]
 pub(crate) async fn edit_post(
     pool: web::Data<DBPool>,
-    web::Path(_id): web::Path<String>,
+    web::Path(id): web::Path<Uuid>,
     edit_post: web::Json<EditPost>,
     req: HttpRequest,
 ) -> Result<HttpResponse> {
@@ -170,9 +171,29 @@ pub(crate) async fn edit_post(
     // TODO: Authenticate user
 
     // TODO: Implement /fed/posts/id (PUT)
+    let conn = get_conn_from_pool(pool)?;
+    web::block(move || {
+        // Start new transaction
+        conn.transaction(|| {
+            // Find the post
+            let (post, _, _, _, _, _) = get_post(&conn, &id)?
+                .ok_or(diesel::NotFound)?;
+
+            let post = modify_post_title(&conn, post, &edit_post.title)?;
+
+            // Now clear everything that existed
+            clear_post_contents(&conn, &post)?;
+
+            // Then put the new contents in.
+            put_post_contents(&conn, &post, &edit_post.content)?;
+
+            Ok::<(), diesel::result::Error>(())
+        })
+    })
+        .await?;
 
     // Nothing to return
-    Ok(HttpResponse::NotImplemented().finish())
+    Ok(HttpResponse::Ok().finish())
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -183,8 +204,7 @@ pub struct DeletePost {
 #[delete("/{id}")]
 pub(crate) async fn delete_post(
     pool: web::Data<DBPool>,
-    web::Path(_id): web::Path<String>,
-    delete_post: web::Json<EditPost>,
+    web::Path(id): web::Path<Uuid>,
     req: HttpRequest,
 ) -> Result<HttpResponse> {
     let client_host = req
@@ -199,8 +219,22 @@ pub(crate) async fn delete_post(
         .ok_or(RouteError::MissingUserID)?;
     // TODO: Parse the user id
 
+    // TODO: Authenticate
+
     // TODO: Implement /fed/posts/id (DEL)
+    let conn = get_conn_from_pool(pool)?;
+    web::block(move || {
+        conn.transaction(|| {
+            let (post, _, _, _, _, _) = get_post(&conn, &id)?
+                .ok_or(diesel::NotFound)?;
+
+            remove_post(&conn, post)?;
+
+            Ok::<(), diesel::result::Error>(())
+        })
+    })
+        .await?;
 
     // Nothing to return
-    Ok(HttpResponse::NotImplemented().finish())
+    Ok(HttpResponse::Ok().finish())
 }

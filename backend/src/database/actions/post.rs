@@ -11,6 +11,7 @@ use diesel::BelongingToDsl;
 use either::Either;
 use either::Either::{Left, Right};
 use uuid::Uuid;
+use actix_web::test::TestBuffer;
 
 pub(crate) fn get_posts_of_community(
     conn: &MysqlConnection,
@@ -165,25 +166,61 @@ pub(crate) fn get_content_of_post(
     }
 
     Ok(post_content)
+}
 
-    // match post.content_type {
-    //     DatabaseContentType::Text => {
-    //         use crate::database::schema::Text::*;
-    //         let text: DatabaseText = DatabaseText::belonging_to(post)
-    //             .first::<DatabaseText>(conn)?;
-    //
-    //         Ok(ContentType::Text {
-    //             text: text.content
-    //         })
-    //     }
-    //     DatabaseContentType::Markdown => {
-    //         use crate::database::schema::Markdown::*;
-    //         let text: DatabaseMarkdown = DatabaseMarkdown::belonging_to(post)
-    //             .first::<DatabaseMarkdown>(conn)?;
-    //
-    //         Ok(ContentType::Text {
-    //             text: text.content
-    //         })
-    //     }
-    // }
+pub(crate) fn clear_post_contents(
+    conn: &MysqlConnection,
+    post: &DatabasePost
+) -> Result<(), diesel::result::Error> {
+    // We have to check through *every single* content type to delete posts.
+
+    // Text
+    {
+        use crate::database::schema::Text::dsl::*;
+        diesel::delete(Text
+            .filter(postId.eq(post.id))
+        )
+            .execute(conn)?;
+    }
+
+    // Markdown
+    {
+        use crate::database::schema::Markdown::dsl::*;
+        diesel::delete(Markdown
+            .filter(postId.eq(post.id))
+        )
+            .execute(conn)?;
+    }
+
+    Ok(())
+}
+
+pub(crate) fn modify_post_title(
+    conn: &MysqlConnection,
+    post: DatabasePost,
+    new_title: &str
+) -> Result<DatabasePost, diesel::result::Error> {
+    todo!()
+}
+
+pub(crate) fn remove_post(
+    conn: &MysqlConnection,
+    post: DatabasePost
+) -> Result<(), diesel::result::Error> {
+    todo!()
+}
+
+pub(crate) fn put_post(
+    conn: &MysqlConnection,
+    new_post: &DatabaseNewPost
+) -> Result<(), diesel::result::Error> {
+    todo!()
+}
+
+pub(crate) fn put_post_contents(
+    conn: &MysqlConnection,
+    post: &DatabasePost,
+    content: &Vec<ContentType>
+) -> Result<(), diesel::result::Error> {
+    todo!()
 }
