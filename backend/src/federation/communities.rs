@@ -35,7 +35,7 @@ pub(crate) async fn communities(pool: web::Data<DBPool>, req: HttpRequest) -> Re
 
 #[get("/{id}")]
 pub(crate) async fn community_by_id(
-    _pool: web::Data<DBPool>,
+    pool: web::Data<DBPool>,
     req: HttpRequest,
     web::Path(id): web::Path<String>,
 ) -> Result<HttpResponse> {
@@ -45,7 +45,7 @@ pub(crate) async fn community_by_id(
         .ok_or(RouteError::MissingClientHost)?;
     // TODO: Parse the client host
 
-    let conn = get_conn_from_pool(_pool.clone())?;
+    let conn = get_conn_from_pool(pool.clone())?;
 
     let (community, admins) = web::block(move || {
         let community = get_community(&conn, &id)?.ok_or(diesel::NotFound)?;

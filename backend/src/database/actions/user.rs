@@ -22,3 +22,15 @@ pub(crate) fn get_user_detail(
 
     Ok(local.map_or_else(|| Right(fed.unwrap()), |l| Left(l)))
 }
+
+pub(crate) fn get_local_users(
+    conn: &MysqlConnection,
+) -> Result<Vec<(DatabaseUser, DatabaseLocalUser)>, diesel::result::Error> {
+    use crate::database::schema::LocalUsers::dsl::*;
+    use crate::database::schema::Users::dsl::*;
+
+    Users
+        .inner_join(LocalUsers)
+        .select((Users::all_columns(), LocalUsers::all_columns()))
+        .load::<(_, _)>(conn)
+}

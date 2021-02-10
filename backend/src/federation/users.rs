@@ -1,3 +1,6 @@
+use crate::database::actions::user::get_local_users;
+use crate::database::get_conn_from_pool;
+use crate::DBPool;
 use actix_web::{get, post, web, HttpResponse, Result};
 use serde::{Deserialize, Serialize};
 
@@ -9,14 +12,30 @@ pub struct MessageParameters {
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SearchUsersParameters {
-    prefix: String,
+    prefix: Option<String>,
 }
 
 #[get("/")]
-pub(crate) async fn search_users(query: web::Query<String>) -> Result<HttpResponse> {
-    // TODO: /fed/users/
-    // Return type: Vec<String>
-    Ok(HttpResponse::NotImplemented().finish())
+pub(crate) async fn search_users(
+    pool: web::Data<DBPool>,
+    web::Query(query): web::Query<SearchUsersParameters>,
+) -> Result<HttpResponse> {
+    let conn = get_conn_from_pool(pool.clone())?;
+    let mut users = web::block(move || get_local_users(&conn)).await?;
+
+    if let Some(p) = query.prefix {
+        users = users
+            .into_iter()
+            .filter(|(u, l)| u.username.starts_with(&p))
+            .collect::<Vec<(_, _)>>();
+    }
+
+    Ok(HttpResponse::Ok().json(
+        users
+            .into_iter()
+            .map(|(u, l)| u.username)
+            .collect::<Vec<String>>(),
+    ))
 }
 
 #[get("/{id}")]

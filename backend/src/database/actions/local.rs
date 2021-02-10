@@ -31,7 +31,7 @@ pub(crate) fn validate_session(
         .optional()?)
 }
 
-pub(crate) fn get_local_user(
+pub(crate) fn get_local_user_by_credentials(
     conn: &MysqlConnection,
     username_: &str,
     email_: &str,

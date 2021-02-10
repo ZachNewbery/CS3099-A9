@@ -4,7 +4,7 @@ use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 
 use crate::database::actions::local::{
-    get_local_user, insert_new_local_user, login_local_user, update_session,
+    get_local_user_by_credentials, insert_new_local_user, login_local_user, update_session,
 };
 use crate::database::get_conn_from_pool;
 use crate::database::models::DatabasePost;
@@ -31,7 +31,7 @@ pub(crate) async fn new_user(
 
     web::block(move || {
         // Check email and username against database
-        if get_local_user(&conn, &new_user.username, &new_user.email)?.is_none() {
+        if get_local_user_by_credentials(&conn, &new_user.username, &new_user.email)?.is_none() {
             // Insert new record into database
             insert_new_local_user(&conn, new_user.clone())?;
         }
