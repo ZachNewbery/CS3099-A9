@@ -30,7 +30,7 @@ pub(crate) struct Community {
     pub(crate) id: String,
     pub(crate) title: String,
     pub(crate) description: String,
-    admins: Vec<User>,
+    pub(crate) admins: Vec<User>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

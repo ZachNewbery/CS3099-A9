@@ -2,7 +2,7 @@ use diesel::prelude::*;
 use diesel::MysqlConnection;
 
 use crate::database::models::{DatabaseLocalUser, DatabasePost};
-use crate::internal::{LocalNewPost, NewUser};
+use crate::internal::{NewUser};
 
 pub(crate) fn update_session(
     conn: &MysqlConnection,
@@ -33,16 +33,16 @@ pub(crate) fn validate_session(
 
 pub(crate) fn get_local_user(
     conn: &MysqlConnection,
-    username_ck: &str,
-    email_ck: &str,
+    username_: &str,
+    email_: &str,
 ) -> Result<Option<DatabaseLocalUser>, diesel::result::Error> {
     use crate::database::schema::LocalUsers::dsl::*;
     use crate::database::schema::Users::dsl::*;
 
     Ok(Users
         .inner_join(LocalUsers)
-        .filter(username.eq(username_ck))
-        .filter(email.eq(email_ck))
+        .filter(username.eq(username_))
+        .filter(email.eq(email_))
         .select(LocalUsers::all_columns())
         .first::<DatabaseLocalUser>(conn)
         .optional()?)

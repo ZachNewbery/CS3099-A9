@@ -122,10 +122,10 @@ pub(crate) fn get_children_posts_of(
         .into_iter()
         .map(|(p, c, u)| {
             Ok((
-                p,
+                p.clone(),
                 get_content_of_post(conn, &p)?,
                 c,
-                u,
+                u.clone(),
                 get_user_detail(conn, &u)?,
             ))
         })

@@ -4,10 +4,9 @@ use actix_web::{web, HttpResponse};
 use chrono::{NaiveDateTime, Utc};
 use diesel::prelude::*;
 use diesel::r2d2::{ConnectionManager, PooledConnection};
-use uuid::Uuid;
 
 use crate::federation::schemas::NewPost;
-use crate::internal::{LocalNewPost, NewUser};
+use crate::internal::{NewUser};
 use crate::DBPool;
 
 use self::models::*;

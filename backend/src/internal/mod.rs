@@ -38,8 +38,7 @@ pub(crate) async fn new_user(
 
         Ok::<(), diesel::result::Error>(())
     })
-    .await
-    .map_err(|_| HttpResponse::InternalServerError().finish())?;
+    .await?;
 
     Ok(HttpResponse::Ok().finish())
 }
@@ -105,47 +104,39 @@ pub(crate) async fn logout(request: HttpRequest, pool: web::Data<DBPool>) -> Res
     Ok(HttpResponse::Ok().finish())
 }
 
-// FIXME: This is a basic local post without communities
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct LocalNewPost {
-    pub title: String,
-    pub body: String,
-}
+// TODO: Work with frontend team to determine more appropriate routes
 
-#[post("/new_post")]
-pub(crate) async fn new_post_local(
-    request: HttpRequest,
-    pool: web::Data<DBPool>,
-    local_new_post: web::Json<LocalNewPost>,
-) -> Result<HttpResponse> {
-    let (_, local_user) = authenticate(pool.clone(), request)?;
-    let conn = get_conn_from_pool(pool)?;
+// #[derive(Serialize, Deserialize, Debug, Clone)]
+// #[serde(rename_all = "camelCase")]
+// pub(crate) struct LocalNewPost {
+//     pub title: String,
+//     pub body: String,
+// }
+//
+// #[post("/new_post")]
+// pub(crate) async fn new_post_local(
+//     request: HttpRequest,
+//     pool: web::Data<DBPool>,
+//     local_new_post: web::Json<LocalNewPost>,
+// ) -> Result<HttpResponse> {
+//     let (_, local_user) = authenticate(pool.clone(), request)?;
+//     let conn = get_conn_from_pool(pool)?;
+//
+//     web::block(move || create_local_post(&conn, local_new_post.0, local_user))
+//         .await
+//         .map_err(|_| HttpResponse::InternalServerError().finish())?;
+//
+//     Ok(HttpResponse::Ok().finish())
+// }
 
-    web::block(move || create_local_post(&conn, local_new_post.0, local_user))
-        .await
-        .map_err(|_| HttpResponse::InternalServerError().finish())?;
-
-    Ok(HttpResponse::Ok().finish())
-}
-
-// FIXME: This really doesn't need authentication but it's here. Also, should this aliased to the federation endpoint instead?
-#[post("/get_posts")]
-pub(crate) async fn get_posts(
-    request: HttpRequest,
-    pool: web::Data<DBPool>,
-) -> Result<HttpResponse> {
-    let (_, _) = authenticate(pool.clone(), request)?;
-    let conn = get_conn_from_pool(pool)?;
-
-    Ok(HttpResponse::NotImplemented().finish())
-
-    // let posts = web::block(move || show_all_posts(&conn))
-    //     .await
-    //     .map_err(|_| HttpResponse::InternalServerError().finish())?
-    //     .into_iter()
-    //     .map(|p| p.into())
-    //     .collect::<Vec<OutputPost>>();
-    //
-    // Ok(HttpResponse::Ok().json(posts))
-}
+// #[post("/get_posts")]
+// pub(crate) async fn get_posts(
+//     request: HttpRequest,
+//     pool: web::Data<DBPool>,
+// ) -> Result<HttpResponse> {
+//     let (_, _) = authenticate(pool.clone(), request)?;
+//     let conn = get_conn_from_pool(pool)?;
+//
+//     Ok(HttpResponse::NotImplemented().finish())
+//
+// }
