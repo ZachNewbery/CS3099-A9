@@ -39,7 +39,7 @@ pub(crate) struct NewPost {
     pub community: String,
     pub parent_post: Option<Uuid>,
     pub title: String,
-    pub content: Vec<String>, // TODO: PostContentText or PostContentMarkdown
+    pub content: Vec<ContentType>,
     pub user_id: String,
 }
 
@@ -67,7 +67,6 @@ pub(crate) struct Post {
     pub(crate) children: Vec<Uuid>,
     pub(crate) title: String,
     pub(crate) content: Vec<ContentType>,
-    // TODO: PostContentText or PostContentMarkdown
     pub(crate) author: User,
     pub(crate) modified: NaiveDateTime,
     pub(crate) created: NaiveDateTime,

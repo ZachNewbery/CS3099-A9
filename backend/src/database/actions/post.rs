@@ -6,12 +6,12 @@ use crate::database::models::{
 use crate::database::schema::Text::dsl::Text;
 use crate::federation::schemas::ContentType;
 use actix_web::error::ReadlinesError::ContentTypeError;
+use actix_web::test::TestBuffer;
 use diesel::prelude::*;
 use diesel::BelongingToDsl;
 use either::Either;
 use either::Either::{Left, Right};
 use uuid::Uuid;
-use actix_web::test::TestBuffer;
 
 pub(crate) fn get_posts_of_community(
     conn: &MysqlConnection,
@@ -22,13 +22,6 @@ pub(crate) fn get_posts_of_community(
         .filter(communityId.eq(community.id))
         .load(conn)
         .optional()
-}
-
-pub(crate) fn add_federated_post(
-    conn: &MysqlConnection,
-    new_post: DatabaseNewPost,
-) -> Result<(), diesel::result::Error> {
-    todo!()
 }
 
 pub(crate) fn get_post(
@@ -170,26 +163,20 @@ pub(crate) fn get_content_of_post(
 
 pub(crate) fn clear_post_contents(
     conn: &MysqlConnection,
-    post: &DatabasePost
+    post: &DatabasePost,
 ) -> Result<(), diesel::result::Error> {
     // We have to check through *every single* content type to delete posts.
 
     // Text
     {
         use crate::database::schema::Text::dsl::*;
-        diesel::delete(Text
-            .filter(postId.eq(post.id))
-        )
-            .execute(conn)?;
+        diesel::delete(Text.filter(postId.eq(post.id))).execute(conn)?;
     }
 
     // Markdown
     {
         use crate::database::schema::Markdown::dsl::*;
-        diesel::delete(Markdown
-            .filter(postId.eq(post.id))
-        )
-            .execute(conn)?;
+        diesel::delete(Markdown.filter(postId.eq(post.id))).execute(conn)?;
     }
 
     Ok(())
@@ -198,29 +185,65 @@ pub(crate) fn clear_post_contents(
 pub(crate) fn modify_post_title(
     conn: &MysqlConnection,
     post: DatabasePost,
-    new_title: &str
+    new_title: &str,
 ) -> Result<DatabasePost, diesel::result::Error> {
-    todo!()
+    use crate::database::schema::Posts::dsl::*;
+
+    let id_ = post.id;
+
+    diesel::update(&post)
+        .set(title.eq(new_title.to_string()))
+        .execute(conn)?;
+
+    Posts.filter(id.eq(id_)).first::<DatabasePost>(conn)
 }
 
 pub(crate) fn remove_post(
     conn: &MysqlConnection,
-    post: DatabasePost
+    post: DatabasePost,
 ) -> Result<(), diesel::result::Error> {
-    todo!()
+    use crate::database::schema::Posts::dsl::*;
+
+    clear_post_contents(conn, &post)?;
+
+    diesel::delete(&post).execute(conn)?;
+
+    Ok(())
 }
 
 pub(crate) fn put_post(
     conn: &MysqlConnection,
-    new_post: &DatabaseNewPost
-) -> Result<(), diesel::result::Error> {
-    todo!()
+    new_post: &DatabaseNewPost,
+) -> Result<DatabasePost, diesel::result::Error> {
+    use crate::database::schema::Posts::dsl::*;
+
+    let uuid_ = new_post.uuid.clone();
+
+    diesel::insert_into(Posts).values(new_post).execute(conn)?;
+
+    Posts.filter(uuid.eq(uuid_)).first::<DatabasePost>(conn)
 }
 
 pub(crate) fn put_post_contents(
     conn: &MysqlConnection,
     post: &DatabasePost,
-    content: &Vec<ContentType>
+    contents: &Vec<ContentType>,
 ) -> Result<(), diesel::result::Error> {
-    todo!()
+    for content_ in contents {
+        match content_ {
+            ContentType::Text { text } => {
+                use crate::database::schema::Text::dsl::*;
+                diesel::insert_into(Text)
+                    .values((content.eq(text), postId.eq(post.id)))
+                    .execute(conn)?;
+            }
+            ContentType::Markdown { text } => {
+                use crate::database::schema::Markdown::dsl::*;
+                diesel::insert_into(Markdown)
+                    .values((content.eq(text), postId.eq(post.id)))
+                    .execute(conn)?;
+            }
+        }
+    }
+    Ok(())
 }

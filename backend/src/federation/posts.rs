@@ -4,14 +4,17 @@ use chrono::NaiveDateTime;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::database::actions::post::{get_children_posts_of, get_post, clear_post_contents, put_post_contents, modify_post_title, remove_post};
+use crate::database::actions::post::{
+    clear_post_contents, get_children_posts_of, get_post, modify_post_title, put_post_contents,
+    remove_post,
+};
 use crate::database::get_conn_from_pool;
 use crate::database::models::{DatabaseFederatedUser, DatabaseLocalUser};
 use crate::federation::schemas::{ContentType, NewPost, Post, User};
 use crate::util::route_error::RouteError;
 use crate::DBPool;
-use either::Either;
 use diesel::Connection;
+use either::Either;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -176,8 +179,7 @@ pub(crate) async fn edit_post(
         // Start new transaction
         conn.transaction(|| {
             // Find the post
-            let (post, _, _, _, _, _) = get_post(&conn, &id)?
-                .ok_or(diesel::NotFound)?;
+            let (post, _, _, _, _, _) = get_post(&conn, &id)?.ok_or(diesel::NotFound)?;
 
             let post = modify_post_title(&conn, post, &edit_post.title)?;
 
@@ -190,7 +192,7 @@ pub(crate) async fn edit_post(
             Ok::<(), diesel::result::Error>(())
         })
     })
-        .await?;
+    .await?;
 
     // Nothing to return
     Ok(HttpResponse::Ok().finish())
@@ -225,15 +227,14 @@ pub(crate) async fn delete_post(
     let conn = get_conn_from_pool(pool)?;
     web::block(move || {
         conn.transaction(|| {
-            let (post, _, _, _, _, _) = get_post(&conn, &id)?
-                .ok_or(diesel::NotFound)?;
+            let (post, _, _, _, _, _) = get_post(&conn, &id)?.ok_or(diesel::NotFound)?;
 
             remove_post(&conn, post)?;
 
             Ok::<(), diesel::result::Error>(())
         })
     })
-        .await?;
+    .await?;
 
     // Nothing to return
     Ok(HttpResponse::Ok().finish())

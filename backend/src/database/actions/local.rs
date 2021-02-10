@@ -2,7 +2,7 @@ use diesel::prelude::*;
 use diesel::MysqlConnection;
 
 use crate::database::models::{DatabaseLocalUser, DatabasePost};
-use crate::internal::{NewUser};
+use crate::internal::NewUser;
 
 pub(crate) fn update_session(
     conn: &MysqlConnection,
