@@ -11,7 +11,9 @@ CREATE TABLE IF NOT EXISTS LocalUsers (
     password TEXT NOT NULL DEFAULT 'hunter2',   -- TODO: Make this secure
     createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     session VARCHAR(36) NOT NULL DEFAULT '',    -- JWT
-    CONSTRAINT FK_LocalUsers_userId FOREIGN KEY (userId) REFERENCES Users(id)
+    CONSTRAINT FK_LocalUsers_userId FOREIGN KEY (userId) REFERENCES Users(id),
+    bio TEXT,
+    avatar TEXT
 );
 
 CREATE TABLE IF NOT EXISTS FederatedUsers (

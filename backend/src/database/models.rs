@@ -27,6 +27,8 @@ pub struct DatabaseLocalUser {
     #[column_name = "createdAt"]
     pub created_at: NaiveDateTime,
     pub session: String,
+    pub bio: Option<String>,
+    pub avatar: Option<String>,
 }
 
 #[derive(Queryable, Identifiable, Associations, Debug, Clone)]

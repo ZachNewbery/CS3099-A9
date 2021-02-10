@@ -1,4 +1,5 @@
 use crate::database::models::{DatabaseFederatedUser, DatabaseLocalUser, DatabaseUser};
+use chrono::Local;
 use diesel::prelude::*;
 use diesel::MysqlConnection;
 use either::Either;
@@ -33,4 +34,19 @@ pub(crate) fn get_local_users(
         .inner_join(LocalUsers)
         .select((Users::all_columns(), LocalUsers::all_columns()))
         .load::<(_, _)>(conn)
+}
+
+pub(crate) fn get_local_user(
+    conn: &MysqlConnection,
+    id_: &str,
+) -> Result<Option<(DatabaseUser, DatabaseLocalUser)>, diesel::result::Error> {
+    use crate::database::schema::LocalUsers::dsl::*;
+    use crate::database::schema::Users::dsl::*;
+
+    Users
+        .inner_join(LocalUsers)
+        .filter(username.eq(id_))
+        .select((Users::all_columns(), LocalUsers::all_columns()))
+        .first::<(_, _)>(conn)
+        .optional()
 }

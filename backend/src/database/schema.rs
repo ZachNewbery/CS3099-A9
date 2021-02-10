@@ -1,19 +1,4 @@
 table! {
-    Comments (id) {
-        id -> Unsigned<Bigint>,
-        post -> Unsigned<Bigint>,
-        parent -> Nullable<Unsigned<Bigint>>,
-        uuid -> Text,
-        title -> Text,
-        author -> Unsigned<Bigint>,
-        contentType -> Unsigned<Bigint>,
-        body -> Text,
-        created -> Timestamp,
-        modified -> Timestamp,
-    }
-}
-
-table! {
     Communities (id) {
         id -> Unsigned<Bigint>,
         name -> Text,
@@ -46,6 +31,8 @@ table! {
         password -> Text,
         createdAt -> Timestamp,
         session -> Varchar,
+        bio -> Nullable<Text>,
+        avatar -> Nullable<Text>,
     }
 }
 
@@ -85,8 +72,6 @@ table! {
     }
 }
 
-joinable!(Comments -> Posts (post));
-joinable!(Comments -> Users (author));
 joinable!(CommunitiesUsers -> Communities (communityId));
 joinable!(CommunitiesUsers -> Users (userId));
 joinable!(FederatedUsers -> Users (userId));
@@ -97,7 +82,6 @@ joinable!(Posts -> Users (authorId));
 joinable!(Text -> Posts (postId));
 
 allow_tables_to_appear_in_same_query!(
-    Comments,
     Communities,
     CommunitiesUsers,
     FederatedUsers,
