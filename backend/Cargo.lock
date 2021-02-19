@@ -354,25 +354,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "backend"
-version = "0.1.0"
-dependencies = [
- "actix-cors",
- "actix-web",
- "actix-web-httpauth",
- "chrono",
- "diesel",
- "diesel-derive-enum",
- "dotenv",
- "either",
- "jsonwebtoken",
- "r2d2",
- "serde",
- "thiserror",
- "uuid",
-]
-
-[[package]]
 name = "backtrace"
 version = "0.3.56"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1636,6 +1617,25 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2beb4d1860a61f571530b3f855a1b538d0200f7871c63331ecd6f17b1f014f8"
 dependencies = [
  "version_check",
+]
+
+[[package]]
+name = "starlight"
+version = "0.1.0"
+dependencies = [
+ "actix-cors",
+ "actix-web",
+ "actix-web-httpauth",
+ "chrono",
+ "diesel",
+ "diesel-derive-enum",
+ "dotenv",
+ "either",
+ "jsonwebtoken",
+ "r2d2",
+ "serde",
+ "thiserror",
+ "uuid",
 ]
 
 [[package]]
