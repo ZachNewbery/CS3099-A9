@@ -32,7 +32,7 @@ async fn main() -> std::io::Result<()> {
 
     let manager = ConnectionManager::<MysqlConnection>::new(std::env::var("DATABASE_URL").unwrap());
     let pool = r2d2::Pool::builder()
-        .max_size(8)
+        .max_size(4)
         .build(manager)
         .expect("could not set up threadpool for database");
 
