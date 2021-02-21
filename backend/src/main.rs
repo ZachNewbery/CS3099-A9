@@ -11,6 +11,7 @@ use crate::federation::posts::{
 };
 use crate::federation::users::{search_users, send_user_message, user_by_id};
 use crate::internal::{login, logout, new_user};
+use actix_cors::Cors;
 
 pub mod database;
 pub mod federation;
@@ -42,6 +43,7 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .wrap(middleware::Logger::default())
+            .wrap(Cors::permissive())
             .data(pool.clone())
             .service(
                 web::scope("/federation")
