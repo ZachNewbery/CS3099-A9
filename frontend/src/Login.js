@@ -1,98 +1,128 @@
 import React, { useRef, useState } from "react";
-import { Link, Redirect, useHistory } from "react-router-dom";
-import { isAuthenticated, fetchData } from "./helpers";
 import styled from "styled-components";
+import { Link, Redirect, useHistory } from "react-router-dom";
+import { isAuthenticated, fetchData, colors, fonts } from "./helpers";
+import { Logo } from "./assets/Logo";
 
-const StyledContainer = styled.div`
+export const StyledAuth = styled.div`
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 10em;
-  background-color: #f8f9f9;
-`;
+  flex: 1;
 
-const StyledLogin = styled.div`
-  align-items: flex-start;
-  .error {
-    color: red;
+  & > form {
+    align-items: flex-start;
+    display: flex;
+    flex-flow: column nowrap;
+    justify-content: center;
+    align-items: center;
+    width: 20rem;
+
+    & > label {
+      display: flex;
+      flex-direction: column;
+      font-size: 0.9rem;
+      width: 100%;
+      margin-bottom: 1.25rem;
+      position: relative;
+
+      & > input {
+        margin: 0.3rem 0;
+        padding: 0.45rem;
+        border: 1px solid ${colors.lightGray};
+        border-radius: 0.3rem;
+        font: inherit;
+        font-size: 1rem;
+      }
+
+      & > .error {
+        position: absolute;
+        color: red;
+        margin: 0.1rem 0.25rem;
+        font-size: 0.8rem;
+        text-align: center;
+        top: 100%;
+        left: 0;
+        right: 0;
+      }
+    }
+
+    & > svg {
+      width: 65%;
+      height: auto;
+      margin-bottom: 5rem;
+    }
+
+    & > button {
+      cursor: pointer;
+      outline: none;
+      border: none;
+      background: ${colors.blue};
+      padding: 0.5rem;
+      width: 100%;
+      margin: 2.5rem 0 0.3rem;
+      color: white;
+      font: inherit;
+      font-size: 1.15rem;
+      font-family: ${fonts.accent};
+      letter-spacing: 1.5px;
+      height: 40px;
+      border-radius: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      transition: all 0.3s;
+      &:hover {
+        background: ${colors.lightBlue};
+      }
+    }
   }
 `;
 
 const getUserToken = async ({ email, password }) => {
-  const details = {
-    email,
-    password
-  };
-
-  let token = "";
-  let json = {};
-
-  try {
-    json = await fetchData(
-    `${process.env.REACT_APP_REAL_API}/internal/login`,
-    JSON.stringify(details),
-    "POST"
-  );
-  } catch (error) {
-    console.log(error);
-  }
-
-  if (json.success) {
-    token = json.token;
-  }
-
-  return token;
+  return await fetchData(`${process.env.REACT_APP_API}/login`, JSON.stringify({ email, password }), "POST");
 };
 
 export const Login = () => {
   const emailRef = useRef(null);
   const passwordRef = useRef(null);
-  const [errors, setErrors] = useState({});
+  const [error, setError] = useState();
   const history = useHistory();
 
   const handleSubmit = async () => {
-    let currentErrors = {};
-
     const email = emailRef.current.value;
     const password = passwordRef.current.value;
 
-    if (Object.keys(currentErrors).length === 0) {
-      try {
-        const token = await getUserToken({ email, password });
-        if (token.length !== 0) {
-          localStorage.setItem("access-token", token);
-          return history.push("/");
-        } else {
-          currentErrors.password = "Please check username or password is entered correctly";
-        }
-      } catch (error) {
-        currentErrors.email = error.message;
-      }
+    try {
+      const { token } = await getUserToken({ email, password });
+      localStorage.setItem("access-token", token);
+      return history.push("/");
+    } catch (error) {
+      setError("Please check email or password is entered correctly.");
     }
-
-    setErrors(currentErrors);
   };
 
   if (isAuthenticated()) return <Redirect to="/" />;
 
   return (
-    <StyledContainer>
-      <StyledLogin>
-        <h1>Login</h1>
-        <label>
-          Username (email):
-          <input type="text" ref={emailRef} name="email" />
-          <p className="error">{errors.email}</p>
-        </label>
-        <label>
-          Password:
-          <input type="password" ref={passwordRef} name="password" />
-          <p className="error">{errors.password}</p>
-        </label>
-        <button onClick={handleSubmit}>Login</button>
-        <p><Link to="/registration">Create an account</Link></p>
-      </StyledLogin>
-    </StyledContainer>
+    <form onChange={() => setError(null)}>
+      <Logo />
+      <label>
+        Email
+        <input type="email" ref={emailRef} name="email" />
+      </label>
+      <label>
+        Password
+        <input type="password" ref={passwordRef} name="password" />
+        {error && <p className="error">{error}</p>}
+      </label>
+      <button type="button" onClick={handleSubmit}>
+        Login
+      </button>
+      <p>
+        <Link to="/registration">Create an account</Link>
+      </p>
+    </form>
   );
 };

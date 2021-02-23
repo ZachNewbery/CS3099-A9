@@ -1,37 +1,11 @@
 import React, { useRef, useState } from "react";
 import { Link, Redirect, useHistory } from "react-router-dom";
 import { isAuthenticated, fetchData } from "./helpers";
-import styled from "styled-components";
+import { Logo } from "./assets/Logo";
 
 const createUser = ({ username, email, password }) => {
-  const user = {
-    username,
-    email,
-    password
-  };
-
-  return fetchData(
-    `${process.env.REACT_APP_REAL_API}/internal/new_user`,
-    JSON.stringify(user),
-    "POST"
-  );
+  return fetchData(`${process.env.REACT_APP_API}/new_user`, JSON.stringify({ username, email, password }), "POST");
 };
-
-const StyledContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 10em;
-  background-color: #f8f9f9;
-`;
-
-const StyledRegistration = styled.div`
-  align-items: flex-start;
-  .error {
-    color: red;
-  }
-`; 
 
 export const Registration = () => {
   const formRef = useRef(null);
@@ -42,12 +16,7 @@ export const Registration = () => {
     e.preventDefault();
     let currentErrors = {};
 
-    let {
-      username,
-      email,
-      password,
-      confirmPassword,
-    } = formRef.current;
+    let { username, email, password, confirmPassword } = formRef.current;
 
     username = username.value;
     email = email.value;
@@ -58,10 +27,11 @@ export const Registration = () => {
       currentErrors.username = "Username too short";
     }
 
-    if (email.length < 6) { // TODO Regex?
-      currentErrors.email = "Email invalid"
+    if (email.length < 6) {
+      // TODO Regex?
+      currentErrors.email = "Email invalid";
     }
-    
+
     if (password.length < 5) {
       currentErrors.password = "Password too short";
       currentErrors.confirmPassword = currentErrors.password;
@@ -72,14 +42,14 @@ export const Registration = () => {
     }
 
     if (Object.keys(currentErrors).length === 0) {
-      try { 
+      try {
         const user = await createUser({ username, email, password });
         console.log(user);
         localStorage.setItem("username", username);
         localStorage.setItem("email", email);
         history.push("/login");
       } catch (error) {
-        currentErrors.firstName = error.message
+        currentErrors.firstName = error.message;
       }
     }
 
@@ -89,34 +59,32 @@ export const Registration = () => {
   if (isAuthenticated()) return <Redirect to="/" />;
 
   return (
-    <StyledContainer>
-      <StyledRegistration>
-        <h1>Registration</h1>
-        <form ref={formRef}>
-          <label>
-            Username:
-            <input type="text" name="username" />
-            <p className="error">{errors.username}</p>
-          </label>
-          <label>
-            Email:
-            <input type="text" name="email" />
-            <p className="error">{errors.email}</p>
-          </label>
-          <label>
-            Password:
-            <input type="password" name="password" />
-            <p className="error">{errors.password}</p>
-          </label>
-          <label>
-            Confirm Password:
-            <input type="password" name="confirmPassword" />
-            <p className="error">{errors.confirmPassword}</p>
-          </label>
-          <button onClick={handleSubmit}>Register</button>
-        </form>
+    <form ref={formRef}>
+      <Logo />
+      <label>
+        Username
+        <input type="text" name="username" />
+        <p className="error">{errors.username}</p>
+      </label>
+      <label>
+        Email
+        <input type="text" name="email" />
+        <p className="error">{errors.email}</p>
+      </label>
+      <label>
+        Password
+        <input type="password" name="password" />
+        <p className="error">{errors.password}</p>
+      </label>
+      <label>
+        Confirm Password
+        <input type="password" name="confirmPassword" />
+        <p className="error">{errors.confirmPassword}</p>
+      </label>
+      <button onClick={handleSubmit}>Register</button>
+      <p>
         <Link to="/login">Already registered?</Link>
-      </StyledRegistration>
-    </StyledContainer>
+      </p>
+    </form>
   );
 };

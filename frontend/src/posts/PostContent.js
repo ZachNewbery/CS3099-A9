@@ -68,38 +68,17 @@ export const StyledContent = styled.div`
   }
 `;
 
-export const CONTENT_TYPES = {
-  TEXT: "text",
-  IMAGE: "image",
-  POLL: "poll"
-}
-
-export const renderContent = ({ contentType, content }) => {
-  switch (contentType) {
-    case CONTENT_TYPES.TEXT:
-      return <TextContent content={content} />
-    case CONTENT_TYPES.IMAGE:
-      return <ImageContent content={content} />
-    case CONTENT_TYPES.POLL:
-      return <PollContent content={content} />
-    default:
-      return null;
-  }
+export const renderContent = content => {
+  return content.map(block => {
+    return (
+      <>
+        {block.text && <TextContent content={block.text.text} />}
+        {block.markdown && <TextContent content={block.markdown.text} />}
+      </>
+    )
+  })
 }
 
 const TextContent = ({ content }) => {
   return <p>{content}</p>
-}
-
-const ImageContent = ({ content: { url, caption }  }) => {
-  return (
-    <div className="image-block">
-      <img src={url} alt="Lovely Scenery" />
-      <p>{caption}</p>
-    </div>
-  )
-}
-
-const PollContent = ({ content }) => {
-  return <div>{content}</div>
 }
