@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# Builds frontend and deploys to host server pseudouser account 
+
+# Check for username argument
+if [ -z "$1" ]
+  then
+    echo "USAGE: ./bad <username>"
+    exit 1
+fi
+
+# Build frontend 
+echo "INFO: Building Frontend"
+# npm run build
+
+chmod -R 777 ./build
+
+# Deploy to host servers
+echo "INFO: Deploying to host servers"
+rsync -rav --delete build/ $1@cs3099user-a9.host.cs.st-andrews.ac.uk:/cs/home/cs3099user-a9/nginx_default/frontend/build --no-owner -p
