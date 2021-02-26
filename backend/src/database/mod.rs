@@ -5,11 +5,7 @@ use chrono::{NaiveDateTime, Utc};
 use diesel::prelude::*;
 use diesel::r2d2::{ConnectionManager, PooledConnection};
 
-use crate::federation::schemas::NewPost;
-use crate::internal::NewUser;
 use crate::DBPool;
-
-use self::models::*;
 
 pub mod actions;
 pub mod models;

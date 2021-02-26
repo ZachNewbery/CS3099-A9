@@ -1,17 +1,18 @@
 #[macro_use]
 extern crate diesel;
 
+use actix_cors::Cors;
 use actix_web::{middleware, web, App, HttpServer};
 use diesel::prelude::*;
 use diesel::r2d2::ConnectionManager;
+
+use internal::user::{login, logout, new_user};
 
 use crate::federation::communities::{communities, community_by_id, community_by_id_timestamps};
 use crate::federation::posts::{
     delete_post, edit_post, get_post_by_id, new_post_federated, post_matching_filters,
 };
 use crate::federation::users::{search_users, send_user_message, user_by_id};
-use crate::internal::{login, logout, new_user};
-use actix_cors::Cors;
 
 pub mod database;
 pub mod federation;

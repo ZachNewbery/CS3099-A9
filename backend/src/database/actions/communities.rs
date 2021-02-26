@@ -1,14 +1,7 @@
 use diesel::prelude::*;
 use diesel::BelongingToDsl;
 
-use crate::database::models::{
-    DatabaseCommunitiesUser, DatabaseCommunity, DatabaseFederatedUser, DatabaseLocalUser,
-    DatabaseUser,
-};
-use crate::database::schema::CommunitiesUsers::dsl::CommunitiesUsers;
-use crate::database::schema::LocalUsers::dsl::LocalUsers;
-use crate::database::schema::Users::dsl::Users;
-use crate::federation::schemas::Community;
+use crate::database::models::*;
 use either::Either;
 use either::Either::{Left, Right};
 
@@ -31,8 +24,6 @@ pub(crate) fn get_community_admins(
     diesel::result::Error,
 > {
     let local_admins: Vec<(DatabaseUser, DatabaseLocalUser)> = {
-        use crate::database::models::DatabaseCommunitiesUser;
-        use crate::database::schema::CommunitiesUsers::dsl::*;
         use crate::database::schema::LocalUsers::dsl::*;
         use crate::database::schema::Users::dsl::*;
 
@@ -43,8 +34,6 @@ pub(crate) fn get_community_admins(
     }?;
 
     let federated_admins: Vec<(DatabaseUser, DatabaseFederatedUser)> = {
-        use crate::database::models::DatabaseCommunitiesUser;
-        use crate::database::schema::CommunitiesUsers::dsl::*;
         use crate::database::schema::FederatedUsers::dsl::*;
         use crate::database::schema::Users::dsl::*;
 

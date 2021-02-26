@@ -26,14 +26,14 @@ pub(crate) async fn search_users(
     if let Some(p) = query.prefix {
         users = users
             .into_iter()
-            .filter(|(u, l)| u.username.starts_with(&p))
+            .filter(|(u, _l)| u.username.starts_with(&p))
             .collect::<Vec<(_, _)>>();
     }
 
     Ok(HttpResponse::Ok().json(
         users
             .into_iter()
-            .map(|(u, l)| u.username)
+            .map(|(u, _l)| u.username)
             .collect::<Vec<String>>(),
     ))
 }

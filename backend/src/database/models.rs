@@ -1,12 +1,12 @@
-use chrono::{NaiveDateTime, Utc};
+use chrono::NaiveDateTime;
 
 use crate::database::naive_date_time_now;
 use crate::database::schema::{
     Communities, CommunitiesUsers, FederatedUsers, LocalUsers, Markdown, Posts, Text, Users,
 };
-use crate::federation::schemas::NewPost;
+
 use crate::internal::authentication::generate_session;
-use crate::internal::NewUser;
+use crate::internal::user::NewUser;
 
 #[derive(Queryable, Identifiable, Debug, Clone)]
 #[table_name = "Users"]

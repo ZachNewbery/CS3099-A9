@@ -1,8 +1,8 @@
 use diesel::prelude::*;
 use diesel::MysqlConnection;
 
-use crate::database::models::{DatabaseLocalUser, DatabasePost};
-use crate::internal::NewUser;
+use crate::database::models::DatabaseLocalUser;
+use crate::internal::user::NewUser;
 
 pub(crate) fn update_session(
     conn: &MysqlConnection,
@@ -48,7 +48,8 @@ pub(crate) fn get_local_user_by_credentials(
         .optional()?)
 }
 
-// FIXME: I cannot emphasize just how insecure this is. MUST fix before pushing to production
+// FIXME: Make this secure
+// FIXME: Rewrite this to modular spec
 pub(crate) fn login_local_user(
     conn: &MysqlConnection,
     email_ck: &str,
@@ -79,7 +80,6 @@ pub(crate) fn insert_new_local_user(
 
     // Unfortunately MySQL does not support RETURN statements.
     // We will have to make a second query to fetch the new user id.
-    // TODO: Look into extracting function
     let inserted_user: DatabaseUser = Users
         .filter(username.eq(&db_new_user.username))
         .first::<DatabaseUser>(conn)?;

@@ -4,9 +4,10 @@ use actix_web::{HttpRequest, Result};
 use crate::database::actions::communities::{get_communities, get_community, get_community_admins};
 use crate::database::actions::post::get_posts_of_community;
 use crate::database::get_conn_from_pool;
-use crate::database::models::{DatabaseFederatedUser, DatabaseLocalUser};
+
 use crate::federation::schemas::{Community, User};
 use crate::util::route_error::RouteError;
+use crate::util::HOSTNAME;
 use crate::DBPool;
 use chrono::NaiveDateTime;
 use either::Either;
@@ -15,7 +16,7 @@ use uuid::Uuid;
 
 #[get("/")]
 pub(crate) async fn communities(pool: web::Data<DBPool>, req: HttpRequest) -> Result<HttpResponse> {
-    let client_host = req
+    let _client_host = req
         .headers()
         .get("Client-Host")
         .ok_or(RouteError::MissingClientHost)?;
@@ -39,7 +40,7 @@ pub(crate) async fn community_by_id(
     req: HttpRequest,
     web::Path(id): web::Path<String>,
 ) -> Result<HttpResponse> {
-    let client_host = req
+    let _client_host = req
         .headers()
         .get("Client-Host")
         .ok_or(RouteError::MissingClientHost)?;
@@ -56,19 +57,15 @@ pub(crate) async fn community_by_id(
 
     let admins = admins
         .into_iter()
-        .map(|(u, x)| {
-            match x {
-                Either::Left(l) => {
-                    User {
-                        id: u.username,
-                        host: "REPLACE-ME.com".to_string(), // TODO: Hardcode this somewhere else!
-                    }
-                }
-                Either::Right(f) => User {
-                    id: u.username,
-                    host: f.host,
-                },
-            }
+        .map(|(u, x)| match x {
+            Either::Left(_l) => User {
+                id: u.username,
+                host: HOSTNAME.to_string(),
+            },
+            Either::Right(f) => User {
+                id: u.username,
+                host: f.host,
+            },
         })
         .collect::<Vec<User>>();
 
@@ -92,7 +89,7 @@ pub(crate) async fn community_by_id_timestamps(
     req: HttpRequest,
     web::Path(id): web::Path<String>,
 ) -> Result<HttpResponse> {
-    let client_host = req
+    let _client_host = req
         .headers()
         .get("Client-Host")
         .ok_or(RouteError::MissingClientHost)?;

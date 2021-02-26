@@ -3,14 +3,12 @@ use crate::database::models::{
     DatabaseCommunity, DatabaseFederatedUser, DatabaseLocalUser, DatabaseMarkdown, DatabaseNewPost,
     DatabasePost, DatabaseText, DatabaseUser,
 };
-use crate::database::schema::Text::dsl::Text;
 use crate::federation::schemas::ContentType;
-use actix_web::error::ReadlinesError::ContentTypeError;
-use actix_web::test::TestBuffer;
+
 use diesel::prelude::*;
 use diesel::BelongingToDsl;
 use either::Either;
-use either::Either::{Left, Right};
+
 use uuid::Uuid;
 
 pub(crate) fn get_posts_of_community(
@@ -39,7 +37,7 @@ pub(crate) fn get_post(
     diesel::result::Error,
 > {
     use crate::database::schema::Communities::dsl::*;
-    use crate::database::schema::LocalUsers::dsl::*;
+
     use crate::database::schema::Posts::dsl::*;
     use crate::database::schema::Users::dsl::*;
 
@@ -91,7 +89,7 @@ pub(crate) fn get_children_posts_of(
     diesel::result::Error,
 > {
     use crate::database::schema::Communities::dsl::*;
-    use crate::database::schema::LocalUsers::dsl::*;
+
     use crate::database::schema::Posts::dsl::*;
     use crate::database::schema::Users::dsl::*;
 
@@ -136,7 +134,6 @@ pub(crate) fn get_content_of_post(
 
     // Text
     {
-        use crate::database::schema::Text::dsl::*;
         post_content.append(
             &mut DatabaseText::belonging_to(post)
                 .load::<DatabaseText>(conn)?
@@ -148,7 +145,6 @@ pub(crate) fn get_content_of_post(
 
     // Markdown
     {
-        use crate::database::schema::Markdown::dsl::*;
         post_content.append(
             &mut DatabaseMarkdown::belonging_to(post)
                 .load::<DatabaseMarkdown>(conn)?
@@ -202,8 +198,6 @@ pub(crate) fn remove_post(
     conn: &MysqlConnection,
     post: DatabasePost,
 ) -> Result<(), diesel::result::Error> {
-    use crate::database::schema::Posts::dsl::*;
-
     clear_post_contents(conn, &post)?;
 
     diesel::delete(&post).execute(conn)?;

@@ -1,5 +1,5 @@
 use crate::database::models::{DatabaseFederatedUser, DatabaseLocalUser, DatabaseUser};
-use chrono::Local;
+
 use diesel::prelude::*;
 use diesel::MysqlConnection;
 use either::Either;
