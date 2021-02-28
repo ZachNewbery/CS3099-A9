@@ -10,7 +10,7 @@ use crate::DBPool;
 use actix_web::{delete, get, patch, post, web, HttpRequest, HttpResponse, Result};
 use diesel::Connection;
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
+
 
 #[derive(Serialize, Deserialize)]
 pub struct ListCommunities {

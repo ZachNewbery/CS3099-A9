@@ -1,14 +1,14 @@
 use actix_web::http::header::Header as ActixHeader;
-use actix_web::{client::Client, client::ClientRequest, error::BlockingError};
+use actix_web::{client::ClientRequest, error::BlockingError};
 use actix_web::{web, HttpRequest, HttpResponse};
 use actix_web_httpauth::headers::authorization::{Authorization, Bearer};
-use base64::encode;
+
 use chrono::Utc;
 use http_signature_normalization_actix::prelude::*;
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, TokenData, Validation};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha512};
-use std::time::{Duration, SystemTime};
+use std::time::{SystemTime};
 use uuid::Uuid;
 
 use crate::database::actions::local::validate_session;
@@ -93,7 +93,7 @@ pub async fn request_wrapper(
     let config = Config::default();
     let digest = Sha512::new();
 
-    let mut response = request
+    let _response = request
         .header("User-Agent", "Actix Web")
         .set(actix_web::http::header::Date(SystemTime::now().into()))
         .signature_with_digest(config, "my-key-id", digest, "", |s| {
