@@ -1,10 +1,15 @@
+use base64::{encode};
 use actix_web::http::header::Header as ActixHeader;
+use actix_web::{client::Client, error::BlockingError, client::ClientRequest};
+use http_signature_normalization_actix::prelude::*;
+use sha2::{Digest, Sha512};
 use actix_web::{web, HttpRequest, HttpResponse};
 use actix_web_httpauth::headers::authorization::{Authorization, Bearer};
 use chrono::Utc;
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, TokenData, Validation};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
+use std::time::{Duration, SystemTime};
 
 use crate::database::actions::local::validate_session;
 use crate::database::get_conn_from_pool;
@@ -80,4 +85,55 @@ pub fn authenticate(
         .ok_or_else(|| HttpResponse::Unauthorized().finish())?;
 
     Ok((token, local_user))
+}
+
+pub async fn request_wrapper(
+    request: ClientRequest
+) -> Result<HttpResponse, Box<dyn std::error::Error>> {
+    let config = Config::default();
+    let digest = Sha512::new();
+
+    let mut response = request.header("User-Agent", "Actix Web")
+                              .set(actix_web::http::header::Date(SystemTime::now().into()))
+                              .signature_with_digest(config, "my-key-id", digest, "", |s| {
+                                Ok(base64::encode(s)) as Result<_, MyError>
+                            })
+                            .await?;
+                            // .send()
+                            // .await
+                            // .map_err(|e| {
+                            //     eprintln!("Error, {}", e);
+                            //     MyError::SendRequest
+                            // })?;
+    unimplemented!();
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum MyError {
+    #[error("Failed to read header, {0}")]
+    Convert(#[from] ToStrError),
+
+    #[error("Failed to create header, {0}")]
+    Header(#[from] InvalidHeaderValue),
+
+    #[error("Failed to send request")]
+    SendRequest,
+
+    #[error("Failed to retrieve request body")]
+    Body,
+
+    #[error("Failed to prepare signing")]
+    Sign(#[from] PrepareSignError),
+
+    #[error("Blocking operation was canceled")]
+    Canceled,
+}
+
+impl From<BlockingError<MyError>> for MyError {
+    fn from(b: BlockingError<MyError>) -> Self {
+        match b {
+            BlockingError::Error(e) => e,
+            _ => MyError::Canceled,
+        }
+    }
 }
