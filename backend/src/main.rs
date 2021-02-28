@@ -85,7 +85,8 @@ async fn main() -> std::io::Result<()> {
                     .service(internal::posts::delete_post)
                     .service(internal::communities::list_communities)
                     .service(internal::communities::create_community)
-                    .service(internal::communities::delete_community),
+                    .service(internal::communities::delete_community)
+                    .service(internal::communities::edit_community_details),
             )
             .service(federation::hello)
             .service(federation::key)

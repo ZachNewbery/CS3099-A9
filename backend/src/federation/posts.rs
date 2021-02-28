@@ -5,8 +5,8 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::database::actions::post::{
-    clear_post_contents, get_children_posts_of, get_post, modify_post_title, put_post_contents,
-    remove_post,
+    get_children_posts_of, get_post, modify_post_title, put_post_contents, remove_post,
+    remove_post_contents,
 };
 use crate::database::get_conn_from_pool;
 
@@ -188,7 +188,7 @@ pub(crate) async fn edit_post(
                 None => {}
                 Some(n) => {
                     // Now clear everything that existed
-                    clear_post_contents(&conn, &post)?;
+                    remove_post_contents(&conn, &post)?;
 
                     // Then put the new contents in.
                     put_post_contents(&conn, &post, &n)?;

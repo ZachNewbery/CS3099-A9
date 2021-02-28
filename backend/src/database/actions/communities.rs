@@ -134,3 +134,35 @@ pub(crate) fn remove_community(
 
     Ok(())
 }
+
+pub(crate) fn update_community_title(
+    conn: &MysqlConnection,
+    mut community: DatabaseCommunity,
+    new_title: &str,
+) -> Result<DatabaseCommunity, diesel::result::Error> {
+    use crate::database::schema::Communities::dsl::*;
+
+    diesel::update(&community)
+        .set(title.eq(new_title))
+        .execute(conn)?;
+
+    community.title = new_title.to_string();
+
+    Ok(community)
+}
+
+pub(crate) fn update_community_description(
+    conn: &MysqlConnection,
+    mut community: DatabaseCommunity,
+    new_description: &str,
+) -> Result<DatabaseCommunity, diesel::result::Error> {
+    use crate::database::schema::Communities::dsl::*;
+
+    diesel::update(&community)
+        .set(description.eq(new_description))
+        .execute(conn)?;
+
+    community.description = new_description.to_string();
+
+    Ok(community)
+}

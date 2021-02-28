@@ -1,6 +1,6 @@
 use crate::database::actions::communities::{
     get_communities, get_community, get_community_admins, put_community, remove_community,
-    set_community_admins,
+    set_community_admins, update_community_description, update_community_title,
 };
 use crate::database::get_conn_from_pool;
 use crate::database::models::DatabaseNewCommunity;
@@ -101,14 +101,49 @@ pub(crate) async fn delete_community(
     Ok(HttpResponse::Ok().finish())
 }
 
+#[derive(Serialize, Deserialize, Clone)]
+pub struct EditCommunity {
+    title: Option<String>,
+    description: Option<String>,
+}
+
 #[patch("/communities/{id}")]
 pub(crate) async fn edit_community_details(
-    _pool: web::Data<DBPool>,
-    _request: HttpRequest,
-    web::Path(_id): web::Path<Uuid>,
+    pool: web::Data<DBPool>,
+    request: HttpRequest,
+    web::Path(id): web::Path<String>,
+    edit: web::Json<EditCommunity>,
 ) -> Result<HttpResponse> {
-    // TODO: Implement /internal/communities/id (PATCH)
+    let (_, local_user) = authenticate(pool.clone(), request)?;
 
-    // Return type: none
-    unimplemented!()
+    let conn = get_conn_from_pool(pool.clone())?;
+    let (community, admins) = web::block(move || {
+        let community = get_community(&conn, &id)?.ok_or(RouteError::NotFound)?;
+        Ok::<(_, _), RouteError>((community.clone(), get_community_admins(&conn, &community)?))
+    })
+    .await?;
+
+    if !admins.into_iter().any(|a| a.0.id == local_user.id) {
+        return Ok(HttpResponse::Unauthorized().finish());
+    }
+
+    let conn = get_conn_from_pool(pool.clone())?;
+    web::block(move || {
+        conn.transaction(|| {
+            let community = match &edit.title {
+                None => community,
+                Some(n) => update_community_title(&conn, community, n)?,
+            };
+
+            let _ = match &edit.description {
+                None => community,
+                Some(n) => update_community_description(&conn, community, n)?,
+            };
+
+            Ok::<(), diesel::result::Error>(())
+        })
+    })
+    .await?;
+
+    Ok(HttpResponse::Ok().finish())
 }

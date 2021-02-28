@@ -1,7 +1,7 @@
 use crate::database::actions::communities::{get_community, get_community_admins};
 use crate::database::actions::post::{
-    clear_post_contents, get_all_posts, get_children_posts_of, get_posts_of_community,
-    modify_post_title, put_post, put_post_contents, remove_post, PostInformation,
+    get_all_posts, get_children_posts_of, get_posts_of_community, modify_post_title, put_post,
+    put_post_contents, remove_post, remove_post_contents, PostInformation,
 };
 use crate::database::get_conn_from_pool;
 use crate::database::models::{DatabaseLocalUser, DatabaseNewPost};
@@ -273,7 +273,7 @@ pub(crate) async fn edit_post(
             match &edit_post.content {
                 None => {}
                 Some(n) => {
-                    clear_post_contents(&conn, &post.post.clone())?;
+                    remove_post_contents(&conn, &post.post.clone())?;
                     put_post_contents(&conn, &post.post, n)?;
                 }
             }
