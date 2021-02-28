@@ -11,7 +11,6 @@ use actix_web::{delete, get, patch, post, web, HttpRequest, HttpResponse, Result
 use diesel::Connection;
 use serde::{Deserialize, Serialize};
 
-
 #[derive(Serialize, Deserialize)]
 pub struct ListCommunities {
     host: Option<String>,

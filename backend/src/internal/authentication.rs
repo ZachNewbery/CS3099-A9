@@ -8,7 +8,7 @@ use http_signature_normalization_actix::prelude::*;
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, TokenData, Validation};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha512};
-use std::time::{SystemTime};
+use std::time::SystemTime;
 use uuid::Uuid;
 
 use crate::database::actions::local::validate_session;
