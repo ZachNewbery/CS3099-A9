@@ -1,3 +1,6 @@
+use crate::database::actions::communities::get_communities;
+use crate::database::get_conn_from_pool;
+use crate::internal::authentication::authenticate;
 use crate::DBPool;
 use actix_web::{delete, get, patch, post, web, HttpRequest, HttpResponse, Result};
 use serde::{Deserialize, Serialize};
@@ -10,14 +13,26 @@ pub struct ListCommunities {
 
 #[get("/communities")]
 pub(crate) async fn list_communities(
-    _pool: web::Data<DBPool>,
-    _request: HttpRequest,
-    _specification: web::Json<ListCommunities>,
+    pool: web::Data<DBPool>,
+    request: HttpRequest,
+    query: web::Query<ListCommunities>,
 ) -> Result<HttpResponse> {
-    // TODO: Implement /internal/communities (GET)
+    let (_, _) = authenticate(pool.clone(), request)?;
 
-    // Return type: in discussion
-    unimplemented!()
+    // TODO: Replace this when we have federated functionality
+    if query.host.is_some() {
+        return Ok(HttpResponse::NotImplemented().finish());
+    }
+
+    let conn = get_conn_from_pool(pool.clone())?;
+    let communities = web::block(move || get_communities(&conn)).await?;
+
+    Ok(HttpResponse::Ok().json(
+        communities
+            .into_iter()
+            .map(|c| c.title)
+            .collect::<Vec<String>>(),
+    ))
 }
 
 #[derive(Serialize, Deserialize)]
