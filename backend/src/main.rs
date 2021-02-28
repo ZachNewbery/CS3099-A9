@@ -81,7 +81,7 @@ async fn main() -> std::io::Result<()> {
                     .service(list_posts)
                     .service(create_post)
                     .service(internal::posts::edit_post)
-                    .service(internal::posts::delete_post)
+                    .service(internal::posts::delete_post),
             )
             .service(federation::hello)
             .service(federation::key)

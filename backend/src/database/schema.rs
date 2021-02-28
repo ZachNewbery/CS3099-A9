@@ -1,7 +1,7 @@
 table! {
     Communities (id) {
         id -> Unsigned<Bigint>,
-        name -> Text,
+        name -> Varchar,
         description -> Text,
         title -> Text,
     }
@@ -47,7 +47,7 @@ table! {
 table! {
     Posts (id) {
         id -> Unsigned<Bigint>,
-        uuid -> Text,
+        uuid -> Varchar,
         title -> Text,
         authorId -> Unsigned<Bigint>,
         created -> Timestamp,
