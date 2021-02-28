@@ -1,10 +1,10 @@
 use crate::database::actions::communities::{get_community, get_community_admins};
 use crate::database::actions::post::{
     clear_post_contents, get_all_posts, get_children_posts_of, get_posts_of_community,
-    modify_post_title, put_post, put_post_contents, PostInformation,
+    modify_post_title, put_post, put_post_contents, remove_post, PostInformation,
 };
 use crate::database::get_conn_from_pool;
-use crate::database::models::DatabaseNewPost;
+use crate::database::models::{DatabaseLocalUser, DatabaseNewPost};
 use crate::federation::posts::EditPost;
 use crate::federation::schemas::{ContentType, User};
 use crate::internal::authentication::authenticate;
@@ -256,18 +256,10 @@ pub(crate) async fn edit_post(
     .await?
     .ok_or(RouteError::NotFound)?;
 
-    // If not author
-    if _local_user.id != post.user.id {
-        // Check if admin
-        let conn = get_conn_from_pool(pool.clone())?;
-        let post_to_check = post.clone();
-        let admins =
-            web::block(move || get_community_admins(&conn, &post_to_check.community)).await?;
-
-        if !admins.into_iter().any(|(u, _)| u.id == _local_user.id) {
-            return Ok(HttpResponse::Unauthorized().finish());
-        }
-    }
+    // Check permissions
+    if !local_user_has_modify_post_permission(pool.clone(), _local_user, &post).await? {
+        return Ok(HttpResponse::Unauthorized().finish());
+    };
 
     let conn = get_conn_from_pool(pool.clone())?;
     web::block(move || {
@@ -293,16 +285,50 @@ pub(crate) async fn edit_post(
     Ok(HttpResponse::Ok().finish())
 }
 
+async fn local_user_has_modify_post_permission(
+    pool: web::Data<DBPool>,
+    local_user: DatabaseLocalUser,
+    post: &PostInformation,
+) -> std::result::Result<bool, actix_web::Error> {
+    if local_user.id != post.user.id {
+        // Check if admin
+        let conn = get_conn_from_pool(pool.clone())?;
+        let post_to_check = post.clone();
+        let admins =
+            web::block(move || get_community_admins(&conn, &post_to_check.community)).await?;
+
+        if !admins.into_iter().any(|(u, _)| u.id == local_user.id) {
+            return Ok(false);
+        }
+    }
+
+    return Ok(true);
+}
+
 #[delete("/posts/{id}")]
 pub(crate) async fn delete_post(
     pool: web::Data<DBPool>,
-    web::Path(_id): web::Path<Uuid>,
+    web::Path(id): web::Path<Uuid>,
     request: HttpRequest,
 ) -> Result<HttpResponse> {
     let (_, _local_user) = authenticate(pool.clone(), request)?;
 
-    // TODO: Implement /internal/posts/id (DELETE)
+    // Get the post first
+    let conn = get_conn_from_pool(pool.clone())?;
+    let post = web::block(move || {
+        use crate::database::actions::post;
+        post::get_post(&conn, &id)
+    })
+    .await?
+    .ok_or(RouteError::NotFound)?;
 
-    // Return type: post with updated values
-    unimplemented!()
+    // Check permissions
+    if !local_user_has_modify_post_permission(pool.clone(), _local_user, &post).await? {
+        return Ok(HttpResponse::Unauthorized().finish());
+    };
+
+    let conn = get_conn_from_pool(pool.clone())?;
+    web::block(move || remove_post(&conn, post.post)).await?;
+
+    Ok(HttpResponse::Ok().finish())
 }
