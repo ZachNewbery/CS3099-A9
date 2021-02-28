@@ -1,8 +1,10 @@
-use crate::database::actions::communities::get_communities;
+use crate::database::actions::communities::{get_communities, put_community, set_community_admins};
 use crate::database::get_conn_from_pool;
+use crate::database::models::DatabaseNewCommunity;
 use crate::internal::authentication::authenticate;
 use crate::DBPool;
 use actix_web::{delete, get, patch, post, web, HttpRequest, HttpResponse, Result};
+use diesel::Connection;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -44,14 +46,30 @@ pub struct CreateCommunity {
 
 #[post("/communities/create")]
 pub(crate) async fn create_community(
-    _pool: web::Data<DBPool>,
-    _request: HttpRequest,
-    _specification: web::Json<CreateCommunity>,
+    pool: web::Data<DBPool>,
+    request: HttpRequest,
+    specification: web::Json<CreateCommunity>,
 ) -> Result<HttpResponse> {
-    // TODO: Implement /internal/communities/create (POST)
+    let (_, local_user) = authenticate(pool.clone(), request)?;
 
-    // Return type: none
-    unimplemented!()
+    let admins = vec![local_user];
+    let new_community = DatabaseNewCommunity {
+        name: specification.id.clone(),
+        description: specification.description.clone(),
+        title: specification.title.clone(),
+    };
+
+    let conn = get_conn_from_pool(pool.clone())?;
+    web::block(move || {
+        conn.transaction(|| {
+            let community = put_community(&conn, new_community)?;
+            set_community_admins(&conn, &community, admins)?;
+            Ok::<(), diesel::result::Error>(())
+        })
+    })
+    .await?;
+
+    Ok(HttpResponse::Ok().finish())
 }
 
 #[delete("/communities/{id}")]

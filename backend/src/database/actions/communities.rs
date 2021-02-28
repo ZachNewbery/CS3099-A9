@@ -65,3 +65,46 @@ pub(crate) fn get_community(
         .first::<DatabaseCommunity>(conn)
         .optional()
 }
+
+pub(crate) fn put_community(
+    conn: &MysqlConnection,
+    new_community: DatabaseNewCommunity,
+) -> Result<DatabaseCommunity, diesel::result::Error> {
+    use crate::database::schema::Communities::dsl::*;
+
+    let community_name = new_community.name.clone();
+
+    diesel::insert_into(Communities)
+        .values(new_community)
+        .execute(conn)?;
+
+    Communities
+        .filter(name.eq(community_name))
+        .first::<DatabaseCommunity>(conn)
+}
+
+pub(crate) fn set_community_admins(
+    conn: &MysqlConnection,
+    community: &DatabaseCommunity,
+    admin_list: Vec<DatabaseLocalUser>,
+) -> Result<(), diesel::result::Error> {
+    use crate::database::schema::CommunitiesUsers::dsl::*;
+
+    let admins = admin_list
+        .into_iter()
+        .map(|a| DatabaseNewCommunitiesUser {
+            community_id: community.id,
+            user_id: a.user_id,
+        })
+        .collect::<Vec<DatabaseNewCommunitiesUser>>();
+
+    diesel::delete(CommunitiesUsers)
+        .filter(communityId.eq(community.id))
+        .execute(conn)?;
+
+    diesel::insert_into(CommunitiesUsers)
+        .values(admins)
+        .execute(conn)?;
+
+    Ok(())
+}

@@ -72,7 +72,7 @@ pub(crate) async fn community_by_id(
     Ok(HttpResponse::Ok().json(Community {
         id: community.name,
         title: community.title,
-        description: community.desc,
+        description: community.description,
         admins,
     }))
 }
