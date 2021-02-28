@@ -40,9 +40,9 @@ pub(crate) struct NewPost {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct UpdatePost {
-    title: Option<String>,
-    content_type: Option<ContentType>,
-    body: Option<String>,
+    pub title: Option<String>,
+    pub content_type: Option<ContentType>,
+    pub body: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

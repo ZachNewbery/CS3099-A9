@@ -80,8 +80,7 @@ async fn main() -> std::io::Result<()> {
                     .service(get_post)
                     .service(list_posts)
                     .service(create_post)
-                    // .service(new_post_local)
-                    // .service(get_posts),
+                    .service(internal::posts::edit_post),
             )
             .service(federation::hello)
             .service(federation::key)

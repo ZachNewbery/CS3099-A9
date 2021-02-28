@@ -1,10 +1,12 @@
-use crate::database::actions::communities::get_community;
+use crate::database::actions::communities::{get_community, get_community_admins};
 use crate::database::actions::post::{
-    get_all_posts, get_children_posts_of, get_posts_of_community, put_post, PostInformation,
+    clear_post_contents, get_all_posts, get_children_posts_of, get_posts_of_community,
+    modify_post_title, put_post, put_post_contents, PostInformation,
 };
 use crate::database::get_conn_from_pool;
 use crate::database::models::DatabaseNewPost;
-use crate::federation::schemas::{ContentType, UpdatePost, User};
+use crate::federation::posts::EditPost;
+use crate::federation::schemas::{ContentType, User};
 use crate::internal::authentication::authenticate;
 use crate::internal::LocatedCommunity;
 use crate::util::route_error::RouteError;
@@ -12,6 +14,7 @@ use crate::util::HOSTNAME;
 use crate::DBPool;
 use actix_web::{delete, get, patch, post, web, HttpRequest, HttpResponse, Result};
 use chrono::{NaiveDateTime, Utc};
+use diesel::Connection;
 use either::Either;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -239,15 +242,55 @@ pub(crate) async fn create_post(
 pub(crate) async fn edit_post(
     pool: web::Data<DBPool>,
     web::Path(_id): web::Path<Uuid>,
-    _post: web::Data<UpdatePost>,
+    _post: web::Data<EditPost>,
     request: HttpRequest,
 ) -> Result<HttpResponse> {
     let (_, _local_user) = authenticate(pool.clone(), request)?;
 
-    // TODO: Implement /internal/posts/id (PATCH)
+    // Get the post first
+    let conn = get_conn_from_pool(pool.clone())?;
+    let post = web::block(move || {
+        use crate::database::actions::post;
+        post::get_post(&conn, &_id)
+    })
+    .await?
+    .ok_or(RouteError::NotFound)?;
 
-    // Return type: post with updated values
-    unimplemented!()
+    // If not author
+    if _local_user.id != post.user.id {
+        // Check if admin
+        let conn = get_conn_from_pool(pool.clone())?;
+        let post_to_check = post.clone();
+        let admins =
+            web::block(move || get_community_admins(&conn, &post_to_check.community)).await?;
+
+        if !admins.into_iter().any(|(u, _)| u.id == _local_user.id) {
+            return Ok(HttpResponse::Unauthorized().finish());
+        }
+    }
+
+    let conn = get_conn_from_pool(pool.clone())?;
+    web::block(move || {
+        conn.transaction(|| {
+            match &_post.title {
+                None => {}
+                Some(n) => {
+                    modify_post_title(&conn, post.post.clone(), n)?;
+                }
+            };
+            match &_post.content {
+                None => {}
+                Some(n) => {
+                    clear_post_contents(&conn, &post.post.clone())?;
+                    put_post_contents(&conn, &post.post, n)?;
+                }
+            }
+            Ok::<(), diesel::result::Error>(())
+        })
+    })
+    .await?;
+
+    Ok(HttpResponse::Ok().finish())
 }
 
 #[delete("/posts/{id}")]

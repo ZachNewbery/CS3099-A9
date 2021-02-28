@@ -148,8 +148,8 @@ pub(crate) async fn get_post_by_id(
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct EditPost {
-    title: String,
-    content: Vec<ContentType>,
+    pub title: Option<String>,
+    pub content: Option<Vec<ContentType>>,
 }
 
 #[put("/{id}")]
@@ -177,13 +177,23 @@ pub(crate) async fn edit_post(
             // Find the post
             let post = get_post(&conn, &id)?.ok_or(diesel::NotFound)?.post;
 
-            let post = modify_post_title(&conn, post, &edit_post.title)?;
+            match &edit_post.title {
+                None => {}
+                Some(n) => {
+                    modify_post_title(&conn, post.clone(), n)?;
+                }
+            };
 
-            // Now clear everything that existed
-            clear_post_contents(&conn, &post)?;
+            match &edit_post.content {
+                None => {}
+                Some(n) => {
+                    // Now clear everything that existed
+                    clear_post_contents(&conn, &post)?;
 
-            // Then put the new contents in.
-            put_post_contents(&conn, &post, &edit_post.content)?;
+                    // Then put the new contents in.
+                    put_post_contents(&conn, &post, &n)?;
+                }
+            }
 
             Ok::<(), diesel::result::Error>(())
         })

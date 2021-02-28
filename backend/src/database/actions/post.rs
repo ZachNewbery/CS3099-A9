@@ -33,6 +33,7 @@ pub(crate) fn get_posts_of_community(
         .optional()
 }
 
+#[derive(Clone, Debug)]
 pub struct PostInformation {
     pub post: DatabasePost,
     pub content: Vec<ContentType>,
