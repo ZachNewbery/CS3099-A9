@@ -46,7 +46,15 @@ pub struct DatabaseFederatedUser {
 pub struct DatabaseCommunity {
     pub id: u64,
     pub name: String,
-    pub desc: String,
+    pub description: String,
+    pub title: String,
+}
+
+#[derive(Insertable, Debug, Clone)]
+#[table_name = "Communities"]
+pub struct DatabaseNewCommunity {
+    pub name: String,
+    pub description: String,
     pub title: String,
 }
 
@@ -55,6 +63,15 @@ pub struct DatabaseCommunity {
 #[belongs_to(DatabaseCommunity, foreign_key = "communityId")]
 pub struct DatabaseCommunitiesUser {
     pub id: u64,
+    #[column_name = "communityId"]
+    pub community_id: u64,
+    #[column_name = "userId"]
+    pub user_id: u64,
+}
+
+#[derive(Insertable, Debug, Clone)]
+#[table_name = "CommunitiesUsers"]
+pub struct DatabaseNewCommunitiesUser {
     #[column_name = "communityId"]
     pub community_id: u64,
     #[column_name = "userId"]
