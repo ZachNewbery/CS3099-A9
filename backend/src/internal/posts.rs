@@ -41,7 +41,7 @@ pub(crate) struct LocatedPost {
 
 #[get("/posts/{id}")]
 pub(crate) async fn get_post(
-    web::Path(_id): web::Path<Uuid>,
+    web::Path(id): web::Path<Uuid>,
     _query: web::Query<GetPost>,
     pool: web::Data<DBPool>,
     request: HttpRequest,
@@ -52,7 +52,7 @@ pub(crate) async fn get_post(
     let conn = get_conn_from_pool(pool.clone())?;
     let post = web::block(move || {
         use crate::database::actions::post;
-        post::get_post(&conn, &_id)
+        post::get_post(&conn, &id)
     })
     .await?
     .ok_or(HttpResponse::NotFound().finish())?;
@@ -99,7 +99,7 @@ pub(crate) async fn get_post(
 
 #[get("/posts")]
 pub(crate) async fn list_posts(
-    _query: web::Query<GetPost>,
+    query: web::Query<GetPost>,
     pool: web::Data<DBPool>,
     request: HttpRequest,
 ) -> Result<HttpResponse> {
@@ -108,7 +108,7 @@ pub(crate) async fn list_posts(
     let conn = get_conn_from_pool(pool.clone())?;
     // Specialised code path for a community being specified
     let posts = web::block(move || {
-        let posts = match &_query.community {
+        let posts = match &query.community {
             None => get_all_posts(&conn),
             Some(c) => {
                 let community = get_community(&conn, c)?.ok_or(diesel::NotFound)?;
@@ -241,8 +241,8 @@ pub(crate) async fn create_post(
 #[patch("/posts/{id}")]
 pub(crate) async fn edit_post(
     pool: web::Data<DBPool>,
-    web::Path(_id): web::Path<Uuid>,
-    _post: web::Data<EditPost>,
+    web::Path(id): web::Path<Uuid>,
+    edit_post: web::Data<EditPost>,
     request: HttpRequest,
 ) -> Result<HttpResponse> {
     let (_, _local_user) = authenticate(pool.clone(), request)?;
@@ -251,7 +251,7 @@ pub(crate) async fn edit_post(
     let conn = get_conn_from_pool(pool.clone())?;
     let post = web::block(move || {
         use crate::database::actions::post;
-        post::get_post(&conn, &_id)
+        post::get_post(&conn, &id)
     })
     .await?
     .ok_or(RouteError::NotFound)?;
@@ -272,13 +272,13 @@ pub(crate) async fn edit_post(
     let conn = get_conn_from_pool(pool.clone())?;
     web::block(move || {
         conn.transaction(|| {
-            match &_post.title {
+            match &edit_post.title {
                 None => {}
                 Some(n) => {
                     modify_post_title(&conn, post.post.clone(), n)?;
                 }
             };
-            match &_post.content {
+            match &edit_post.content {
                 None => {}
                 Some(n) => {
                     clear_post_contents(&conn, &post.post.clone())?;
