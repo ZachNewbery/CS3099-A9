@@ -1,9 +1,9 @@
 use crate::database::actions::communities::get_community;
 use crate::database::actions::post::{
-    get_all_posts, get_children_posts_of, get_posts_of_community, PostInformation,
+    get_all_posts, get_children_posts_of, get_posts_of_community, put_post, PostInformation,
 };
 use crate::database::get_conn_from_pool;
-use crate::database::models::{DatabaseFederatedUser, DatabaseLocalUser};
+use crate::database::models::DatabaseNewPost;
 use crate::federation::schemas::{ContentType, UpdatePost, User};
 use crate::internal::authentication::authenticate;
 use crate::internal::LocatedCommunity;
@@ -11,7 +11,7 @@ use crate::util::route_error::RouteError;
 use crate::util::HOSTNAME;
 use crate::DBPool;
 use actix_web::{delete, get, patch, post, web, HttpRequest, HttpResponse, Result};
-use chrono::NaiveDateTime;
+use chrono::{NaiveDateTime, Utc};
 use either::Either;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -185,22 +185,54 @@ pub(crate) async fn search_posts(
 pub struct CreatePost {
     pub community: LocatedCommunity,
     pub parent: Option<Uuid>,
-    pub title: Option<String>,
+    pub title: String,
     pub content: Vec<ContentType>,
 }
 
 #[post("/posts/create")]
 pub(crate) async fn create_post(
     pool: web::Data<DBPool>,
-    _post: web::Data<CreatePost>,
+    post: web::Data<CreatePost>,
     request: HttpRequest,
 ) -> Result<HttpResponse> {
     let (_, _local_user) = authenticate(pool.clone(), request)?;
 
-    // TODO: Implement /internal/posts/create (POST)
+    let conn = get_conn_from_pool(pool.clone())?;
+    let parent = match post.parent {
+        None => None,
+        Some(u) => {
+            web::block(move || {
+                use crate::database::actions::post;
+                post::get_post(&conn, &u)
+            })
+            .await?
+        }
+    };
 
-    // Return type: none
-    unimplemented!()
+    match &post.community {
+        LocatedCommunity::Local { id } => {
+            let conn = get_conn_from_pool(pool.clone())?;
+            let id = id.clone();
+            let community = web::block(move || get_community(&conn, &id))
+                .await?
+                .ok_or(RouteError::NotFound)?;
+
+            let new_post = DatabaseNewPost {
+                uuid: Uuid::new_v4().to_string(),
+                title: post.title.clone(),
+                author_id: _local_user.id,
+                created: Utc::now().naive_utc(),
+                modified: Utc::now().naive_utc(),
+                parent_id: parent.map(|p| p.post.id),
+                community_id: community.id,
+            };
+
+            let conn = get_conn_from_pool(pool.clone())?;
+            web::block(move || put_post(&conn, &new_post)).await?;
+            Ok(HttpResponse::Ok().finish())
+        }
+        LocatedCommunity::Federated { .. } => Ok(HttpResponse::NotImplemented().finish()),
+    }
 }
 
 #[patch("/posts/{id}")]
