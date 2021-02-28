@@ -42,8 +42,7 @@ pub(crate) fn get_local_user_by_username_email(
 
     Ok(Users
         .inner_join(LocalUsers)
-        .filter(username.eq(username_))
-        .filter(email.eq(email_))
+        .filter(username.eq(username_).or(email.eq(email_)))
         .select(LocalUsers::all_columns())
         .first::<DatabaseLocalUser>(conn)
         .optional()?)
