@@ -55,7 +55,7 @@ pub(crate) async fn get_post(
         post::get_post(&conn, &id)
     })
     .await?
-    .ok_or(HttpResponse::NotFound().finish())?;
+    .ok_or_else(|| HttpResponse::NotFound().finish())?;
 
     let conn = get_conn_from_pool(pool.clone())?;
     let parent = post.post.clone();
@@ -64,17 +64,13 @@ pub(crate) async fn get_post(
         .unwrap_or_default();
 
     let lp = LocatedPost {
-        id: post
-            .post
-            .uuid
-            .parse()
-            .map_err(|e| RouteError::UuidParse(e))?,
+        id: post.post.uuid.parse().map_err(RouteError::UuidParse)?,
         community: LocatedCommunity::Local {
             id: post.community.name,
         },
         parent_post: post
             .parent
-            .map(|u| u.uuid.parse().map_err(|e| RouteError::UuidParse(e)))
+            .map(|u| u.uuid.parse().map_err(RouteError::UuidParse))
             .transpose()?,
         children: children
             .into_iter()
@@ -120,11 +116,8 @@ pub(crate) async fn list_posts(
             .into_iter()
             .map(|p| {
                 use crate::database::actions::post;
-                let post = post::get_post(
-                    &conn,
-                    &p.uuid.parse().map_err(|e| RouteError::UuidParse(e))?,
-                )?
-                .ok_or(diesel::NotFound)?;
+                let post = post::get_post(&conn, &p.uuid.parse().map_err(RouteError::UuidParse)?)?
+                    .ok_or(diesel::NotFound)?;
                 let children = get_children_posts_of(&conn, &post.post)?.unwrap_or_default();
                 Ok((post, children))
             })
@@ -136,14 +129,14 @@ pub(crate) async fn list_posts(
         .into_iter()
         .map(|(p, c)| {
             Ok(LocatedPost {
-                id: p.post.uuid.parse().map_err(|e| RouteError::UuidParse(e))?,
+                id: p.post.uuid.parse().map_err(RouteError::UuidParse)?,
                 community: LocatedCommunity::Local {
                     id: p.community.name,
                 },
                 parent_post: None,
                 children: c
                     .into_iter()
-                    .map(|h| Ok(h.post.uuid.parse().map_err(|e| RouteError::UuidParse(e))?))
+                    .map(|h| Ok(h.post.uuid.parse().map_err(RouteError::UuidParse)?))
                     .collect::<Result<Vec<Uuid>, RouteError>>()?,
                 title: p.post.title,
                 content: p.content,
@@ -196,11 +189,8 @@ pub(crate) async fn search_posts(
             .into_iter()
             .map(|p| {
                 use crate::database::actions::post;
-                let post = post::get_post(
-                    &conn,
-                    &p.uuid.parse().map_err(|e| RouteError::UuidParse(e))?,
-                )?
-                .ok_or(diesel::NotFound)?;
+                let post = post::get_post(&conn, &p.uuid.parse().map_err(RouteError::UuidParse)?)?
+                    .ok_or(diesel::NotFound)?;
                 let children = get_children_posts_of(&conn, &post.post)?.unwrap_or_default();
                 Ok((post, children))
             })
@@ -221,14 +211,14 @@ pub(crate) async fn search_posts(
         })
         .map(|(p, c)| {
             Ok(LocatedPost {
-                id: p.post.uuid.parse().map_err(|e| RouteError::UuidParse(e))?,
+                id: p.post.uuid.parse().map_err(RouteError::UuidParse)?,
                 community: LocatedCommunity::Local {
                     id: p.community.name,
                 },
                 parent_post: None,
                 children: c
                     .into_iter()
-                    .map(|h| Ok(h.post.uuid.parse().map_err(|e| RouteError::UuidParse(e))?))
+                    .map(|h| Ok(h.post.uuid.parse().map_err(RouteError::UuidParse)?))
                     .collect::<Result<Vec<Uuid>, RouteError>>()?,
                 title: p.post.title,
                 content: p.content,

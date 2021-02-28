@@ -231,7 +231,7 @@ pub(crate) fn put_post(
 pub(crate) fn put_post_contents(
     conn: &MysqlConnection,
     post: &DatabasePost,
-    contents: &Vec<ContentType>,
+    contents: &[ContentType],
 ) -> Result<(), diesel::result::Error> {
     for content_ in contents {
         match content_ {

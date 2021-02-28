@@ -21,7 +21,7 @@ pub(crate) fn get_user_detail(
         return Err(diesel::NotFound);
     }
 
-    Ok(local.map_or_else(|| Right(fed.unwrap()), |l| Left(l)))
+    Ok(local.map_or_else(|| Right(fed.unwrap()), Left))
 }
 
 pub(crate) fn get_local_users(

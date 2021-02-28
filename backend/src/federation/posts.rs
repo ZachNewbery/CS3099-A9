@@ -93,14 +93,14 @@ pub(crate) async fn get_post_by_id(
         .get("Client-Host")
         .ok_or(RouteError::MissingClientHost)?
         .to_str()
-        .map_err(|e| RouteError::HeaderParse(e))?;
+        .map_err(RouteError::HeaderParse)?;
 
     let _user_id = req
         .headers()
         .get("User-ID")
         .ok_or(RouteError::MissingUserID)?
         .to_str()
-        .map_err(|e| RouteError::HeaderParse(e))?;
+        .map_err(RouteError::HeaderParse)?;
 
     let conn = get_conn_from_pool(pool.clone())?;
 
@@ -116,15 +116,11 @@ pub(crate) async fn get_post_by_id(
         .unwrap_or_default();
 
     let p = Post {
-        id: post
-            .user
-            .username
-            .parse()
-            .map_err(|e| RouteError::UuidParse(e))?,
+        id: post.user.username.parse().map_err(RouteError::UuidParse)?,
         community: post.community.name,
         parent_post: post
             .parent
-            .map(|u| u.uuid.parse().map_err(|e| RouteError::UuidParse(e)))
+            .map(|u| u.uuid.parse().map_err(RouteError::UuidParse))
             .transpose()?,
         children: children
             .into_iter()
