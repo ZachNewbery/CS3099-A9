@@ -1,15 +1,17 @@
 use crate::database::actions::local::{
-    get_local_user_by_credentials, insert_new_local_user, login_local_user, update_session,
+    get_local_user_by_credentials, get_local_user_by_username_email, insert_new_local_user,
+    update_local_user, update_session,
 };
 use crate::database::get_conn_from_pool;
 use crate::internal::authentication::{authenticate, generate_session, Token};
 use crate::{database, DBPool};
 use actix_web::{post, put, HttpResponse};
 use actix_web::{web, HttpRequest};
+use diesel::Connection;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
-pub struct NewUser {
+pub struct NewLocalUser {
     pub username: String,
     pub email: String,
     pub password: String,
@@ -18,7 +20,7 @@ pub struct NewUser {
 #[post("/new_user")]
 pub(crate) async fn new_user(
     pool: web::Data<DBPool>,
-    new_user: web::Json<NewUser>,
+    new_user: web::Json<NewLocalUser>,
 ) -> actix_web::Result<HttpResponse> {
     let conn = pool
         .get()
@@ -26,7 +28,7 @@ pub(crate) async fn new_user(
 
     web::block(move || {
         // Check email and username against database
-        if get_local_user_by_credentials(&conn, &new_user.username, &new_user.email)?.is_none() {
+        if get_local_user_by_username_email(&conn, &new_user.username, &new_user.email)?.is_none() {
             // Insert new record into database
             insert_new_local_user(&conn, new_user.clone())?;
         }
@@ -59,11 +61,12 @@ pub(crate) async fn login(
     let conn = database::get_conn_from_pool(pool.clone())?;
 
     // Check credentials against database
-    let local_user =
-        web::block(move || login_local_user(&conn, &login_info.email, &login_info.password))
-            .await
-            .map_err(|_| HttpResponse::InternalServerError().finish())?
-            .ok_or_else(|| HttpResponse::Unauthorized().finish())?; // User not found
+    let local_user = web::block(move || {
+        get_local_user_by_credentials(&conn, &login_info.email, &login_info.password)
+    })
+    .await
+    .map_err(|_| HttpResponse::InternalServerError().finish())?
+    .ok_or_else(|| HttpResponse::Unauthorized().finish())?; // User not found
 
     let new_session = generate_session();
 
@@ -104,22 +107,36 @@ pub(crate) async fn logout(
 
 #[derive(Serialize, Deserialize)]
 pub struct EditProfile {
-    username: String,
-    password: String,
-    name: String,
+    pub password: String,
 }
 
 #[put("/edit_profile")]
 pub(crate) async fn edit_profile(
     request: HttpRequest,
-    _edit_profile: web::Json<EditProfile>,
+    edit_profile: web::Json<EditProfile>,
     pool: web::Data<DBPool>,
 ) -> actix_web::Result<HttpResponse> {
     // Verify token validity
-    let (_, _local_user) = authenticate(pool.clone(), request)?;
+    let (_, local_user) = authenticate(pool.clone(), request)?;
 
-    // TODO: Implement edit_profile (PUT)
+    let conn = get_conn_from_pool(pool.clone())?;
+
+    let new_session = generate_session();
+    let token = Token::new(local_user.id, &new_session)
+        .generate_token()
+        .map_err(|_| HttpResponse::InternalServerError().finish())?; // TODO: Make this error type
+
+    web::block(move || {
+        conn.transaction(|| {
+            let u = update_local_user(&conn, local_user, &*edit_profile)?;
+            update_session(&conn, &u, &new_session)
+        })
+    })
+    .await?;
 
     // Return type: new token
-    unimplemented!()
+    Ok(HttpResponse::Ok().json(LoginOutput {
+        token,
+        token_type: String::from("bearer"),
+    }))
 }

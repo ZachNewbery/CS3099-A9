@@ -1,6 +1,6 @@
-use actix_web::{delete, get, post, web, patch, HttpRequest, HttpResponse, Result};
-use serde::{Serialize, Deserialize};
 use crate::DBPool;
+use actix_web::{delete, get, patch, post, web, HttpRequest, HttpResponse, Result};
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 #[derive(Serialize, Deserialize)]
@@ -12,7 +12,7 @@ pub struct ListCommunities {
 pub(crate) async fn list_communities(
     _pool: web::Data<DBPool>,
     _request: HttpRequest,
-    _specification: web::Json<ListCommunities>
+    _specification: web::Json<ListCommunities>,
 ) -> Result<HttpResponse> {
     // TODO: Implement /internal/communities (GET)
 
@@ -31,7 +31,7 @@ pub struct CreateCommunity {
 pub(crate) async fn create_community(
     _pool: web::Data<DBPool>,
     _request: HttpRequest,
-    _specification: web::Json<CreateCommunity>
+    _specification: web::Json<CreateCommunity>,
 ) -> Result<HttpResponse> {
     // TODO: Implement /internal/communities/create (POST)
 

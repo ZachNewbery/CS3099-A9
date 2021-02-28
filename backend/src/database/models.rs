@@ -6,7 +6,7 @@ use crate::database::schema::{
 };
 
 use crate::internal::authentication::generate_session;
-use crate::internal::user::NewUser;
+use crate::internal::user::NewLocalUser;
 
 #[derive(Queryable, Identifiable, Debug, Clone)]
 #[table_name = "Users"]
@@ -128,8 +128,8 @@ pub struct DatabaseNewFederatedUser {
     pub host: String,
 }
 
-impl From<NewUser> for DatabaseNewUser {
-    fn from(value: NewUser) -> Self {
+impl From<NewLocalUser> for DatabaseNewUser {
+    fn from(value: NewLocalUser) -> Self {
         Self {
             username: value.username,
         }
@@ -147,8 +147,8 @@ pub struct DatabaseNewLocalUser {
     pub session: String,
 }
 
-impl From<(DatabaseUser, NewUser)> for DatabaseNewLocalUser {
-    fn from(value: (DatabaseUser, NewUser)) -> Self {
+impl From<(DatabaseUser, NewLocalUser)> for DatabaseNewLocalUser {
+    fn from(value: (DatabaseUser, NewLocalUser)) -> Self {
         let (user, new_user) = value;
         Self {
             userId: user.id,
