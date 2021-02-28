@@ -108,3 +108,29 @@ pub(crate) fn set_community_admins(
 
     Ok(())
 }
+
+pub(crate) fn remove_community(
+    conn: &MysqlConnection,
+    community: DatabaseCommunity,
+) -> Result<(), diesel::result::Error> {
+    // Remove all posts
+    {
+        use crate::database::schema::Posts::dsl::*;
+        diesel::delete(Posts)
+            .filter(communityId.eq(community.id))
+            .execute(conn)?;
+    }
+    // Remove all admins
+    {
+        use crate::database::schema::CommunitiesUsers::dsl::*;
+        diesel::delete(CommunitiesUsers)
+            .filter(communityId.eq(community.id))
+            .execute(conn)?;
+    }
+    // Remove community itself
+    {
+        diesel::delete(&community).execute(conn)?;
+    }
+
+    Ok(())
+}
