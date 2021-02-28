@@ -14,6 +14,7 @@ use crate::federation::posts::{
 };
 use crate::federation::users::{search_users, send_user_message, user_by_id};
 use crate::internal::user::edit_profile;
+use crate::internal::posts::{get_post, list_posts};
 
 pub mod database;
 pub mod federation;
@@ -76,6 +77,8 @@ async fn main() -> std::io::Result<()> {
                     .service(login)
                     .service(logout)
                     .service(edit_profile)
+                    .service(get_post)
+                    .service(list_posts)
                     // .service(new_post_local)
                     // .service(get_posts),
             )

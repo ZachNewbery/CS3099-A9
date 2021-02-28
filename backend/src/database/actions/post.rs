@@ -11,6 +11,16 @@ use either::Either;
 
 use uuid::Uuid;
 
+pub(crate) fn get_all_posts(
+    conn: &MysqlConnection,
+) -> Result<Option<Vec<DatabasePost>>, diesel::result::Error> {
+    use crate::database::schema::Posts::dsl::*;
+    Posts
+        .filter(parentId.is_null()) // Only top level
+        .load(conn)
+        .optional()
+}
+
 pub(crate) fn get_posts_of_community(
     conn: &MysqlConnection,
     community: &DatabaseCommunity,
@@ -18,6 +28,7 @@ pub(crate) fn get_posts_of_community(
     use crate::database::schema::Posts::dsl::*;
     Posts
         .filter(communityId.eq(community.id))
+        .filter(parentId.is_null()) // Only top level
         .load(conn)
         .optional()
 }
@@ -28,7 +39,7 @@ pub struct PostInformation {
     pub community: DatabaseCommunity,
     pub user: DatabaseUser,
     pub user_details: Either<DatabaseLocalUser, DatabaseFederatedUser>,
-    pub parent: DatabasePost,
+    pub parent: Option<DatabasePost>,
 }
 
 pub(crate) fn get_post(
@@ -75,8 +86,10 @@ pub(crate) fn get_post(
 pub(crate) fn get_parent_of(
     conn: &MysqlConnection,
     post: &DatabasePost,
-) -> Result<DatabasePost, diesel::result::Error> {
-    DatabasePost::belonging_to(post).first::<DatabasePost>(conn)
+) -> Result<Option<DatabasePost>, diesel::result::Error> {
+    DatabasePost::belonging_to(post)
+        .first::<DatabasePost>(conn)
+        .optional()
 }
 
 pub(crate) fn get_children_posts_of(
@@ -113,7 +126,7 @@ pub(crate) fn get_children_posts_of(
                 community: c,
                 user: u.clone(),
                 user_details: get_user_detail(conn, &u)?,
-                parent: parent.clone(),
+                parent: Some(parent.clone()),
             })
         })
         .collect::<Result<Vec<_>, diesel::result::Error>>()?;

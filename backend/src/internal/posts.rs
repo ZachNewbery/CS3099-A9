@@ -1,5 +1,9 @@
-use crate::database::actions::post::get_children_posts_of;
+use crate::database::actions::communities::get_community;
+use crate::database::actions::post::{
+    get_all_posts, get_children_posts_of, get_posts_of_community, PostInformation,
+};
 use crate::database::get_conn_from_pool;
+use crate::database::models::{DatabaseFederatedUser, DatabaseLocalUser};
 use crate::federation::schemas::{ContentType, UpdatePost, User};
 use crate::internal::authentication::authenticate;
 use crate::internal::LocatedCommunity;
@@ -23,7 +27,7 @@ pub struct GetPost {
 pub(crate) struct LocatedPost {
     pub(crate) id: Uuid,
     pub(crate) community: LocatedCommunity,
-    pub(crate) parent_post: Uuid,
+    pub(crate) parent_post: Option<Uuid>,
     pub(crate) children: Vec<Uuid>,
     pub(crate) title: String,
     pub(crate) content: Vec<ContentType>,
@@ -51,15 +55,15 @@ pub(crate) async fn get_post(
     .ok_or(HttpResponse::NotFound().finish())?;
 
     let conn = get_conn_from_pool(pool.clone())?;
-    let parent = post.parent.clone();
+    let parent = post.post.clone();
     let children = web::block(move || get_children_posts_of(&conn, &parent))
         .await?
         .unwrap_or_default();
 
     let lp = LocatedPost {
         id: post
-            .user
-            .username
+            .post
+            .uuid
             .parse()
             .map_err(|e| RouteError::UuidParse(e))?,
         community: LocatedCommunity::Local {
@@ -67,9 +71,8 @@ pub(crate) async fn get_post(
         },
         parent_post: post
             .parent
-            .uuid
-            .parse()
-            .map_err(|e| RouteError::UuidParse(e))?,
+            .map(|u| u.uuid.parse().map_err(|e| RouteError::UuidParse(e)))
+            .transpose()?,
         children: children
             .into_iter()
             .map(|p| Ok(p.post.uuid.parse()?))
@@ -99,10 +102,62 @@ pub(crate) async fn list_posts(
 ) -> Result<HttpResponse> {
     let (_, _local_user) = authenticate(pool.clone(), request)?;
 
-    // TODO: Implement /internal/posts (GET)
+    let conn = get_conn_from_pool(pool.clone())?;
+    // Specialised code path for a community being specified
+    let posts = web::block(move || {
+        let posts = match &_query.community {
+            None => get_all_posts(&conn),
+            Some(c) => {
+                let community = get_community(&conn, c)?.ok_or(diesel::NotFound)?;
+                get_posts_of_community(&conn, &community)
+            }
+        }?
+        .unwrap_or_default();
+        posts
+            .into_iter()
+            .map(|p| {
+                use crate::database::actions::post;
+                let post = post::get_post(
+                    &conn,
+                    &p.uuid.parse().map_err(|e| RouteError::UuidParse(e))?,
+                )?
+                .ok_or(diesel::NotFound)?;
+                let children = get_children_posts_of(&conn, &post.post)?.unwrap_or_default();
+                Ok((post, children))
+            })
+            .collect::<Result<Vec<(PostInformation, Vec<PostInformation>)>, RouteError>>()
+    })
+    .await?;
 
-    // Return type: single post
-    unimplemented!()
+    let posts = posts
+        .into_iter()
+        .map(|(p, c)| {
+            Ok(LocatedPost {
+                id: p.post.uuid.parse().map_err(|e| RouteError::UuidParse(e))?,
+                community: LocatedCommunity::Local {
+                    id: p.community.name,
+                },
+                parent_post: None,
+                children: c
+                    .into_iter()
+                    .map(|h| Ok(h.post.uuid.parse().map_err(|e| RouteError::UuidParse(e))?))
+                    .collect::<Result<Vec<Uuid>, RouteError>>()?,
+                title: p.post.title,
+                content: p.content,
+                author: User {
+                    id: p.user.username,
+                    host: match p.user_details {
+                        Either::Left(_) => HOSTNAME.to_string(),
+                        Either::Right(f) => f.host,
+                    },
+                },
+                modified: p.post.modified,
+                created: p.post.created,
+            })
+        })
+        .collect::<Result<Vec<LocatedPost>, RouteError>>()?;
+
+    Ok(HttpResponse::Ok().json(posts))
 }
 
 #[derive(Serialize, Deserialize)]

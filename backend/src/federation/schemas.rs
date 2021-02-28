@@ -57,7 +57,7 @@ pub(crate) struct PostTimeStamp {
 pub(crate) struct Post {
     pub(crate) id: Uuid,
     pub(crate) community: String,
-    pub(crate) parent_post: Uuid,
+    pub(crate) parent_post: Option<Uuid>,
     pub(crate) children: Vec<Uuid>,
     pub(crate) title: String,
     pub(crate) content: Vec<ContentType>,

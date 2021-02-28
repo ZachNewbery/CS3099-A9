@@ -110,7 +110,7 @@ pub(crate) async fn get_post_by_id(
 
     let conn = get_conn_from_pool(pool.clone())?;
 
-    let parent = post.parent.clone();
+    let parent = post.post.clone();
     let children = web::block(move || get_children_posts_of(&conn, &parent))
         .await?
         .unwrap_or_default();
@@ -124,9 +124,8 @@ pub(crate) async fn get_post_by_id(
         community: post.community.name,
         parent_post: post
             .parent
-            .uuid
-            .parse()
-            .map_err(|e| RouteError::UuidParse(e))?,
+            .map(|u| u.uuid.parse().map_err(|e| RouteError::UuidParse(e)))
+            .transpose()?,
         children: children
             .into_iter()
             .map(|p| Ok(p.post.uuid.parse()?))
