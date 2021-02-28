@@ -22,20 +22,19 @@ pub(crate) fn get_posts_of_community(
         .optional()
 }
 
+pub struct PostInformation {
+    pub post: DatabasePost,
+    pub content: Vec<ContentType>,
+    pub community: DatabaseCommunity,
+    pub user: DatabaseUser,
+    pub user_details: Either<DatabaseLocalUser, DatabaseFederatedUser>,
+    pub parent: DatabasePost,
+}
+
 pub(crate) fn get_post(
     conn: &MysqlConnection,
     uuid_: &Uuid,
-) -> Result<
-    Option<(
-        DatabasePost,
-        Vec<ContentType>,
-        DatabaseCommunity,
-        DatabaseUser,
-        Either<DatabaseLocalUser, DatabaseFederatedUser>,
-        DatabasePost, // Parent
-    )>,
-    diesel::result::Error,
-> {
+) -> Result<Option<PostInformation>, diesel::result::Error> {
     use crate::database::schema::Communities::dsl::*;
 
     use crate::database::schema::Posts::dsl::*;
@@ -61,9 +60,16 @@ pub(crate) fn get_post(
 
     let parent = get_parent_of(conn, &post)?;
 
-    let user_detail = get_user_detail(conn, &user)?;
+    let user_details = get_user_detail(conn, &user)?;
 
-    Ok(Some((post, content, community, user, user_detail, parent)))
+    Ok(Some(PostInformation {
+        post,
+        content,
+        community,
+        user,
+        user_details,
+        parent,
+    }))
 }
 
 pub(crate) fn get_parent_of(
@@ -76,18 +82,7 @@ pub(crate) fn get_parent_of(
 pub(crate) fn get_children_posts_of(
     conn: &MysqlConnection,
     parent: &DatabasePost,
-) -> Result<
-    Option<
-        Vec<(
-            DatabasePost,
-            Vec<ContentType>,
-            DatabaseCommunity,
-            DatabaseUser,
-            Either<DatabaseLocalUser, DatabaseFederatedUser>,
-        )>,
-    >,
-    diesel::result::Error,
-> {
+) -> Result<Option<Vec<PostInformation>>, diesel::result::Error> {
     use crate::database::schema::Communities::dsl::*;
 
     use crate::database::schema::Posts::dsl::*;
@@ -112,13 +107,14 @@ pub(crate) fn get_children_posts_of(
     let children = children
         .into_iter()
         .map(|(p, c, u)| {
-            Ok((
-                p.clone(),
-                get_content_of_post(conn, &p)?,
-                c,
-                u.clone(),
-                get_user_detail(conn, &u)?,
-            ))
+            Ok(PostInformation {
+                post: p.clone(),
+                content: get_content_of_post(conn, &p)?,
+                community: c,
+                user: u.clone(),
+                user_details: get_user_detail(conn, &u)?,
+                parent: parent.clone(),
+            })
         })
         .collect::<Result<Vec<_>, diesel::result::Error>>()?;
 

@@ -1,8 +1,14 @@
-use crate::federation::schemas::{ContentType, UpdatePost};
+use crate::database::actions::post::get_children_posts_of;
+use crate::database::get_conn_from_pool;
+use crate::federation::schemas::{ContentType, UpdatePost, User};
 use crate::internal::authentication::authenticate;
 use crate::internal::LocatedCommunity;
+use crate::util::route_error::RouteError;
+use crate::util::HOSTNAME;
 use crate::DBPool;
 use actix_web::{delete, get, patch, post, web, HttpRequest, HttpResponse, Result};
+use chrono::NaiveDateTime;
+use either::Either;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -10,6 +16,20 @@ use uuid::Uuid;
 pub struct GetPost {
     host: Option<String>,
     community: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct LocatedPost {
+    pub(crate) id: Uuid,
+    pub(crate) community: LocatedCommunity,
+    pub(crate) parent_post: Uuid,
+    pub(crate) children: Vec<Uuid>,
+    pub(crate) title: String,
+    pub(crate) content: Vec<ContentType>,
+    pub(crate) author: User,
+    pub(crate) modified: NaiveDateTime,
+    pub(crate) created: NaiveDateTime,
 }
 
 #[get("/posts/{id}")]
@@ -21,10 +41,54 @@ pub(crate) async fn get_post(
 ) -> Result<HttpResponse> {
     let (_, _local_user) = authenticate(pool.clone(), request)?;
 
-    // TODO: Implement /internal/posts/id (GET)
+    // TODO: Add federated lookup
+    let conn = get_conn_from_pool(pool.clone())?;
+    let post = web::block(move || {
+        use crate::database::actions::post;
+        post::get_post(&conn, &_id)
+    })
+    .await?
+    .ok_or(HttpResponse::NotFound().finish())?;
 
-    // Return type: see document
-    unimplemented!()
+    let conn = get_conn_from_pool(pool.clone())?;
+    let parent = post.parent.clone();
+    let children = web::block(move || get_children_posts_of(&conn, &parent))
+        .await?
+        .unwrap_or_default();
+
+    let lp = LocatedPost {
+        id: post
+            .user
+            .username
+            .parse()
+            .map_err(|e| RouteError::UuidParse(e))?,
+        community: LocatedCommunity::Local {
+            id: post.community.name,
+        },
+        parent_post: post
+            .parent
+            .uuid
+            .parse()
+            .map_err(|e| RouteError::UuidParse(e))?,
+        children: children
+            .into_iter()
+            .map(|p| Ok(p.post.uuid.parse()?))
+            .collect::<Result<Vec<_>, RouteError>>()?,
+        title: post.post.title,
+        content: post.content,
+        author: User {
+            id: post.user.username,
+            host: match post.user_details {
+                Either::Left(_) => HOSTNAME.to_string(),
+                Either::Right(f) => f.host,
+            },
+        },
+        modified: post.post.modified,
+        created: post.post.created,
+    };
+
+    // Return type: a monstrosity, honestly.
+    Ok(HttpResponse::Ok().json(lp))
 }
 
 #[get("/posts")]

@@ -12,6 +12,7 @@ use crate::database::get_conn_from_pool;
 
 use crate::federation::schemas::{ContentType, NewPost, Post, User};
 use crate::util::route_error::RouteError;
+use crate::util::HOSTNAME;
 use crate::DBPool;
 use diesel::Connection;
 use either::Either;
@@ -103,39 +104,44 @@ pub(crate) async fn get_post_by_id(
 
     let conn = get_conn_from_pool(pool.clone())?;
 
-    let (post, content, community, user, detail, parent) = web::block(move || get_post(&conn, &id))
+    let post = web::block(move || get_post(&conn, &id))
         .await?
         .ok_or(RouteError::NotFound)?;
 
     let conn = get_conn_from_pool(pool.clone())?;
 
-    let parent_ = post.clone();
-    let children = web::block(move || get_children_posts_of(&conn, &parent_))
+    let parent = post.parent.clone();
+    let children = web::block(move || get_children_posts_of(&conn, &parent))
         .await?
         .unwrap_or_default();
 
     let p = Post {
-        id: user
+        id: post
+            .user
             .username
             .parse()
             .map_err(|e| RouteError::UuidParse(e))?,
-        community: community.name,
-        parent_post: parent.uuid.parse().map_err(|e| RouteError::UuidParse(e))?,
+        community: post.community.name,
+        parent_post: post
+            .parent
+            .uuid
+            .parse()
+            .map_err(|e| RouteError::UuidParse(e))?,
         children: children
             .into_iter()
-            .map(|p| Ok(p.0.uuid.parse()?))
+            .map(|p| Ok(p.post.uuid.parse()?))
             .collect::<Result<Vec<_>, RouteError>>()?,
-        title: community.title,
-        content,
+        title: post.post.title,
+        content: post.content,
         author: User {
-            id: user.username,
-            host: match detail {
-                Either::Left(_l) => "REPLACE-ME.com".to_string(),
+            id: post.user.username,
+            host: match post.user_details {
+                Either::Left(_l) => HOSTNAME.to_string(),
                 Either::Right(f) => f.host,
             },
         },
-        modified: post.modified,
-        created: post.created,
+        modified: post.post.modified,
+        created: post.post.created,
     };
 
     Ok(HttpResponse::Created().json(p))
@@ -170,7 +176,7 @@ pub(crate) async fn edit_post(
         // Start new transaction
         conn.transaction(|| {
             // Find the post
-            let (post, _, _, _, _, _) = get_post(&conn, &id)?.ok_or(diesel::NotFound)?;
+            let post = get_post(&conn, &id)?.ok_or(diesel::NotFound)?.post;
 
             let post = modify_post_title(&conn, post, &edit_post.title)?;
 
@@ -214,7 +220,7 @@ pub(crate) async fn delete_post(
     let conn = get_conn_from_pool(pool)?;
     web::block(move || {
         conn.transaction(|| {
-            let (post, _, _, _, _, _) = get_post(&conn, &id)?.ok_or(diesel::NotFound)?;
+            let post = get_post(&conn, &id)?.ok_or(diesel::NotFound)?.post;
 
             remove_post(&conn, post)?;
 
