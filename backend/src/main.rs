@@ -70,7 +70,10 @@ async fn main() -> std::io::Result<()> {
                             .service(search_users)
                             .service(user_by_id)
                             .service(send_user_message),
-                    ),
+                    )
+                    .service(federation::key)
+                    .service(federation::hello)
+                    .service(federation::discover),
             )
             .service(
                 web::scope("/internal")
@@ -86,10 +89,8 @@ async fn main() -> std::io::Result<()> {
                     .service(internal::communities::list_communities)
                     .service(internal::communities::create_community),
             )
-            .service(federation::hello)
-            .service(federation::key)
-            .service(federation::discover)
     })
+    .workers(2)
     .bind(bind)?
     .run()
     .await

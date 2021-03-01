@@ -7,7 +7,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-actix-web = "^3.2.0"
+actix-web = { version = "3.3.2", features = ["openssl"] }
 dotenv = "^0.15.0"
 serde = "^1.0.117"
 diesel = { version = "^1.4.4", features = ["mysql", "r2d2", "chrono", "numeric"] }
@@ -21,6 +21,9 @@ jsonwebtoken = "^7.2.0"
 actix-web-httpauth = "^0.5.0"
 actix-cors = "^0.5.2"
 http-signature-normalization-actix = { version = "0.4.1", default-features = false, features = ["sha-2"] }
-sha2 = "0.9.3"
+rust-crypto = "0.2.36"
 actix-rt = "2.1.0"
 base64 = "0.13.0"
+awc = "2.0.3"
+hex = "0.4.2"
+openssl = "0.10.32"

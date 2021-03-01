@@ -7,7 +7,7 @@ use crate::database::get_conn_from_pool;
 use crate::database::models::{DatabaseLocalUser, DatabaseNewPost};
 use crate::federation::posts::EditPost;
 use crate::federation::schemas::{ContentType, User};
-use crate::internal::authentication::authenticate;
+use crate::internal::authentication::{authenticate, request_wrapper};
 use crate::internal::LocatedCommunity;
 use crate::util::route_error::RouteError;
 use crate::util::HOSTNAME;
@@ -47,8 +47,19 @@ pub(crate) async fn get_post(
     request: HttpRequest,
 ) -> Result<HttpResponse> {
     let (_, _local_user) = authenticate(pool.clone(), request)?;
-
     // TODO: Add federated lookup
+    // let req = awc::Client::builder()
+    //     .disable_timeout()
+    //     .finish()
+    //     .get(format!(
+    //         "https://cs3099user-a7.host.cs.st-andrews.ac.uk/fed/posts/{}",
+    //         id
+    //     ))
+    //     .header("User-Agent", "Actix Web")
+    //     .header("Client-Host", "cs3099user-a9.host.cs.st-andrews.ac.uk")
+    //     .send()
+    //     .await?;
+
     let conn = get_conn_from_pool(pool.clone())?;
     let post = web::block(move || {
         use crate::database::actions::post;
@@ -104,7 +115,6 @@ pub(crate) async fn list_posts(
     request: HttpRequest,
 ) -> Result<HttpResponse> {
     let (_, _local_user) = authenticate(pool.clone(), request)?;
-
     let conn = get_conn_from_pool(pool.clone())?;
     // Specialised code path for a community being specified
     let posts = web::block(move || {

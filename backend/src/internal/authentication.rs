@@ -1,15 +1,23 @@
-use base64::{encode};
+use actix_rt::System;
 use actix_web::http::header::Header as ActixHeader;
-use actix_web::{client::Client, error::BlockingError, client::ClientRequest};
-use http_signature_normalization_actix::prelude::*;
-use sha2::{Digest, Sha512};
+use actix_web::{client::ClientRequest, error::BlockingError};
 use actix_web::{web, HttpRequest, HttpResponse};
 use actix_web_httpauth::headers::authorization::{Authorization, Bearer};
+use awc::{http, Client};
+use base64::encode;
 use chrono::Utc;
+use crypto::{digest::Digest, sha2::Sha512};
+use hex::decode;
+use http_signature_normalization_actix::prelude::*;
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, TokenData, Validation};
+use openssl::hash::MessageDigest;
+use openssl::pkey::PKey;
+use openssl::rsa::Rsa;
+use openssl::sign::{Signer, Verifier};
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
+use std::fs;
 use std::time::{Duration, SystemTime};
+use uuid::Uuid;
 
 use crate::database::actions::local::validate_session;
 use crate::database::get_conn_from_pool;
@@ -87,25 +95,60 @@ pub fn authenticate(
     Ok((token, local_user))
 }
 
-pub async fn request_wrapper(
-    request: ClientRequest
-) -> Result<HttpResponse, Box<dyn std::error::Error>> {
+pub async fn request_wrapper() -> String {
     let config = Config::default();
-    let digest = Sha512::new();
+    let mut digest = Sha512::new();
 
-    let mut response = request.header("User-Agent", "Actix Web")
-                              .set(actix_web::http::header::Date(SystemTime::now().into()))
-                              .signature_with_digest(config, "my-key-id", digest, "", |s| {
-                                Ok(base64::encode(s)) as Result<_, MyError>
-                            })
-                            .await?;
-                            // .send()
-                            // .await
-                            // .map_err(|e| {
-                            //     eprintln!("Error, {}", e);
-                            //     MyError::SendRequest
-                            // })?;
-    unimplemented!();
+    // hash body of HTTP request (need to work out how to do for post requests!)
+    digest.input_str("");
+    let hex = hex::decode(digest.result_str()).expect("Hex string decoded");
+    let digest_header = base64::encode(hex);
+    let date = SystemTime::now().into();
+
+    // create request to be signed
+    let req = awc::Client::new()
+        .get("https://cs3099user-a7.host.cs.st-andrews.ac.uk/fed/posts")
+        .header("User-Agent", "Actix Web")
+        // .header("Digest", ["sha-512=", &digest_header].join(""))
+        .set(actix_web::http::header::Date(date))
+        .send()
+        .await;
+    // builder().connector(
+    //     awc::Connector::new()
+    //             .timeout(Duration::from_secs(20))
+    //             .finish(),
+    // )
+    // .finish()
+    // construct string as per supergroup protocol
+    // let header_map = req.headers();
+    // let mut string = String::new();
+    // string.push_str(&format!("(request-target): get {}\n", "/fed/posts"));
+    // string.push_str(&format!("host: {}\n", "https://cs3099user-a9.host.cs.st-andrews.ac.uk/"));
+    // string.push_str(&format!("client-host: {}\n", "https://cs3099user-a7.host.cs.st-andrews.ac.uk"));
+    // string.push_str(&format!("date: {}\n", date));
+    // string.push_str(&format!("digest: SHA-512={}", digest_header));
+
+    // // obtain private key from file and sign string
+    // let pkey = PKey::private_key_from_pem(&fs::read("fed_auth.pem").expect("reading key")).expect("Getting private key.");
+    // let mut signer = Signer::new(MessageDigest::sha512(), &pkey).unwrap();
+    // signer.update(string.as_bytes()).unwrap();
+
+    // // base64 encode string
+    // let signature = signer.sign_to_vec().unwrap();
+    // let encoded_sign = base64::encode(signature);
+
+    // // append header to request
+    // let mut header_val = String::new();
+    // header_val.push_str("keyId=\"rsa-global\",algorithm=\"hs2019\",headers=\"(request-target) host client-host date digest\",signature=");
+    // header_val.push_str(&encoded_sign);
+    // let new_req = req.header("Signature", header_val);
+
+    // send request?
+    // let response = new_req.timeout(Duration::from_secs(20)).send().await;
+
+    println!("Response: {:?}", req);
+
+    return "done".to_string();
 }
 
 #[derive(Debug, thiserror::Error)]
