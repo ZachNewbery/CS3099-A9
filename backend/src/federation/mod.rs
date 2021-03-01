@@ -11,7 +11,8 @@ pub async fn hello(web::Path(name): web::Path<String>) -> Result<String> {
 pub(crate) async fn key() -> Result<HttpResponse> {
     Ok(HttpResponse::Ok()
         .header(http::header::CONTENT_TYPE, "application/x-pem-file")
-        .body("-----BEGIN PUBLIC KEY-----\n
+        .body(
+            "-----BEGIN PUBLIC KEY-----\n
     MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxhGEP9mv/joN3UtyV0XN
     Bgwn4N9wKB7N0IDR4dN+JHqmTitUUSbm8h3wCxScbAWhhNgrqHf61kbfmnbjKf3x
     /uj5dj1t6PuGudjInB+T5/ADw01YpjF/ASt6WqB92ch3QGvaHiomVVz5yWPQzYzz
