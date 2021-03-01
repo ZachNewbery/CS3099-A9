@@ -6,6 +6,7 @@ pub mod posts;
 pub mod user;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(untagged)]
 pub enum LocatedCommunity {
     Local { id: String },
     Federated { id: String, host: String },
