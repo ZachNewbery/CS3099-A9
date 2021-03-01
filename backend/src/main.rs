@@ -47,7 +47,11 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .wrap(middleware::Logger::default())
-            .wrap(Cors::default().send_wildcard())
+            .wrap(Cors::default()
+                .allow_any_origin()
+                .send_wildcard()
+                .allow_any_method()
+            )
             .data(pool.clone())
             .service(
                 web::scope("/federation")
