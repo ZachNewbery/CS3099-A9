@@ -7,7 +7,7 @@ use crate::database::get_conn_from_pool;
 use crate::database::models::{DatabaseLocalUser, DatabaseNewPost};
 use crate::federation::posts::EditPost;
 use crate::federation::schemas::{ContentType, User};
-use crate::internal::authentication::{authenticate, request_wrapper};
+use crate::internal::authentication::{authenticate};
 use crate::internal::LocatedCommunity;
 use crate::util::route_error::RouteError;
 use crate::util::HOSTNAME;
@@ -214,7 +214,7 @@ pub(crate) async fn search_posts(
             p.content.iter().any(|c| {
                 let content = match c {
                     ContentType::Text { text } => text,
-                    ContentType::Markdown { text } => text,
+                    ContentType::Markdown { markdown: text } => text,
                 };
                 content.contains(&query.search)
             })

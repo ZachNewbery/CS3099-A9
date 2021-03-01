@@ -159,7 +159,7 @@ pub(crate) fn get_content_of_post(
             &mut DatabaseMarkdown::belonging_to(post)
                 .load::<DatabaseMarkdown>(conn)?
                 .into_iter()
-                .map(|m| ContentType::Markdown { text: m.content })
+                .map(|m| ContentType::Markdown { markdown: m.content })
                 .collect(),
         )
     }
@@ -241,7 +241,7 @@ pub(crate) fn put_post_contents(
                     .values((content.eq(text), postId.eq(post.id)))
                     .execute(conn)?;
             }
-            ContentType::Markdown { text } => {
+            ContentType::Markdown { markdown: text } => {
                 use crate::database::schema::Markdown::dsl::*;
                 diesel::insert_into(Markdown)
                     .values((content.eq(text), postId.eq(post.id)))

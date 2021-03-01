@@ -1,22 +1,22 @@
-use actix_rt::System;
+
 use actix_web::http::header::Header as ActixHeader;
-use actix_web::{client::ClientRequest, error::BlockingError};
+use actix_web::{error::BlockingError};
 use actix_web::{web, HttpRequest, HttpResponse};
 use actix_web_httpauth::headers::authorization::{Authorization, Bearer};
-use awc::{http, Client};
-use base64::encode;
+
+
 use chrono::Utc;
 use crypto::{digest::Digest, sha2::Sha512};
-use hex::decode;
+
 use http_signature_normalization_actix::prelude::*;
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, TokenData, Validation};
-use openssl::hash::MessageDigest;
-use openssl::pkey::PKey;
-use openssl::rsa::Rsa;
-use openssl::sign::{Signer, Verifier};
+
+
+
+
 use serde::{Deserialize, Serialize};
-use std::fs;
-use std::time::{Duration, SystemTime};
+
+use std::time::{SystemTime};
 use uuid::Uuid;
 
 use crate::database::actions::local::validate_session;
@@ -96,13 +96,13 @@ pub fn authenticate(
 }
 
 pub async fn request_wrapper() -> String {
-    let config = Config::default();
+    let _config = Config::default();
     let mut digest = Sha512::new();
 
     // hash body of HTTP request (need to work out how to do for post requests!)
     digest.input_str("");
     let hex = hex::decode(digest.result_str()).expect("Hex string decoded");
-    let digest_header = base64::encode(hex);
+    let _digest_header = base64::encode(hex);
     let date = SystemTime::now().into();
 
     // create request to be signed
