@@ -259,7 +259,7 @@ pub struct CreatePost {
 #[post("/posts/create")]
 pub(crate) async fn create_post(
     pool: web::Data<DBPool>,
-    post: web::Data<CreatePost>,
+    post: web::Json<CreatePost>,
     request: HttpRequest,
 ) -> Result<HttpResponse> {
     let (_, _local_user) = authenticate(pool.clone(), request)?;
