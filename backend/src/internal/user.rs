@@ -124,7 +124,7 @@ pub(crate) async fn edit_profile(
     let new_session = generate_session();
     let token = Token::new(local_user.id, &new_session)
         .generate_token()
-        .map_err(|_| HttpResponse::InternalServerError().finish())?; // TODO: Make this error type
+        .map_err(|_| HttpResponse::InternalServerError().finish())?;
 
     web::block(move || {
         conn.transaction(|| {

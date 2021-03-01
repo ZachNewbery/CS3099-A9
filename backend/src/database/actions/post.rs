@@ -167,7 +167,7 @@ pub(crate) fn get_content_of_post(
     Ok(post_content)
 }
 
-pub(crate) fn clear_post_contents(
+pub(crate) fn remove_post_contents(
     conn: &MysqlConnection,
     post: &DatabasePost,
 ) -> Result<(), diesel::result::Error> {
@@ -208,7 +208,7 @@ pub(crate) fn remove_post(
     conn: &MysqlConnection,
     post: DatabasePost,
 ) -> Result<(), diesel::result::Error> {
-    clear_post_contents(conn, &post)?;
+    remove_post_contents(conn, &post)?;
 
     diesel::delete(&post).execute(conn)?;
 
@@ -231,7 +231,7 @@ pub(crate) fn put_post(
 pub(crate) fn put_post_contents(
     conn: &MysqlConnection,
     post: &DatabasePost,
-    contents: &Vec<ContentType>,
+    contents: &[ContentType],
 ) -> Result<(), diesel::result::Error> {
     for content_ in contents {
         match content_ {
