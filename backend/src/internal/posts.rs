@@ -119,6 +119,7 @@ pub(crate) async fn list_posts(
             Some(c) => {
                 let community = get_community(&conn, c)?.ok_or(diesel::NotFound)?;
                 println!("community get okay");
+                dbg!(&community);
                 get_posts_of_community(&conn, &community)
             }
         }?
@@ -129,8 +130,10 @@ pub(crate) async fn list_posts(
                 use crate::database::actions::post;
                 let post = post::get_post(&conn, &p.uuid.parse().map_err(RouteError::UuidParse)?)?
                     .ok_or(diesel::NotFound)?;
+                dbg!(&post);
                 println!("post get okay");
-                let children = get_children_posts_of(&conn, &post.post)?.unwrap_or_default();
+                let children = get_children_posts_of(&conn, &p)?.unwrap_or_default();
+                dbg!(&children);
                 println!("children get okay");
                 Ok((post, children))
             })
