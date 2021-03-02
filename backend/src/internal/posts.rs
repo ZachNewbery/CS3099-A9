@@ -118,23 +118,31 @@ pub(crate) async fn list_posts(
             None => get_all_posts(&conn),
             Some(c) => {
                 let community = get_community(&conn, c)?.ok_or(diesel::NotFound)?;
+
                 println!("community get okay");
-                dbg!(&community);
+                println!("{:?}", &community);
+
                 get_posts_of_community(&conn, &community)
             }
         }?
         .unwrap_or_default();
+
+        println!("{:?}", &posts);
+
         posts
             .into_iter()
             .map(|p| {
                 use crate::database::actions::post;
                 let post = post::get_post(&conn, &p.uuid.parse().map_err(RouteError::UuidParse)?)?
                     .ok_or(diesel::NotFound)?;
-                dbg!(&post);
+
+                println!("{:?}", &post);
                 println!("post get okay");
                 let children = get_children_posts_of(&conn, &p)?.unwrap_or_default();
-                dbg!(&children);
+
+                println!("{:?}", &children);
                 println!("children get okay");
+
                 Ok((post, children))
             })
             .collect::<Result<Vec<(PostInformation, Vec<PostInformation>)>, RouteError>>()
