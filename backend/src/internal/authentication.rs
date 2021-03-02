@@ -1,9 +1,7 @@
-
+use actix_web::error::BlockingError;
 use actix_web::http::header::Header as ActixHeader;
-use actix_web::{error::BlockingError};
 use actix_web::{web, HttpRequest, HttpResponse};
 use actix_web_httpauth::headers::authorization::{Authorization, Bearer};
-
 
 use chrono::Utc;
 use crypto::{digest::Digest, sha2::Sha512};
@@ -11,12 +9,9 @@ use crypto::{digest::Digest, sha2::Sha512};
 use http_signature_normalization_actix::prelude::*;
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, TokenData, Validation};
 
-
-
-
 use serde::{Deserialize, Serialize};
 
-use std::time::{SystemTime};
+use std::time::SystemTime;
 use uuid::Uuid;
 
 use crate::database::actions::local::validate_session;

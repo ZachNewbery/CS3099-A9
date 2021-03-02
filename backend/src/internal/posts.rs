@@ -7,7 +7,7 @@ use crate::database::get_conn_from_pool;
 use crate::database::models::{DatabaseLocalUser, DatabaseNewPost};
 use crate::federation::posts::EditPost;
 use crate::federation::schemas::{ContentType, User};
-use crate::internal::authentication::{authenticate};
+use crate::internal::authentication::authenticate;
 use crate::internal::LocatedCommunity;
 use crate::util::route_error::RouteError;
 use crate::util::HOSTNAME;
@@ -295,7 +295,11 @@ pub(crate) async fn create_post(
             };
 
             let conn = get_conn_from_pool(pool.clone())?;
-            web::block(move || put_post(&conn, &new_post)).await?;
+            web::block(move || {
+                let db_post = put_post(&conn, &new_post)?;
+                put_post_contents(&conn, &db_post, &post.content[..])
+            })
+            .await?;
             Ok(HttpResponse::Ok().finish())
         }
         LocatedCommunity::Federated { .. } => Ok(HttpResponse::NotImplemented().finish()),
