@@ -1,6 +1,6 @@
 import React, { useRef, useState } from "react";
 import { Link, Redirect, useHistory } from "react-router-dom";
-import { isAuthenticated, fetchData } from "./helpers";
+import { isAuthenticated, fetchData, StyledForm } from "./helpers";
 import { Logo } from "./assets/Logo";
 
 const createUser = ({ username, email, password }) => {
@@ -59,7 +59,7 @@ export const Registration = () => {
   if (isAuthenticated()) return <Redirect to="/" />;
 
   return (
-    <form ref={formRef}>
+    <StyledForm ref={formRef}>
       <Logo />
       <label>
         Username
@@ -82,9 +82,7 @@ export const Registration = () => {
         <p className="error">{errors.confirmPassword}</p>
       </label>
       <button onClick={handleSubmit}>Register</button>
-      <p>
-        <Link to="/login">Already registered?</Link>
-      </p>
-    </form>
+      <Link to="/auth/login" className="switch-mode-link">Already registered?</Link>
+    </StyledForm>
   );
 };

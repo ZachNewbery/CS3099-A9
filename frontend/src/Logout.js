@@ -10,5 +10,5 @@ export const Logout = () => {
   localStorage.removeItem("username");
   localStorage.removeItem("email");
 
-  return <Redirect to="/login" />;
+  return <Redirect to="/auth/login" />;
 }

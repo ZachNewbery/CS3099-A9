@@ -2,63 +2,43 @@ import React, { useRef, useState } from "react";
 import styled from "styled-components";
 import moment from "moment";
 import { useAsync } from "react-async";
-import { fetchData, getCurrentUser } from "../helpers";
+import { fetchData, getCurrentUser, Spinner, Error } from "../helpers";
 import { StyledBlock, StyledContent, renderContent } from "./PostContent";
 
-const loadChildPosts = async ({ children, postId }) => {
+const loadChildPosts = async ({ children }) => {
   let posts = [];
 
   for (const child of children) {
-    const post = await fetchData(`${process.env.REACT_APP_API}/posts/${postId}`);
+    const post = await fetchData(`${process.env.REACT_APP_API}/posts/${child}`);
     posts.push(post);
   }
-  
+
   return posts;
 };
 
 const createComment = async ({ postId, communityId, content }) => {
-  // author: {id: "Fraser", host: "Academoo"}
-  // community: "GeneralCowPictures"
-  // content: [{text: {text: "bruh"}}]
-  // parentPost: "bb6964f3-a1d3-4007-ad48-a9116b801600"
-  // title: ""
-
   const post = {
-    parentPost: postId,
+    parent: postId,
     content: [
       {
-        text: {
-          text: content
-        },
+        text: content,
       },
     ],
-    community: communityId,
-    title: "",
-    author: getCurrentUser()
+    community: {
+      id: communityId, // I changed this :( lol
+    },
+    title: "atitle",
   };
 
-  return fetchData(
-    `${process.env.REACT_APP_API}/posts`,
-    JSON.stringify(post),
-    "POST"
-  );
+  return fetchData(`${process.env.REACT_APP_API}/posts/create`, JSON.stringify(post), "POST");
 };
 
 const Comment = ({ author, content, created, modified }) => {
-  // author: {host: "Academoo", id: "darren"}
-  // children: []
-  // community: "GeneralCowPictures"
-  // content: [{text: {text: "no! ban me u wont"}}]
-  // 0: {text: {text: "no! ban me u wont"}}
-  // created: 1613414547
-  // id: "3ce1e327-7ca8-4569-b24f-dc57632dee4d"
-  // modified: 1613414547
-  // parentPost: "bb6964f3-a1d3-4007-ad48-a9116b801600"
-  // title: ""
-  
   return (
     <StyledContent>
-          {renderContent(content)}
+      {content.map((block, i) => (
+        <StyledBlock key={i}>{renderContent(block)}</StyledBlock>
+      ))}
       <hr />
       <div className="header">
         <p className="user" title={author.id}>
@@ -90,7 +70,7 @@ export const CreateComment = ({ postId, communityId, refresh }) => {
 
     if (Object.keys(currentErrors).length === 0) {
       try {
-        await createComment({ postId, content, communityId })
+        await createComment({ postId, content, communityId });
         return refresh();
       } catch (error) {
         currentErrors.content = error.message; // TODO: see how they're passing errors
@@ -112,21 +92,21 @@ export const CreateComment = ({ postId, communityId, refresh }) => {
 };
 
 export const Comments = ({ children }) => {
-  const { data, isLoading } = useAsync(loadChildPosts, { children });
+  const { data: comments, isLoading, error } = useAsync(loadChildPosts, { children });
 
-  if (isLoading) {
-    return <h1>Loading Comments</h1>;
-  }
+  if (isLoading) return <Spinner />;
+  if (error) return <Error message={error} />;
+
+  console.log(comments);
 
   return (
     <StyledComments>
-      {data.map((comment) => (
+      {comments.map((comment) => (
         <Comment key={comment.id} {...comment} />
       ))}
     </StyledComments>
   );
 };
-
 
 const StyledComments = styled.div`
   margin: 0;

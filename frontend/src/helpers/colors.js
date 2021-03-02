@@ -1,9 +1,21 @@
 export const colors = {
-  veryLightGray: "#e5e5e5",
+  veryLightGray: "#ededed",
+  mediumLightGray: "#e6e6e6",
   lightGray: "#b9b9b9",
   gray: "#969696",
   darkGray: "#656565",
   blue: "#0061ff",
   lightBlue: "#5595ff",
-  white: "rgba(255, 255, 255, 0.9)"
-}
+  white: "rgba(255, 255, 255, 0.9)",
+  softWhite: "rgba(255, 255, 255, 0.775)",
+  text: "#3a3a3a",
+  lightText: "#5c5c5c",
+  blueGradient: "linear-gradient(to left, #1143f7, #0007d6, #0d0ab7)",
+  darkBlueGradient: "linear-gradient(to left, #0733cf, #0005a3, #090788)",
+  lightBlueGradient: "linear-gradient(to left, #2250f7, #0008f5, #0f0bd5)",
+  blueInsetShadow: "inset 0 0 0px 1px rgb(0 0 0 / 20%), inset 0px 0px 0px 2.2px rgb(255 255 255 / 20%), inset 0 0 10px 2px rgb(255 255 255 / 40%)",
+  modalBackground: "rgba(0, 0, 0, 0.5)",
+  pageBackground: "#f8f9f9",
+  scrollbarColor: "#aeb0b6",
+  scrollbarHover: "#959ba6",
+};

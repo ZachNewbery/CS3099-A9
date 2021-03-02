@@ -1,72 +1,53 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
-import { Redirect, Link, Switch, Route } from "react-router-dom";
-import { isAuthenticated } from "./helpers";
-import { ListPosts, SinglePost, CreatePost } from "./posts";
+import { Switch, Route } from "react-router-dom";
+
+import { ErrorHandledRoute } from "./components/ErrorHandledRoute";
+import { CreatePost, ListPosts, SinglePost } from "./posts";
+import { ListCommunities } from "./communities/ListCommunities";
+import { SingleCommunity } from "./communities/SingleCommunity";
 
 const StyledContainer = styled.div`
-  width: 100%;
-`;
-
-const StyledHeader = styled.div`
-  width: 100%;
-  padding: 5px 0;
-  border-bottom: 1px solid lightgray;
-  background: white;
-  box-sizing: border-box;
   display: flex;
-  justify-content: center;
-  align-items: center;
-  & > div {
-    width: 500px;
-    margin: auto;
-    display: flex;
-    justify-content: space-between;
-    & > a {
-      padding: 5px 10px;
-    }
+  margin: 2rem 0;
+
+  & > .communities-container {
+    width: 15rem;
+    min-height: 20rem;
+    max-height: 30rem;
+    margin-right: 1rem;
+  }
+
+  & > .posts-container {
+    width: 35rem;
   }
 `;
 
-const StyledContent = styled.div`
-  width: 100%;
-  display: flex;
-  align-items: center;
-  flex: 1;
-  background: #ffffff;
-`;
+export const Home = ({ search, host }) => {
+  const [community, setCommunity] = useState(null);
+  const [i, setI] = useState(0);
 
-const Header = () => {
-  return (
-    <StyledHeader>
-      <div>
-        <Link to="/logout">Logout</Link>
-        <Link to="/">Home</Link>
-        <Link to="/create-post">Create Post</Link>
-      </div>
-    </StyledHeader>
-  )
-}
+  const reload = () => setI(i => i + 1);
 
-export const Home = () => {  
-  if (!isAuthenticated()) return <Redirect to='/login' />;
-
+  console.log(community);
+  
   return (
     <StyledContainer>
-      <Header />
-      <StyledContent>
+      <div className="communities-container">
+        {community && <SingleCommunity id={community} host={host} />}
+        <ListCommunities setCommunity={setCommunity} community={community} host={host} />
+      </div>
+      <div className="posts-container">
         <Switch>
-          <Route path="/post/:postId">
+          <ErrorHandledRoute path="/post/:postId">
             <SinglePost />
-          </Route>
-          <Route path="/create-post">
-            <CreatePost />
-          </Route>
+          </ErrorHandledRoute>
           <Route path="/">
-            <ListPosts />
+            <CreatePost community={community} host={host} refresh={reload} />
+            {community && <ListPosts key={`${community}${i}`} community={community} host={host} search={search} />}
           </Route>
         </Switch>
-      </StyledContent>
+      </div>
     </StyledContainer>
-  )
-}
+  );
+};

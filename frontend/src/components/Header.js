@@ -1,9 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSignOutAlt, faCog } from "@fortawesome/free-solid-svg-icons";
 import { Link } from "react-router-dom";
 
+import { Settings } from "../settings";
 import { Logo } from "../assets/Logo";
 import { fonts, colors } from "../helpers";
 
@@ -12,13 +13,17 @@ const StyledHeader = styled.header`
   height: 5rem;
   padding: 1rem;
   display: flex;
-  border-bottom: 1px solid ${colors.lightGray};
+  background: ${colors.pageBackground};
+  position: relative;
   justify-content: space-between;
-  background: ${colors.veryLightGray};
+  z-index: 10;
+  box-shadow: 0 10px 70px -30px rgb(6 27 225 / 40%);
 
   & > .logo-container {
+    text-decoration: none;
     display: flex;
     align-items: center;
+    width: 12rem;
     & > svg {
       height: 100%;
       width: auto;
@@ -30,18 +35,31 @@ const StyledHeader = styled.header`
         font-size: 1.6rem;
         font-family: ${fonts.accent};
         font-weight: normal;
+        color: ${colors.text};
       }
       & > p {
         margin: 0;
         font-size: 1.1rem;
         font-family: ${fonts.accent};
         font-weight: normal;
-        color: rgba(0, 0, 0, 0.6);
+        color: ${colors.lightText};
         letter-spacing: 1.5px;
         word-spacing: 6.1px;
         line-height: 0.5;
       }
     }
+  }
+
+  & > .content {
+    z-index: -1;
+    position: absolute;
+    left: 0;
+    top: 1.25rem;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
   }
 
   & > .actions-container {
@@ -54,51 +72,59 @@ const StyledHeader = styled.header`
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 0.4rem 0.8rem;
-      border: 1px solid ${colors.lightGray};
-      border-radius: 0.25rem;
+      padding: 0 1.25rem;
+      border-radius: 1.25rem;
       margin-left: 0.5rem;
       background: rgba(255, 255, 255, 0.6);
       font-family: ${fonts.accent};
       letter-spacing: 1.4px;
       font-size: 1rem;
-      box-shadow: 0 1.5px 1px rgba(0, 0, 0, 0.3);
+      height: 2.5rem;
+      color: ${colors.white} !important;
+      background: ${colors.blueGradient};
+      box-shadow: ${colors.blueInsetShadow};
       transition: all 0.3s;
-      color: inherit !important;
       &:hover {
-        background: rgba(255, 255, 255, 0.4);
-      }
-      &:active {
-        background: rgba(255, 255, 255, 0.2);
+        color: white !important;
+        background: ${colors.lightBlueGradient};
       }
       & > svg {
         margin-right: 0.5rem;
-        color: ${colors.darkGray};
+        color: ${colors.white};
       }
     }
   }
 `;
 
-export const Header = () => {
+export const Header = ({ children }) => {
+  const [showSettings, setShowSettings] = useState(false);
+
+  const handleShowSettings = () => setShowSettings(true);
+  const handleHideSettings = () => setShowSettings(false);
+
   return (
-    <StyledHeader>
-      <div className="logo-container">
-        <Logo />
-        <div className="logo-text">
-          <h3>Fediversity</h3>
-          <p>To The Moon!</p>
+    <>
+      <Settings show={showSettings} hide={handleHideSettings} />
+      <StyledHeader>
+        <Link to="/" className="logo-container">
+          <Logo />
+          <div className="logo-text">
+            <h3>Fediversity</h3>
+            <p>To The Moon!</p>
+          </div>
+        </Link>
+        <div className="content">{children}</div>
+        <div className="actions-container">
+          <Link to="#" className="action" onClick={handleShowSettings}>
+            <FontAwesomeIcon icon={faCog} />
+            Settings
+          </Link>
+          <Link to="/auth/logout" className="action">
+            <FontAwesomeIcon icon={faSignOutAlt} />
+            Logout
+          </Link>
         </div>
-      </div>
-      <div className="actions-container">
-        <Link to="/logout" className="action">
-          <FontAwesomeIcon icon={faSignOutAlt} />
-          Logout
-        </Link>
-        <Link to="#" className="action">
-          <FontAwesomeIcon icon={faCog} />
-          Settings
-        </Link>
-      </div>
-    </StyledHeader>
+      </StyledHeader>
+    </>
   );
 };

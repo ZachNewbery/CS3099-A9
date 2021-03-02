@@ -1,6 +1,8 @@
 import React from "react";
 import styled from "styled-components";
 
+import { colors } from "../helpers";
+
 export const StyledBlock = styled.div`
   padding: 0.8em 0;
   * {
@@ -16,13 +18,15 @@ export const StyledBlock = styled.div`
 
 export const StyledContent = styled.div`
   cursor: pointer;
-  padding: 10px;
+  display: flex;
+  height: 100%;
+  flex-flow: column nowrap;
   background: white;
-  border-radius: 5px;
-  border: 1px solid lightgray;
-  margin: 0 0 1.5em;
-  width: 100%;
-  box-sizing: border-box;
+  border: 1px solid ${colors.mediumLightGray};
+  border-radius: 0.6rem;
+  padding: 1rem;
+  margin-top: 1rem;
+
   .header {
     display: flex;
     .title {
@@ -68,15 +72,14 @@ export const StyledContent = styled.div`
   }
 `;
 
-export const renderContent = content => {
-  return content.map(block => {
-    return (
-      <>
-        {block.text && <TextContent content={block.text.text} />}
-        {block.markdown && <TextContent content={block.markdown.text} />}
-      </>
-    )
-  })
+export const renderContent = (content = []) => {
+  console.log(content);
+  return (
+    <>
+      {content.text && <TextContent content={content.text} />}
+      {content.markdown && <TextContent content={content.markdown} />}
+    </>
+  )
 }
 
 const TextContent = ({ content }) => {

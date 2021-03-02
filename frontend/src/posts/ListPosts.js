@@ -1,43 +1,32 @@
 import React, { useState, useEffect } from "react";
-import { useAsync } from "react-async";
-import { fetchData } from "../helpers";
-import { renderContent} from "./PostContent";
+import styled from "styled-components";
 import moment from "moment";
 
-const loadPosts = async ({ communityId }) => {
-  return fetchData(`${process.env.REACT_APP_API}/posts?community=${communityId}`)
-}
+import { useAsync } from "react-async";
+import { fetchData, Spinner, Error } from "../helpers";
 
-const Post = ({ author, children, content, created, modified, parentPost }) => {
-  if (parentPost) return null;
-  // author: {host: "Academoo", id: "rhona"}
-  // children: []
-  // community: "GeneralCowPictures"
-  // content: [{text: {text: "Feature: Ban Darren↵...Coming soon to Academoo near yoo"}}]
-  // created: 1613416074
-  // id: "4890cc57-b378-4bc2-a5f5-94b5211d7a1d"
-  // modified: 1613416074
-  // parentPost: "bb6964f3-a1d3-4007-ad48-a9116b801600"
-  // title: ""
-  
-  return (
-    <div>
-      <p>Author {author.id}</p>
-      <p>Comments {children.length}</p>
-      <p>Created {moment(created).fromNow()}</p>
-      {renderContent(content)}
-    </div>
-  )
-}
+import { renderContent } from "./PostContent";
+import { posts } from "./posts";
+import { Post } from "./SinglePost";
 
-export const ListPosts = ({ communityId }) => {
-  const { data: posts } = useAsync(loadPosts);
-  
+const loadPosts = async ({ host, community }) => {
+  const hostParam = host ? `host=${host}&` : "";
+  return fetchData(`${process.env.REACT_APP_API}/posts?${hostParam}community=${community}`);
+};
+
+const StyledPosts = styled.div``;
+
+export const ListPosts = ({ host, community }) => {
+  const { data: posts, isLoading, error } = useAsync(loadPosts, { host, community });
+
+  if (isLoading) return <Spinner />;
+  if (error) return <Error message={error} />;
+
   return (
-    <div>
-      {posts.map(post => (
+    <StyledPosts>
+      {posts.map((post) => (
         <Post key={post.id} {...post} />
       ))}
-    </div>
-  )
+    </StyledPosts>
+  );
 };

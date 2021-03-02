@@ -11,7 +11,7 @@ fi
 
 # Build frontend 
 echo "INFO: Building Frontend"
-# npm run build
+npm run build
 
 chmod -R 777 ./build
 

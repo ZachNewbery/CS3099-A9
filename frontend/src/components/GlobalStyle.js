@@ -1,4 +1,5 @@
 import { createGlobalStyle } from "styled-components";
+import { colors } from "../helpers";
 
 export const GlobalStyle = createGlobalStyle`
   html {
@@ -11,6 +12,9 @@ export const GlobalStyle = createGlobalStyle`
     background-color: #f8f9f9;
     font-size: 14px;
     height: 100%;
+  }
+  iframe {
+    display: none;
   }
   * {
     box-sizing: border-box;
