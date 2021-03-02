@@ -3,7 +3,7 @@ use crate::database::actions::communities::{
     set_community_admins, update_community_description, update_community_title,
 };
 use crate::database::get_conn_from_pool;
-use crate::database::models::{DatabaseNewCommunity};
+use crate::database::models::DatabaseNewCommunity;
 use crate::federation::schemas::{Community, User};
 use crate::internal::authentication::authenticate;
 use crate::util::route_error::RouteError;

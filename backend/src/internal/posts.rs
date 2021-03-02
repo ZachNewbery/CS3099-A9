@@ -119,15 +119,10 @@ pub(crate) async fn list_posts(
             Some(c) => {
                 let community = get_community(&conn, c)?.ok_or(diesel::NotFound)?;
 
-                println!("community get okay");
-                println!("{:?}", &community);
-
                 get_posts_of_community(&conn, &community)
             }
         }?
         .unwrap_or_default();
-
-        println!("{:?}", &posts);
 
         posts
             .into_iter()
@@ -136,12 +131,7 @@ pub(crate) async fn list_posts(
                 let post = post::get_post(&conn, &p.uuid.parse().map_err(RouteError::UuidParse)?)?
                     .ok_or(diesel::NotFound)?;
 
-                println!("{:?}", &post);
-                println!("post get okay");
                 let children = get_children_posts_of(&conn, &p)?.unwrap_or_default();
-
-                println!("{:?}", &children);
-                println!("children get okay");
 
                 Ok((post, children))
             })
