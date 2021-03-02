@@ -58,7 +58,7 @@ pub(crate) async fn community_by_id(
     let admins = admins
         .into_iter()
         .map(|(u, x)| match x {
-            Either::Left(_l) => User {
+            Either::Left(_) => User {
                 id: u.username,
                 host: HOSTNAME.to_string(),
             },

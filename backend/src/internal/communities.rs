@@ -3,12 +3,15 @@ use crate::database::actions::communities::{
     set_community_admins, update_community_description, update_community_title,
 };
 use crate::database::get_conn_from_pool;
-use crate::database::models::DatabaseNewCommunity;
+use crate::database::models::{DatabaseNewCommunity};
+use crate::federation::schemas::{Community, User};
 use crate::internal::authentication::authenticate;
 use crate::util::route_error::RouteError;
+use crate::util::HOSTNAME;
 use crate::DBPool;
 use actix_web::{delete, get, patch, post, web, HttpRequest, HttpResponse, Result};
 use diesel::Connection;
+use either::Either;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -73,6 +76,44 @@ pub(crate) async fn create_community(
     .await?;
 
     Ok(HttpResponse::Ok().finish())
+}
+
+#[get("/communities/{id}")]
+pub(crate) async fn get_community_details(
+    pool: web::Data<DBPool>,
+    request: HttpRequest,
+    web::Path(id): web::Path<String>,
+) -> Result<HttpResponse> {
+    let (_, _) = authenticate(pool.clone(), request)?;
+
+    let conn = get_conn_from_pool(pool.clone())?;
+    let community = web::block(move || get_community(&conn, &id))
+        .await?
+        .ok_or(RouteError::NotFound)?;
+
+    let conn = get_conn_from_pool(pool.clone())?;
+    let cmm = community.clone();
+    let admins = web::block(move || get_community_admins(&conn, &cmm))
+        .await?
+        .into_iter()
+        .map(|(u, d)| match d {
+            Either::Left(_) => User {
+                id: u.username,
+                host: HOSTNAME.to_string(),
+            },
+            Either::Right(r) => User {
+                id: u.username,
+                host: r.host,
+            },
+        })
+        .collect::<Vec<User>>();
+
+    Ok(HttpResponse::Ok().json(Community {
+        id: community.name,
+        title: community.title,
+        description: community.description,
+        admins,
+    }))
 }
 
 #[delete("/communities/{id}")]
