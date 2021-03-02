@@ -45,15 +45,17 @@ pub struct PostInformation {
 
 pub(crate) fn get_post(
     conn: &MysqlConnection,
-    uuid_: &Uuid,
+    post_uuid: &Uuid,
 ) -> Result<Option<PostInformation>, diesel::result::Error> {
     use crate::database::schema::Communities::dsl::*;
 
     use crate::database::schema::Posts::dsl::*;
     use crate::database::schema::Users::dsl::*;
 
+    println!("entered get_post");
+
     let (post, community, user) = match Posts
-        .filter(uuid.eq(uuid_.to_string()))
+        .filter(uuid.eq(post_uuid.to_string()))
         .inner_join(Users)
         .inner_join(Communities)
         .select((
@@ -68,11 +70,19 @@ pub(crate) fn get_post(
         Some(t) => t,
     };
 
+    println!("got tuple");
+
     let content = get_content_of_post(conn, &post)?;
+
+    println!("got content");
 
     let parent = get_parent_of(conn, &post)?;
 
+    println!("got parent");
+
     let user_details = get_user_detail(conn, &user)?;
+
+    println!("got details");
 
     Ok(Some(PostInformation {
         post,
