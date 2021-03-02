@@ -16,7 +16,7 @@ pub(crate) fn get_user_detail(
     let fed: Option<DatabaseFederatedUser> = DatabaseFederatedUser::belonging_to(user)
         .first::<DatabaseFederatedUser>(conn)
         .optional()?;
-        
+
     if local.is_none() && fed.is_none() {
         return Err(diesel::NotFound);
     }
