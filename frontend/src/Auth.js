@@ -34,6 +34,7 @@ const StyledAuthRoutes = styled.div`
   justify-content: center;
   align-items: center;
   flex: 1;
+  margin-top: 5rem;
 
   & > form {
     & > button {
