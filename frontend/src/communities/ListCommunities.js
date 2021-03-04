@@ -68,8 +68,6 @@ export const ListCommunities = ({ host, community, setCommunity }) => {
     history.push("/");
   };
 
-  const hostLabel = host ? `Posts from ${host}` : "Local posts";
-
   if (isLoading) return <Spinner />;
   if (error) return <Error message={error} />;
 
@@ -79,7 +77,7 @@ export const ListCommunities = ({ host, community, setCommunity }) => {
       <CreateCommunity show={showCreate} hide={handleHideCreate} refresh={reload} />
       <ScrollContainer className="communities-list">
         {communities.map((c, i) => (
-          <h3 key={i} onClick={() => setCommunity(c)} className={c === community ? "active" : ""}>
+          <h3 key={i} onClick={() => handleSelect(c)} className={c === community ? "active" : ""}>
             {c}
           </h3>
         ))}

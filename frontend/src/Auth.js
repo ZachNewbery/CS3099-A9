@@ -2,7 +2,7 @@ import React from "react";
 import styled from "styled-components";
 import { Switch } from "react-router-dom";
 
-import { colors, fonts } from "./helpers";
+import { colors } from "./helpers";
 import { Login } from "./Login";
 import { Logout } from "./Logout";
 import { Registration } from "./Registration";

@@ -7,17 +7,42 @@ const editProfile = async ({ password }) => {
 
 export const ProfileSettings = () => {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  
   const passwordRef = useRef(null);
+  const confirmPasswordRef = useRef(null);
 
   const handleConfirm = async () => {
     const password = passwordRef.current.value;
+    const confirmPassword = confirmPasswordRef.current.value;
+
+    let errors = [];
+    
+    if (password.length < 5) {
+      errors.push("Password too short");
+    }
+
+    if (password !== confirmPassword) {
+      errors.push("Passwords don't match");
+    }
+
+    setError(errors.join("; "));
+
+    if (Object.keys(errors).length !== 0) {
+      return;
+    }
+    
+
     setLoading(true);
 
-    const token = await editProfile({ password });
+    const result = await editProfile({ password });
 
-    localStorage.setItem("access-token", token);
+    localStorage.setItem("access-token", result.token);
 
-    setLoading(false);
+    setLoading("done");
+
+    passwordRef.current.value = "";
+    confirmPasswordRef.current.value = "";
   };
 
   return (
@@ -25,9 +50,14 @@ export const ProfileSettings = () => {
       <label>
         Change Password
         <input type="password" ref={passwordRef} />
+        <p className="error">{error}</p>
+      </label>
+      <label>
+        Confirm Password
+        <input type="password" ref={confirmPasswordRef} />
       </label>
       <button type="button" onClick={handleConfirm}>
-        {loading ? "Loading..." : "Confirm"}
+        {loading === true ? "Loading..." : loading === "done" ? "done!" : "Confirm"}
       </button>
     </StyledForm>
   );

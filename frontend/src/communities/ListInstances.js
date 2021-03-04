@@ -2,8 +2,7 @@ import React from "react";
 import styled from "styled-components";
 import { useAsync } from "react-async";
 
-import { fetchData, Spinner, Error, colors, fonts } from "../helpers";
-import { ListCommunities } from "./ListCommunities";
+import { Spinner, Error, colors, fonts } from "../helpers";
 import { ScrollContainer } from "../components/ScrollContainer";
 
 const fetchInstances = async () => {

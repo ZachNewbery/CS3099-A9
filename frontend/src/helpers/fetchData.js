@@ -15,11 +15,14 @@ export const fetchData = async (path, body, method, contentType) => {
     } catch (error) {
       return reject(error);
     }
+    if (response.status === 401 && window.location.pathname !== "/auth/login") {
+      localStorage.removeItem("access-token");
+      window.location.href = `${window.location.origin}/logout`;
+    }
     let json = {};
     try {
       json = await response.json();
-    } catch (error) {
-    }
+    } catch (error) {}
     if (!response.ok || (json.hasOwnProperty("success") && !json.success)) {
       return reject(json);
     }

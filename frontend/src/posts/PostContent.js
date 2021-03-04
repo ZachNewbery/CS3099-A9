@@ -10,8 +10,8 @@ export const StyledBlock = styled.div`
   }
   .image-block {
     img {
-    width: 100%;
-    height: auto;
+      width: 100%;
+      height: auto;
     }
   }
 `;
@@ -33,6 +33,10 @@ export const StyledContent = styled.div`
       font-size: 1.5em;
       flex: 1;
       margin: 0;
+      width: 10rem;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
     }
   }
   .date-time {
@@ -79,9 +83,9 @@ export const renderContent = (content = []) => {
       {content.text && <TextContent content={content.text} />}
       {content.markdown && <TextContent content={content.markdown} />}
     </>
-  )
-}
+  );
+};
 
 const TextContent = ({ content }) => {
-  return <p>{content}</p>
-}
+  return <p>{content}</p>;
+};

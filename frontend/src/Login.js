@@ -1,7 +1,6 @@
 import React, { useRef, useState } from "react";
-import styled from "styled-components";
 import { Link, Redirect, useHistory } from "react-router-dom";
-import { isAuthenticated, fetchData, colors, fonts, StyledForm } from "./helpers";
+import { isAuthenticated, fetchData, StyledForm } from "./helpers";
 import { Logo } from "./assets/Logo";
 
 const getUserToken = async ({ email, password }) => {
@@ -27,6 +26,12 @@ export const Login = () => {
     }
   };
 
+  const handleKeyDown = async (e) => {
+    if (e.key === "Enter") {
+      await handleSubmit();
+    }
+  };
+
   if (isAuthenticated()) return <Redirect to="/" />;
 
   return (
@@ -38,13 +43,15 @@ export const Login = () => {
       </label>
       <label>
         Password
-        <input type="password" ref={passwordRef} name="password" />
+        <input type="password" ref={passwordRef} name="password" onKeyDown={handleKeyDown} />
         {error && <p className="error">{error}</p>}
       </label>
       <button type="button" onClick={handleSubmit}>
         Login
       </button>
-      <Link to="/auth/registration" className="switch-mode-link">Need to create an account?</Link>
+      <Link to="/auth/registration" className="switch-mode-link">
+        Need to create an account?
+      </Link>
     </StyledForm>
   );
 };

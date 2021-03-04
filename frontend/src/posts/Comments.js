@@ -2,7 +2,7 @@ import React, { useRef, useState } from "react";
 import styled from "styled-components";
 import moment from "moment";
 import { useAsync } from "react-async";
-import { fetchData, getCurrentUser, Spinner, Error } from "../helpers";
+import { fetchData, Spinner, Error, colors } from "../helpers";
 import { StyledBlock, StyledContent, renderContent } from "./PostContent";
 
 const loadChildPosts = async ({ children }) => {
@@ -25,7 +25,7 @@ const createComment = async ({ postId, communityId, content }) => {
       },
     ],
     community: {
-      id: communityId, // I changed this :( lol
+      id: communityId,
     },
     title: "atitle",
   };
@@ -33,26 +33,56 @@ const createComment = async ({ postId, communityId, content }) => {
   return fetchData(`${process.env.REACT_APP_API}/posts/create`, JSON.stringify(post), "POST");
 };
 
-const Comment = ({ author, content, created, modified }) => {
-  return (
-    <StyledContent>
-      {content.map((block, i) => (
-        <StyledBlock key={i}>{renderContent(block)}</StyledBlock>
-      ))}
-      <hr />
-      <div className="header">
-        <p className="user" title={author.id}>
-          {author.id}
-        </p>
-        <div className="date-time">
-          <p className="date" style={{ marginRight: "0.5em" }}>
-            {moment(created).fromNow()}
-          </p>
-        </div>
-      </div>
-    </StyledContent>
-  );
-};
+const StyledComments = styled.div`
+  background: ${colors.pageBackground};
+  padding: 1rem 0;
+  & > .comment {
+    padding: 0 1rem;
+    &:not(:first-child) {
+      padding-top: 1rem;
+    }
+    & > .main {
+      display: flex;
+      align-items: center;
+      & > .profile > img {
+        height: 2.5rem;
+        width: 2.5rem;
+        border-radius: 1.5rem;
+        margin-right: 0.5rem;
+      }
+      & > .content {
+        width: 100%;
+        background: white;
+        border: 1px solid ${colors.mediumLightGray};
+        border-radius: 0.6rem;
+        padding: 0 1rem;
+      }
+    }
+    & > .footer {
+      margin: 0.25rem;
+      margin-left: 3.5rem;
+      & > p {
+        margin: 0;
+        font-size: 0.75rem;
+      }
+    }
+  }
+`;
+
+const StyledCreateComment = styled.div`
+  padding: 0.8rem 0;
+  margin: 0 0.8rem;
+  & > input {
+    border: 1px solid ${colors.veryLightGray};
+    width: 100%;
+    border-radius: 0.6em;
+    padding: 0.5rem 0.7rem;
+    color: inherit;
+    font: inherit;
+    font-size: 0.8rem;
+    outline: none;
+  }
+`;
 
 export const CreateComment = ({ postId, communityId, refresh }) => {
   const contentRef = useRef(null);
@@ -80,14 +110,16 @@ export const CreateComment = ({ postId, communityId, refresh }) => {
     setErrors(currentErrors);
   };
 
+  const handleKeyDown = async (e) => {
+    if (e.key === "Enter") {
+      await handleSubmit(e);
+    }
+  };
+
   return (
-    <StyledContent style={{ background: "#f8f9f9", padding: 0 }}>
-      <StyledCreateComment>
-        <input ref={contentRef} placeholder="Enter comment" />
-        <p>{errors.content}</p>
-        <button onClick={handleSubmit}>Post</button>
-      </StyledCreateComment>
-    </StyledContent>
+    <StyledCreateComment>
+      <input ref={contentRef} placeholder="Write a comment..." onKeyDown={handleKeyDown} />
+    </StyledCreateComment>
   );
 };
 
@@ -101,62 +133,26 @@ export const Comments = ({ children }) => {
 
   return (
     <StyledComments>
-      {comments.map((comment) => (
-        <Comment key={comment.id} {...comment} />
+      {comments.sort((a, b) => moment(b.created).unix() - moment(a.created).unix()).map((comment) => (
+        <div key={comment.id} className="comment">
+          <div className="main">
+            <div className="profile">
+              <img
+                alt="profile"
+                src={`https://eu.ui-avatars.com/api/?rounded=true&bold=true&background=0061ff&color=ffffff&uppercase=true&format=svg&name=${comment.author.id}`}
+              />
+            </div>
+            <div className="content">
+              {comment.content.map((block, i) => (
+                <StyledBlock key={i}>{renderContent(block)}</StyledBlock>
+              ))}
+            </div>
+          </div>
+          <div className="footer">
+            <p title={moment(comment.created).format("HH:mma - Do MMMM, YYYY")}>{moment(comment.created).fromNow()}</p>
+          </div>
+        </div>
       ))}
     </StyledComments>
   );
 };
-
-const StyledComments = styled.div`
-  margin: 0;
-  font-size: 0.8em;
-  & > div {
-    padding: 5px 10px;
-    cursor: auto;
-    background-color: #f8f9f9;
-  }
-  .user {
-    flex: 1;
-    font-weight: bold;
-    margin: 0;
-    color: #676767;
-  }
-  .date-time {
-    font-size: 0.9em;
-    flex-flow: row nowrap;
-  }
-  img {
-    height: 100px !important;
-    width: auto !important;
-  }
-`;
-
-const StyledCreateComment = styled.div`
-  padding: 1em;
-  cursor: auto;
-  display: flex;
-  flex-flow: column nowrap;
-  align-items: flex-start;
-  & > input {
-    border: 1px solid lightgray;
-    width: 100%;
-    border-radius: 0.3em;
-    padding: 10px;
-    color: inherit;
-    font: inherit;
-    font-size: 1em;
-    box-sizing: border-box;
-  }
-  & > p {
-    margin: 0.5em 0;
-  }
-  & > button {
-    align-self: flex-end;
-    border: 1px solid lightgray;
-    background: #e5e5e5;
-    border-radius: 0.3em;
-    cursor: pointer;
-    padding: 0.2em 1em;
-  }
-`;

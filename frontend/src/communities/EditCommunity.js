@@ -1,5 +1,4 @@
 import React, { useState, useRef } from "react";
-import styled from "styled-components";
 
 import { Modal } from "../components/Modal";
 import { StyledForm, fetchData } from "../helpers";

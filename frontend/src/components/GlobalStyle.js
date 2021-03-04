@@ -1,5 +1,4 @@
 import { createGlobalStyle } from "styled-components";
-import { colors } from "../helpers";
 
 export const GlobalStyle = createGlobalStyle`
   html {
@@ -26,11 +25,11 @@ export const GlobalStyle = createGlobalStyle`
   }
 
   main {
-    height: 100%;
     display: flex;
     justify-content: center;
-    margin: auto;
+    margin: 0 auto;
     width: 50rem;
     max-width: 95%;
+    padding-bottom: 5rem;
   }
 `;

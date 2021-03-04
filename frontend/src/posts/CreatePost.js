@@ -1,10 +1,9 @@
 import React, { useState, useRef } from "react";
 import styled from "styled-components";
-import moment from "moment";
 
-import { useHistory } from "react-router";
-import { fetchData, getCurrentUser, colors, fonts } from "../helpers";
+import { fetchData, colors, fonts } from "../helpers";
 import { StyledForm } from "../helpers/styles";
+import { Tooltip } from "../components/Tooltip"
 
 const createPost = async ({ title, community, content }) => {
   const post = {
@@ -51,7 +50,6 @@ const StyledContainer = styled.div`
 
 export const CreatePost = ({ community, host, refresh }) => {
   const formRef = useRef(null);
-  const history = useHistory();
   const [errors, setErrors] = useState({});
 
   const handleSubmit = async (e) => {
@@ -63,21 +61,21 @@ export const CreatePost = ({ community, host, refresh }) => {
     title = title.value;
     body = body.value;
 
-    // if (title.length < 5) {
-    //   currentErrors.title = "Title is too short";
-    // }
+    if (title.length < 5) {
+      currentErrors.title = "Title is too short";
+    }
 
-    // if (title.length === 0) {
-    //   currentErrors.title = "Missing title";
-    // }
+    if (title.length === 0) {
+      currentErrors.title = "Missing title";
+    }
 
-    // if (body.length < 5) {
-    //   currentErrors.body = "Body is too short";
-    // }
+    if (body.length < 5) {
+      currentErrors.body = "Body is too short";
+    }
 
-    // if (body.length === 0) {
-    //   currentErrors.body = "Missing body";
-    // }
+    if (body.length === 0) {
+      currentErrors.body = "Missing body";
+    }
 
     if (Object.keys(currentErrors).length === 0) {
       try {
@@ -91,16 +89,16 @@ export const CreatePost = ({ community, host, refresh }) => {
     setErrors(currentErrors);
   };
 
-  console.log(errors);
-
   return (
     <StyledContainer>
-      <StyledForm ref={formRef}>
+      <StyledForm ref={formRef} onChange={() => setErrors({})}>
         <label>
           <input type="text" name="title" placeholder="Title" />
+          {errors.title && <Tooltip text={errors.title} />}
         </label>
         <label>
           <textarea type="text" name="body" placeholder="Start writing..." />
+          {errors.body && <Tooltip text={errors.body}/>}
         </label>
         <button onClick={handleSubmit}>Post to {community} </button>
       </StyledForm>

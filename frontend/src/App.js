@@ -6,10 +6,8 @@ import { isAuthenticated } from "./helpers";
 import { Header } from "./components/Header";
 import { Search } from "./components/Search";
 import { ErrorHandledRoute } from "./components/ErrorHandledRoute";
-import { ListPosts, SinglePost, CreatePost } from "./posts";
 
 import { Home } from "./Home";
-import { ListInstances } from "./communities/ListInstances";
 
 export const AppRoutes = () => {
   const [filters, setFilters] = useState({ search: null, host: null })

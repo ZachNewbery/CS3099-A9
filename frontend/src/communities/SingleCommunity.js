@@ -8,11 +8,6 @@ import { fetchData, Spinner, Error, colors, fonts } from "../helpers";
 
 import { EditCommunity } from "./EditCommunity";
 
-const fetchCommunities = async ({ id, host }) => {
-  const hostParam = host ? `?host=${host}` : "";
-  return await fetchData(`${process.env.REACT_APP_API}/communities/${id}${hostParam}`);
-};
-
 const StyledContainer = styled.div`
   display: flex;
   flex-flow: column nowrap;
@@ -58,6 +53,11 @@ const StyledContainer = styled.div`
   }
 `;
 
+const fetchCommunity = async ({ id, host }) => {
+  const hostParam = host ? `?host=${host}` : "";
+  return await fetchData(`${process.env.REACT_APP_API}/communities/${id}${hostParam}`);
+};
+
 const deleteCommunity = async ({ id }) => {
   return await fetchData(`${process.env.REACT_APP_API}/communities`, JSON.stringify({ id }), "DELETE");
 };
@@ -65,7 +65,7 @@ const deleteCommunity = async ({ id }) => {
 export const SingleCommunity = ({ id, host }) => {
   const [showCommunity, setShowCommunity] = useState(false);
 
-  const { data, isLoading, error, reload } = useAsync(fetchCommunities, { id, host });
+  const { data, isLoading, error, reload } = useAsync(fetchCommunity, { id, host });
 
   const handleShowCommunity = () => setShowCommunity(true);
   const handleHideCommunity = () => setShowCommunity(false);

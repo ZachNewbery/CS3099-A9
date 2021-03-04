@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
 import { Switch, Route } from "react-router-dom";
 
@@ -34,13 +34,13 @@ export const Home = ({ search, host }) => {
   return (
     <StyledContainer>
       <div className="communities-container">
-        {community && <SingleCommunity id={community} host={host} />}
+        {community && <SingleCommunity key={community} id={community} host={host} />}
         <ListCommunities setCommunity={setCommunity} community={community} host={host} />
       </div>
       <div className="posts-container">
         <Switch>
           <ErrorHandledRoute path="/post/:postId">
-            <SinglePost />
+            <SinglePost community={community} setCommunity={setCommunity} />
           </ErrorHandledRoute>
           <Route path="/">
             <CreatePost community={community} host={host} refresh={reload} />

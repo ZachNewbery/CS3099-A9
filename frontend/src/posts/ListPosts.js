@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import styled from "styled-components";
 import moment from "moment";
+import { useHistory } from "react-router-dom";
 
+import { StyledBlock, StyledContent, renderContent } from "./PostContent";
 import { useAsync } from "react-async";
 import { fetchData, Spinner, Error } from "../helpers";
 
-import { renderContent } from "./PostContent";
-import { posts } from "./posts";
 import { Post } from "./SinglePost";
 
 const loadPosts = async ({ host, community }) => {
@@ -17,6 +17,8 @@ const loadPosts = async ({ host, community }) => {
 const StyledPosts = styled.div``;
 
 export const ListPosts = ({ host, community }) => {
+  const history = useHistory();
+
   const { data: posts, isLoading, error } = useAsync(loadPosts, { host, community });
 
   if (isLoading) return <Spinner />;
@@ -24,8 +26,23 @@ export const ListPosts = ({ host, community }) => {
 
   return (
     <StyledPosts>
-      {posts.map((post) => (
-        <Post key={post.id} {...post} />
+      {posts.map(({ id, title, content, user, created, children }) => (
+        <StyledContent key={id} onClick={() => history.push(`/post/${id}`)}>
+          <div className="header">
+            <h1 className="title" title={title}>{title}</h1>
+            <div className="date-time">
+              <p className="time">{moment(created).format("HH:mm")}</p>
+              <p className="date">{moment(created).format("DD MMMM YYYY")}</p>
+            </div>
+          </div>
+          {content.map((block, i) => (
+            <StyledBlock key={i}>{renderContent(block)}</StyledBlock>
+          ))}
+          <hr />
+          <div className="stats">
+            <p>{`${children.length} ${children.length === 1 ? "comment" : "comments"}`}</p>
+          </div>
+        </StyledContent>
       ))}
     </StyledPosts>
   );
