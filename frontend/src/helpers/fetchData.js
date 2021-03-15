@@ -1,7 +1,7 @@
 export const getRequestOptions = (method = "GET", body, contentType = "application/json") => ({
   headers: {
     "Content-Type": contentType,
-    Authorization: "Bearer " + localStorage.getItem("access-token"),
+    Authorization: "Bearer " + sessionStorage.getItem("access-token"),
   },
   method,
   body,
@@ -16,7 +16,7 @@ export const fetchData = async (path, body, method, contentType) => {
       return reject(error);
     }
     if (response.status === 401 && window.location.pathname !== "/auth/login") {
-      localStorage.removeItem("access-token");
+      sessionStorage.removeItem("access-token");
       window.location.href = `${window.location.origin}/logout`;
     }
     let json = {};

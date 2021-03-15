@@ -1,17 +1,24 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import moment from "moment";
 import { useParams, useHistory } from "react-router-dom";
 import { useAsync } from "react-async";
+
 import { fetchData, Spinner, colors, fonts } from "../helpers";
 import { StyledBlock, StyledContent, renderContent } from "./PostContent";
 import { Comments, CreateComment } from "./Comments";
+import { EditPost } from "./EditPost";
+
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowLeft } from "@fortawesome/free-solid-svg-icons";
+import { faArrowLeft, faPencilAlt, faTrash } from "@fortawesome/free-solid-svg-icons";
 
 const loadSinglePost = async ({ id }) => {
   return fetchData(`${process.env.REACT_APP_API}/posts/${id}`);
 };
+
+const deletePost = async ({ id }) => {
+  return fetchData(`${process.env.REACT_APP_API}/posts`, JSON.stringify({ id }), "DELETE");
+}
 
 const StyledPostContainer = styled.div`
   width: 100%;
@@ -112,7 +119,21 @@ const StyledPost = styled.div`
     padding: 0.6rem 0.2rem;
     margin: 0 0.8rem;
     display: flex;
-    justify-content: flex-end;
+    align-items: center;
+    & > .actions {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      & > svg {
+        margin-right: 0.5rem;
+        color: ${colors.darkGray};
+        cursor: pointer;
+        transition: all 0.3s;
+        &:hover {
+          color: ${colors.gray};
+        }
+      }
+    }
     & > p {
       margin: 0;
       font-size: 0.8rem;
@@ -139,18 +160,31 @@ export const SinglePost = ({ community, setCommunity }) => {
 
   return (
     <StyledPostContainer>
-      <Post {...data} />
+      <Post {...data} refresh={reload} />
       <CreateComment postId={data.id} refresh={reload} communityId={data.community.id} />
       <Comments children={data.children} />
     </StyledPostContainer>
   );
 };
 
-export const Post = ({ id, title, content, user, created, children, author }) => {
+export const Post = ({ id, title, content, created, children, author, refresh }) => {
   const history = useHistory();
+  const [showEdit, setShowEdit] = useState(false);
 
+  const currentUser = { id: "", host: "" };
+  const isAdmin = true || (author.id.toLowerCase() === currentUser.id.toLowerCase() && author.host.toLowerCase() === currentUser.host.toLowerCase());
+
+  const handleEdit = () => {
+    setShowEdit(true);
+  }
+
+  const handleDelete = async () => {
+    await deletePost({ id });
+  }
+  
   return (
     <StyledPost>
+      <EditPost id={id} hide={() => setShowEdit(false)} show={showEdit} initialTitle={title} initialContent={content[0].text} refresh={refresh} />
       <div className="header">
         <div className="back-icon" onClick={() => history.goBack()}>
           <FontAwesomeIcon icon={faArrowLeft} />
@@ -176,6 +210,12 @@ export const Post = ({ id, title, content, user, created, children, author }) =>
         ))}
       </div>
       <div className="footer">
+        {isAdmin && (
+          <div className="actions">
+            <FontAwesomeIcon onClick={handleEdit} icon={faPencilAlt} />
+            <FontAwesomeIcon onClick={handleDelete} icon={faTrash} />
+          </div>
+        )}
         <p>{`${children.length} ${children.length === 1 ? "comment" : "comments"}`}</p>
       </div>
     </StyledPost>

@@ -2,13 +2,9 @@ import React from "react";
 import { Redirect } from "react-router";
 
 export const Logout = () => {
-  localStorage.removeItem("access-token");
-  //localStorage.removeItem("firstName");
-  //localStorage.removeItem("lastName");
-  //localStorage.removeItem("userName");
-  //localStorage.removeItem("userId");
-  localStorage.removeItem("username");
-  localStorage.removeItem("email");
+  sessionStorage.removeItem("access-token");  
+  sessionStorage.removeItem("username");
+  sessionStorage.removeItem("email");
 
   return <Redirect to="/auth/login" />;
 }

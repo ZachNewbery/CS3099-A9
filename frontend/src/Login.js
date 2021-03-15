@@ -19,7 +19,7 @@ export const Login = () => {
 
     try {
       const { token } = await getUserToken({ email, password });
-      localStorage.setItem("access-token", token);
+      sessionStorage.setItem("access-token", token);
       return history.push("/");
     } catch (error) {
       setError("Please check email or password is entered correctly.");

@@ -1,10 +1,10 @@
 export const isAuthenticated = () => {
-  const token = localStorage.getItem("access-token");
+  const token = sessionStorage.getItem("access-token");
   return token !== null;
 };
 
 export const getCurrentUser = () => {
-  const id = localStorage.getItem("username");
-  const host = localStorage.getItem("host");
+  const id = sessionStorage.getItem("username");
+  const host = sessionStorage.getItem("host");
   return { id, host };
 };

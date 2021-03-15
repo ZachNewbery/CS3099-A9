@@ -37,7 +37,7 @@ export const ProfileSettings = () => {
 
     const result = await editProfile({ password });
 
-    localStorage.setItem("access-token", result.token);
+    sessionStorage.setItem("access-token", result.token);
 
     setLoading("done");
 

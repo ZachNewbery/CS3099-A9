@@ -45,8 +45,8 @@ export const Registration = () => {
       try {
         const user = await createUser({ username, email, password });
         console.log(user);
-        localStorage.setItem("username", username);
-        localStorage.setItem("email", email);
+        sessionStorage.setItem("username", user.username);
+        sessionStorage.setItem("host", user.host);
         history.push("/login");
       } catch (error) {
         currentErrors.firstName = error.message;

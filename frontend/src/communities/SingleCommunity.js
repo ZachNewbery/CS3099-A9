@@ -80,10 +80,19 @@ export const SingleCommunity = ({ id, host }) => {
     if (isLoading) return <Spinner />;
     if (error) return <Error message={error} />;
 
+    const currentUser = { id: "", host: "" };
+    const isAdmin = true || data.admins.find(admin => admin.id.toLowerCase() === currentUser.id.toLowerCase() && admin.host.toLowerCase() === currentUser.host.toLowerCase());
+    
     return (
-      <div className="content">
-        <p>{data.description}</p>
-      </div>
+      <>
+        {isAdmin && (<div className="actions">
+          <FontAwesomeIcon onClick={handleEdit} icon={faPencilAlt} />
+          <FontAwesomeIcon onClick={handleDelete} icon={faTrash} />
+        </div>)}
+        <div className="content">
+          <p>{data.description}</p>
+        </div>
+      </>
     );
   };
 
@@ -101,10 +110,6 @@ export const SingleCommunity = ({ id, host }) => {
       <StyledContainer>
         <h1>{id}</h1>
         {renderCommunity()}
-        <div className="actions">
-          <FontAwesomeIcon onClick={handleEdit} icon={faPencilAlt} />
-          <FontAwesomeIcon onClick={handleDelete} icon={faTrash} />
-        </div>
       </StyledContainer>
     </>
   );
