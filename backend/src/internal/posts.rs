@@ -314,7 +314,7 @@ pub(crate) async fn create_post(
 pub(crate) async fn edit_post(
     pool: web::Data<DBPool>,
     web::Path(id): web::Path<Uuid>,
-    edit_post: web::Data<EditPost>,
+    edit_post: web::Json<EditPost>,
     request: HttpRequest,
 ) -> Result<HttpResponse> {
     let (_, _local_user) = authenticate(pool.clone(), request)?;
