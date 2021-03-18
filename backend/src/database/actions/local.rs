@@ -24,11 +24,11 @@ pub(crate) fn validate_session(
 ) -> Result<Option<DatabaseLocalUser>, diesel::result::Error> {
     use crate::database::schema::LocalUsers::dsl::*;
 
-    Ok(LocalUsers
+    LocalUsers
         .filter(id.eq(id_ck))
         .filter(session.eq(session_ck))
         .first::<DatabaseLocalUser>(conn)
-        .optional()?)
+        .optional()
 }
 
 // TODO: This is buggy for username xor email unique
@@ -40,12 +40,12 @@ pub(crate) fn get_local_user_by_username_email(
     use crate::database::schema::LocalUsers::dsl::*;
     use crate::database::schema::Users::dsl::*;
 
-    Ok(Users
+    Users
         .inner_join(LocalUsers)
         .filter(username.eq(username_).or(email.eq(email_)))
         .select(LocalUsers::all_columns())
         .first::<DatabaseLocalUser>(conn)
-        .optional()?)
+        .optional()
 }
 
 pub(crate) fn get_local_user_by_credentials(
@@ -55,11 +55,11 @@ pub(crate) fn get_local_user_by_credentials(
 ) -> Result<Option<DatabaseLocalUser>, diesel::result::Error> {
     use crate::database::schema::LocalUsers::dsl::*;
 
-    Ok(LocalUsers
+    LocalUsers
         .filter(email.eq(email_ck))
         .filter(password.eq(password_ck))
         .first::<DatabaseLocalUser>(conn)
-        .optional()?)
+        .optional()
 }
 
 pub(crate) fn insert_new_local_user(
@@ -104,7 +104,7 @@ pub(crate) fn update_local_user(
         .set(password.eq(update_to.password.clone()))
         .execute(conn)?;
 
-    Ok(LocalUsers
+    LocalUsers
         .filter(id.eq(user_id))
-        .first::<DatabaseLocalUser>(conn)?)
+        .first::<DatabaseLocalUser>(conn)
 }

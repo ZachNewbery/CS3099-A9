@@ -150,7 +150,7 @@ pub(crate) async fn list_posts(
                 parent_post: None,
                 children: c
                     .into_iter()
-                    .map(|h| Ok(h.post.uuid.parse().map_err(RouteError::UuidParse)?))
+                    .map(|h| h.post.uuid.parse().map_err(RouteError::UuidParse))
                     .collect::<Result<Vec<Uuid>, RouteError>>()?,
                 title: p.post.title,
                 content: p.content,
@@ -232,7 +232,7 @@ pub(crate) async fn search_posts(
                 parent_post: None,
                 children: c
                     .into_iter()
-                    .map(|h| Ok(h.post.uuid.parse().map_err(RouteError::UuidParse)?))
+                    .map(|h| h.post.uuid.parse().map_err(RouteError::UuidParse))
                     .collect::<Result<Vec<Uuid>, RouteError>>()?,
                 title: p.post.title,
                 content: p.content,

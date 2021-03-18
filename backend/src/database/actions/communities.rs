@@ -113,6 +113,36 @@ pub(crate) fn remove_community(
     conn: &MysqlConnection,
     community: DatabaseCommunity,
 ) -> Result<(), diesel::result::Error> {
+    // Remove all Contents
+
+    // Text
+    {
+        use crate::database::schema::Posts::dsl::*;
+
+        diesel::delete(
+            DatabaseText::belonging_to(
+                &Posts
+                    .filter(communityId.eq(community.id))
+                    .load(conn)?
+            )
+        )
+            .execute(conn)?;
+    }
+
+    // Markdown
+    {
+    use crate::database::schema::Posts::dsl::*;
+
+    diesel::delete(
+        DatabaseMarkdown::belonging_to(
+            &Posts
+                .filter(communityId.eq(community.id))
+                .load(conn)?
+        )
+    )
+        .execute(conn)?;
+    }
+
     // Remove all posts
     {
         use crate::database::schema::Posts::dsl::*;
