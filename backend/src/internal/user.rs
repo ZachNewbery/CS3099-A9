@@ -4,6 +4,7 @@ use crate::database::actions::local::{
 };
 use crate::database::get_conn_from_pool;
 use crate::internal::authentication::{authenticate, generate_session, Token};
+use crate::util::HOSTNAME;
 use crate::{database, DBPool};
 use actix_web::{post, put, HttpResponse};
 use actix_web::{web, HttpRequest};
@@ -50,6 +51,7 @@ pub struct Login {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct LoginOutput {
     pub username: String,
+    pub host: String,
     #[serde(flatten)]
     pub new_token: NewToken,
 }
@@ -85,6 +87,7 @@ pub(crate) async fn login(
 
     Ok(HttpResponse::Ok().json(LoginOutput {
         username: user.username,
+        host: HOSTNAME.to_string(),
         new_token: NewToken {
             token,
             token_type: String::from("bearer"),
