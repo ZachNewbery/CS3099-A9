@@ -1,7 +1,7 @@
 use diesel::prelude::*;
 use diesel::MysqlConnection;
 
-use crate::database::models::DatabaseLocalUser;
+use crate::database::models::{DatabaseLocalUser, DatabaseUser};
 use crate::internal::user::{EditProfile, NewLocalUser};
 
 pub(crate) fn update_session(
@@ -52,13 +52,16 @@ pub(crate) fn get_local_user_by_credentials(
     conn: &MysqlConnection,
     email_ck: &str,
     password_ck: &str,
-) -> Result<Option<DatabaseLocalUser>, diesel::result::Error> {
+) -> Result<Option<(DatabaseUser, DatabaseLocalUser)>, diesel::result::Error> {
     use crate::database::schema::LocalUsers::dsl::*;
+    use crate::database::schema::Users::dsl::*;
 
     LocalUsers
         .filter(email.eq(email_ck))
         .filter(password.eq(password_ck))
-        .first::<DatabaseLocalUser>(conn)
+        .inner_join(Users)
+        .select((Users::all_columns(), LocalUsers::all_columns()))
+        .first::<(_, _)>(conn)
         .optional()
 }
 
@@ -66,7 +69,7 @@ pub(crate) fn insert_new_local_user(
     conn: &MysqlConnection,
     new_user: NewLocalUser,
 ) -> Result<(), diesel::result::Error> {
-    use crate::database::models::{DatabaseNewLocalUser, DatabaseNewUser, DatabaseUser};
+    use crate::database::models::{DatabaseNewLocalUser, DatabaseNewUser};
     use crate::database::schema::LocalUsers::dsl::*;
     use crate::database::schema::Users::dsl::*;
 

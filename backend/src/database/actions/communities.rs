@@ -119,27 +119,19 @@ pub(crate) fn remove_community(
     {
         use crate::database::schema::Posts::dsl::*;
 
-        diesel::delete(
-            DatabaseText::belonging_to(
-                &Posts
-                    .filter(communityId.eq(community.id))
-                    .load(conn)?
-            )
-        )
-            .execute(conn)?;
+        diesel::delete(DatabaseText::belonging_to(
+            &Posts.filter(communityId.eq(community.id)).load(conn)?,
+        ))
+        .execute(conn)?;
     }
 
     // Markdown
     {
-    use crate::database::schema::Posts::dsl::*;
+        use crate::database::schema::Posts::dsl::*;
 
-    diesel::delete(
-        DatabaseMarkdown::belonging_to(
-            &Posts
-                .filter(communityId.eq(community.id))
-                .load(conn)?
-        )
-    )
+        diesel::delete(DatabaseMarkdown::belonging_to(
+            &Posts.filter(communityId.eq(community.id)).load(conn)?,
+        ))
         .execute(conn)?;
     }
 

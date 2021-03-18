@@ -49,8 +49,9 @@ pub struct Login {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct LoginOutput {
-    pub token: String,
-    pub token_type: String,
+    pub username: String,
+    #[serde(flatten)]
+    pub new_token: NewToken,
 }
 
 #[post("/login")]
@@ -61,7 +62,7 @@ pub(crate) async fn login(
     let conn = database::get_conn_from_pool(pool.clone())?;
 
     // Check credentials against database
-    let local_user = web::block(move || {
+    let (user, local_user) = web::block(move || {
         get_local_user_by_credentials(&conn, &login_info.email, &login_info.password)
     })
     .await
@@ -83,8 +84,11 @@ pub(crate) async fn login(
         .map_err(|_| HttpResponse::InternalServerError().finish())?;
 
     Ok(HttpResponse::Ok().json(LoginOutput {
-        token,
-        token_type: String::from("bearer"),
+        username: user.username,
+        new_token: NewToken {
+            token,
+            token_type: String::from("bearer"),
+        },
     }))
 }
 
@@ -108,6 +112,12 @@ pub(crate) async fn logout(
 #[derive(Serialize, Deserialize)]
 pub struct EditProfile {
     pub password: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct NewToken {
+    pub token: String,
+    pub token_type: String,
 }
 
 #[put("/edit_profile")]
@@ -135,7 +145,7 @@ pub(crate) async fn edit_profile(
     .await?;
 
     // Return type: new token
-    Ok(HttpResponse::Ok().json(LoginOutput {
+    Ok(HttpResponse::Ok().json(NewToken {
         token,
         token_type: String::from("bearer"),
     }))
