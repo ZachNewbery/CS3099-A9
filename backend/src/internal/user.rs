@@ -52,6 +52,8 @@ pub struct Login {
 pub struct LoginOutput {
     pub username: String,
     pub host: String,
+    pub avatar: Option<String>,
+    pub bio: Option<String>,
     #[serde(flatten)]
     pub new_token: NewToken,
 }
@@ -80,6 +82,7 @@ pub(crate) async fn login(
 
     let conn = database::get_conn_from_pool(pool)?;
 
+    let local_user_copy = local_user.clone();
     // Invalidate the old session
     web::block(move || update_session(&conn, &local_user, &new_session))
         .await
@@ -88,6 +91,8 @@ pub(crate) async fn login(
     Ok(HttpResponse::Ok().json(LoginOutput {
         username: user.username,
         host: HOSTNAME.to_string(),
+        avatar: local_user_copy.avatar,
+        bio: local_user_copy.bio,
         new_token: NewToken {
             token,
             token_type: String::from("bearer"),
@@ -114,7 +119,9 @@ pub(crate) async fn logout(
 
 #[derive(Serialize, Deserialize)]
 pub struct EditProfile {
-    pub password: String,
+    pub avatar: Option<String>,
+    pub bio: Option<String>,
+    pub password: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

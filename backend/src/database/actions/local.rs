@@ -103,9 +103,30 @@ pub(crate) fn update_local_user(
 
     let user_id = user.id;
 
-    diesel::update(&user)
-        .set(password.eq(update_to.password.clone()))
-        .execute(conn)?;
+    match &update_to.password {
+        None => {}
+        Some(t) => {
+            diesel::update(&user)
+                .set(password.eq(t.clone()))
+                .execute(conn)?;
+        }
+    }
+
+    match &update_to.bio {
+        None => {}
+        Some(t) => {
+            diesel::update(&user).set(bio.eq(t.clone())).execute(conn)?;
+        }
+    }
+
+    match &update_to.avatar {
+        None => {}
+        Some(t) => {
+            diesel::update(&user)
+                .set(avatar.eq(t.clone()))
+                .execute(conn)?;
+        }
+    }
 
     LocalUsers
         .filter(id.eq(user_id))
