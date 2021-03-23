@@ -50,7 +50,8 @@ CREATE TABLE IF NOT EXISTS Posts (
     parentId BIGINT UNSIGNED,
     CONSTRAINT FK_Posts_parentId FOREIGN KEY (parentId) REFERENCES Posts(id),
     communityId BIGINT UNSIGNED NOT NULL,
-    CONSTRAINT FK_Posts_communityId FOREIGN KEY (communityId) REFERENCES Communities(id)
+    CONSTRAINT FK_Posts_communityId FOREIGN KEY (communityId) REFERENCES Communities(id),
+    deleted BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE IF NOT EXISTS Text (

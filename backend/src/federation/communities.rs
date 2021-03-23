@@ -2,7 +2,7 @@ use actix_web::{get, web, HttpResponse};
 use actix_web::{HttpRequest, Result};
 
 use crate::database::actions::communities::{get_communities, get_community, get_community_admins};
-use crate::database::actions::post::get_posts_of_community;
+use crate::database::actions::post::get_top_level_posts_of_community;
 use crate::database::get_conn_from_pool;
 
 use crate::federation::schemas::{Community, User};
@@ -99,11 +99,12 @@ pub(crate) async fn community_by_id_timestamps(
 
     let posts = web::block(move || {
         let community = get_community(&conn, &id)?.ok_or(diesel::NotFound)?;
-        get_posts_of_community(&conn, &community)
+        get_top_level_posts_of_community(&conn, &community)
     })
     .await?
     .unwrap_or_default()
     .into_iter()
+    .filter(|p| !p.deleted)
     .map(|p| {
         Ok(PostModified {
             id: p.uuid.parse()?,
@@ -113,6 +114,4 @@ pub(crate) async fn community_by_id_timestamps(
     .collect::<Result<Vec<PostModified>, RouteError>>()?;
 
     Ok(HttpResponse::Ok().json(posts))
-
-    // Return type: PostModified
 }

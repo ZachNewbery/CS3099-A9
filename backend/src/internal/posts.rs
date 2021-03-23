@@ -1,7 +1,8 @@
 use crate::database::actions::communities::{get_community, get_community_admins};
 use crate::database::actions::post::{
-    get_all_posts, get_children_posts_of, get_posts_of_community, modify_post_title, put_post,
-    put_post_contents, remove_post, remove_post_contents, PostInformation,
+    get_all_top_level_posts, get_children_posts_of, get_top_level_posts_of_community,
+    modify_post_title, put_post, put_post_contents, remove_post, remove_post_contents,
+    PostInformation,
 };
 use crate::database::get_conn_from_pool;
 use crate::database::models::{DatabaseLocalUser, DatabaseNewPost};
@@ -37,6 +38,7 @@ pub(crate) struct LocatedPost {
     pub(crate) author: User,
     pub(crate) modified: NaiveDateTime,
     pub(crate) created: NaiveDateTime,
+    pub(crate) deleted: bool,
 }
 
 #[get("/posts/{id}")]
@@ -98,6 +100,7 @@ pub(crate) async fn get_post(
         },
         modified: post.post.modified,
         created: post.post.created,
+        deleted: post.post.deleted,
     };
 
     // Return type: a monstrosity, honestly.
@@ -115,11 +118,11 @@ pub(crate) async fn list_posts(
     // Specialised code path for a community being specified
     let posts = web::block(move || {
         let posts = match &query.community {
-            None => get_all_posts(&conn),
+            None => get_all_top_level_posts(&conn),
             Some(c) => {
                 let community = get_community(&conn, c)?.ok_or(diesel::NotFound)?;
 
-                get_posts_of_community(&conn, &community)
+                get_top_level_posts_of_community(&conn, &community)
             }
         }?
         .unwrap_or_default();
@@ -163,6 +166,7 @@ pub(crate) async fn list_posts(
                 },
                 modified: p.post.modified,
                 created: p.post.created,
+                deleted: p.post.deleted,
             })
         })
         .collect::<Result<Vec<LocatedPost>, RouteError>>()?;
@@ -192,10 +196,10 @@ pub(crate) async fn search_posts(
     let query2 = query.clone();
     let posts = web::block(move || {
         let posts = match &query2.host_community.community {
-            None => get_all_posts(&conn),
+            None => get_all_top_level_posts(&conn),
             Some(c) => {
                 let community = get_community(&conn, c)?.ok_or(diesel::NotFound)?;
-                get_posts_of_community(&conn, &community)
+                get_top_level_posts_of_community(&conn, &community)
             }
         }?
         .unwrap_or_default();
@@ -245,6 +249,7 @@ pub(crate) async fn search_posts(
                 },
                 modified: p.post.modified,
                 created: p.post.created,
+                deleted: p.post.deleted,
             })
         })
         .collect::<Result<Vec<LocatedPost>, RouteError>>()?;

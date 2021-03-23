@@ -54,6 +54,7 @@ table! {
         modified -> Timestamp,
         parentId -> Nullable<Unsigned<Bigint>>,
         communityId -> Unsigned<Bigint>,
+        deleted -> Bool,
     }
 }
 

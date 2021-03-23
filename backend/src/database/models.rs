@@ -95,6 +95,7 @@ pub struct DatabasePost {
     pub parent_id: Option<u64>,
     #[column_name = "communityId"]
     pub community_id: u64,
+    pub deleted: bool,
 }
 
 #[derive(Queryable, Identifiable, Associations, Debug, Clone)]

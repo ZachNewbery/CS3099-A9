@@ -11,7 +11,7 @@ use either::Either;
 
 use uuid::Uuid;
 
-pub(crate) fn get_all_posts(
+pub(crate) fn get_all_top_level_posts(
     conn: &MysqlConnection,
 ) -> Result<Option<Vec<DatabasePost>>, diesel::result::Error> {
     use crate::database::schema::Posts::dsl::*;
@@ -21,7 +21,7 @@ pub(crate) fn get_all_posts(
         .optional()
 }
 
-pub(crate) fn get_posts_of_community(
+pub(crate) fn get_top_level_posts_of_community(
     conn: &MysqlConnection,
     community: &DatabaseCommunity,
 ) -> Result<Option<Vec<DatabasePost>>, diesel::result::Error> {
@@ -210,9 +210,11 @@ pub(crate) fn remove_post(
     conn: &MysqlConnection,
     post: DatabasePost,
 ) -> Result<(), diesel::result::Error> {
+    use crate::database::schema::Posts::dsl::*;
+
     remove_post_contents(conn, &post)?;
 
-    diesel::delete(&post).execute(conn)?;
+    diesel::update(&post).set(deleted.eq(true)).execute(conn)?;
 
     Ok(())
 }

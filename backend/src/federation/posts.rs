@@ -108,6 +108,11 @@ pub(crate) async fn get_post_by_id(
         .await?
         .ok_or(RouteError::NotFound)?;
 
+    // Internal post deletion semantic should be opaque to federated requests
+    if post.post.deleted {
+        return Ok(HttpResponse::NotFound().finish());
+    }
+
     let conn = get_conn_from_pool(pool.clone())?;
 
     let parent = post.post.clone();
@@ -173,6 +178,11 @@ pub(crate) async fn edit_post(
             // Find the post
             let post = get_post(&conn, &id)?.ok_or(diesel::NotFound)?.post;
 
+            // Internal post deletion semantic should be opaque to federated requests
+            if post.deleted {
+                return Err(diesel::NotFound);
+            }
+
             match &edit_post.title {
                 None => {}
                 Some(n) => {
@@ -226,6 +236,11 @@ pub(crate) async fn delete_post(
     web::block(move || {
         conn.transaction(|| {
             let post = get_post(&conn, &id)?.ok_or(diesel::NotFound)?.post;
+
+            // Internal post deletion semantic should be opaque to federated requests
+            if post.deleted {
+                return Err(diesel::NotFound);
+            }
 
             remove_post(&conn, post)?;
 
