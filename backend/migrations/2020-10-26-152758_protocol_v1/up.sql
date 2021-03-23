@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS LocalUsers (
     id SERIAL PRIMARY KEY,
     userId BIGINT UNSIGNED NOT NULL UNIQUE,
     email VARCHAR(254) NOT NULL UNIQUE,
-    password TEXT NOT NULL DEFAULT 'hunter2',   -- TODO: Make this secure
+    password TEXT NOT NULL,   -- TODO: Make this secure
     createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     session VARCHAR(36) NOT NULL DEFAULT '',    -- JWT
     CONSTRAINT FK_LocalUsers_userId FOREIGN KEY (userId) REFERENCES Users(id),

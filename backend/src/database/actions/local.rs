@@ -31,7 +31,6 @@ pub(crate) fn validate_session(
         .optional()
 }
 
-// TODO: This is buggy for username xor email unique
 pub(crate) fn get_local_user_by_username_email(
     conn: &MysqlConnection,
     username_: &str,
