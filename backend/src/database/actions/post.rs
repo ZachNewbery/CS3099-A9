@@ -21,6 +21,13 @@ pub(crate) fn get_all_top_level_posts(
         .optional()
 }
 
+pub(crate) fn get_all_posts(
+    conn: &MysqlConnection,
+) -> Result<Option<Vec<DatabasePost>>, diesel::result::Error> {
+    use crate::database::schema::Posts::dsl::*;
+    Posts.load(conn).optional()
+}
+
 pub(crate) fn get_top_level_posts_of_community(
     conn: &MysqlConnection,
     community: &DatabaseCommunity,

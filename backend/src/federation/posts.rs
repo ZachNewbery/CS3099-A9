@@ -1,21 +1,23 @@
-use actix_web::{delete, get, post, put, web, HttpRequest};
-use actix_web::{HttpResponse, Result};
-use chrono::NaiveDateTime;
-use serde::{Deserialize, Serialize};
-use uuid::Uuid;
-
 use crate::database::actions::post::{
-    get_children_posts_of, get_post, modify_post_title, put_post_contents, remove_post,
-    remove_post_contents,
+    get_all_posts, get_all_top_level_posts, get_children_posts_of, get_post, modify_post_title,
+    put_post_contents, remove_post, remove_post_contents,
 };
 use crate::database::get_conn_from_pool;
-
 use crate::federation::schemas::{ContentType, NewPost, Post, User};
 use crate::util::route_error::RouteError;
 use crate::util::HOSTNAME;
 use crate::DBPool;
+use actix_web::{delete, get, post, put, web, HttpRequest};
+use actix_web::{HttpResponse, Result};
+use chrono::NaiveDateTime;
 use diesel::Connection;
 use either::Either;
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
+
+const fn true_func() -> bool {
+    false
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -26,15 +28,16 @@ pub struct PostFilters {
     author: Option<String>,
     host: Option<String>,
     parent_post: Option<Uuid>,
-    include_sub_children_posts: Option<bool>,
+    #[serde(default = "true_func")]
+    include_sub_children_posts: bool,
     content_type: Option<ContentType>,
 }
 
 #[get("/")]
 pub(crate) async fn post_matching_filters(
-    _pool: web::Data<DBPool>,
+    pool: web::Data<DBPool>,
     req: HttpRequest,
-    _parameters: web::Query<PostFilters>,
+    parameters: web::Query<PostFilters>,
 ) -> Result<HttpResponse> {
     // TODO: Authentication for /fed/posts (filter) (GET)
     let _client_host = req
@@ -47,9 +50,108 @@ pub(crate) async fn post_matching_filters(
         .get("User-ID")
         .ok_or(RouteError::MissingUserID)?;
 
-    // TODO: Implement /fed/posts (filter) (GET)
+    let conn = get_conn_from_pool(pool.clone())?;
+    let inc = parameters.include_sub_children_posts;
+    let mut posts = {
+        let mut p = web::block(move || {
+            let posts = if inc {
+                get_all_posts(&conn)?
+            } else {
+                get_all_top_level_posts(&conn)?
+            }
+            .unwrap_or_default()
+            .into_iter()
+            .map(|p| {
+                Ok::<_, RouteError>((
+                    get_post(&conn, &p.uuid.parse().map_err(RouteError::UuidParse)?)?
+                        .ok_or(RouteError::Diesel(diesel::NotFound))?,
+                    get_children_posts_of(&conn, &p)?.unwrap_or_default(),
+                ))
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+
+            Ok::<_, RouteError>(posts)
+        })
+        .await?;
+
+        // Sort by descending time
+        p.sort_by(|(a, _), (b, _)| b.post.modified.cmp(&a.post.modified));
+        p
+    };
+
+    if let Some(n) = &parameters.limit {
+        posts = posts.into_iter().take(*n as usize).collect();
+    }
+
+    if let Some(community_id) = &parameters.community {
+        posts = posts
+            .into_iter()
+            .filter(|(p, _)| &p.community.name == community_id)
+            .collect();
+    }
+
+    if let Some(date) = &parameters.min_date {
+        posts = posts
+            .into_iter()
+            .filter(|(p, _)| &p.post.created >= date)
+            .collect();
+    }
+
+    if let Some(author) = &parameters.author {
+        posts = posts
+            .into_iter()
+            .filter(|(p, _)| &p.user.username == author)
+            .collect();
+    }
+
+    if let Some(host) = &parameters.host {
+        posts = posts
+            .into_iter()
+            .filter(|(p, _)| match &p.user_details {
+                Either::Left(_) => host == HOSTNAME,
+                Either::Right(f) => host == &f.host,
+            })
+            .collect();
+    }
+
+    if let Some(ct) = &parameters.content_type {
+        posts = posts
+            .into_iter()
+            .filter(|(p, _)| p.content.iter().any(|c| c == ct))
+            .collect();
+    }
+
+    let posts = posts
+        .into_iter()
+        .map(|(p, c)| {
+            Ok::<_, RouteError>(Post {
+                id: p.user.username.parse().map_err(RouteError::UuidParse)?,
+                community: p.community.name,
+                parent_post: p
+                    .parent
+                    .map(|u| u.uuid.parse().map_err(RouteError::UuidParse))
+                    .transpose()?,
+                children: c
+                    .into_iter()
+                    .map(|h| h.post.uuid.parse().map_err(RouteError::UuidParse))
+                    .collect::<Result<Vec<_>, _>>()?,
+                title: p.post.title,
+                content: p.content,
+                author: User {
+                    id: p.user.username,
+                    host: match p.user_details {
+                        Either::Left(_) => HOSTNAME.to_string(),
+                        Either::Right(f) => f.host,
+                    },
+                },
+                modified: p.post.modified,
+                created: p.post.created,
+            })
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+
     // Return type: Vec<Post>
-    Ok(HttpResponse::NotImplemented().finish())
+    Ok(HttpResponse::Ok().json(posts))
 }
 
 #[post("/")]
