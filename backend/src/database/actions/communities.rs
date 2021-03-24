@@ -135,6 +135,15 @@ pub(crate) fn remove_community(
         .execute(conn)?;
     }
 
+    // Remove all comments
+    {
+        use crate::database::schema::Posts::dsl::*;
+        diesel::delete(Posts)
+            .filter(communityId.eq(community.id))
+            .filter(parentId.is_not_null())
+            .execute(conn)?;
+    }
+
     // Remove all posts
     {
         use crate::database::schema::Posts::dsl::*;
@@ -142,6 +151,7 @@ pub(crate) fn remove_community(
             .filter(communityId.eq(community.id))
             .execute(conn)?;
     }
+
     // Remove all admins
     {
         use crate::database::schema::CommunitiesUsers::dsl::*;
@@ -149,6 +159,7 @@ pub(crate) fn remove_community(
             .filter(communityId.eq(community.id))
             .execute(conn)?;
     }
+
     // Remove community itself
     {
         diesel::delete(&community).execute(conn)?;
