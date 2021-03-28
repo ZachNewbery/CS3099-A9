@@ -26,7 +26,7 @@ export const EditCommunity = ({ show, hide, id, initialTitle, initialDescription
     await editCommunity({ title, description, id });
 
     setLoading(false);
-    refresh();
+    refresh(title);
     hide();
   };
 

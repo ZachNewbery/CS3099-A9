@@ -7,7 +7,7 @@ const getUserToken = async ({ email, password }) => {
   return await fetchData(`${process.env.REACT_APP_API}/login`, JSON.stringify({ email, password }), "POST");
 };
 
-export const Login = () => {
+export const Login = ({ setUser }) => {
   const emailRef = useRef(null);
   const passwordRef = useRef(null);
   const [error, setError] = useState();
@@ -18,8 +18,10 @@ export const Login = () => {
     const password = passwordRef.current.value;
 
     try {
-      const { token } = await getUserToken({ email, password });
+      const user = await getUserToken({ email, password });
+      const { token } = user;
       sessionStorage.setItem("access-token", token);
+      setUser(user);
       return history.push("/");
     } catch (error) {
       setError("Please check email or password is entered correctly.");

@@ -27,6 +27,7 @@ export const ListPosts = ({ host, community }) => {
   return (
     <StyledPosts>
       {posts
+        .filter(post => !post.deleted)
         .sort((a, b) => moment(b.created).unix() - moment(a.created).unix())
         .map(({ id, title, content, user, created, children }) => (
           <StyledContent key={id} onClick={() => history.push(`/post/${id}`)}>
@@ -35,17 +36,13 @@ export const ListPosts = ({ host, community }) => {
                 {title}
               </h1>
               <div className="date-time">
-                <p className="time">{moment(created).format("HH:mm")}</p>
-                <p className="date">{moment(created).format("DD MMMM YYYY")}</p>
+                <p className="time">{moment(created).utc(true).format("HH:mm")}</p>
+                <p className="date">{moment(created).utc(true).format("DD MMMM YYYY")}</p>
               </div>
             </div>
             {content.map((block, i) => (
               <StyledBlock key={i}>{renderContent(block)}</StyledBlock>
             ))}
-            <hr />
-            <div className="stats">
-              <p>{`${children.length} ${children.length === 1 ? "comment" : "comments"}`}</p>
-            </div>
           </StyledContent>
         ))}
     </StyledPosts>

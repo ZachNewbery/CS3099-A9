@@ -47,14 +47,14 @@ const fetchCommunities = async ({ host }) => {
   return await fetchData(`${process.env.REACT_APP_API}/communities${hostParam}`);
 };
 
-export const ListCommunities = ({ host, community, setCommunity }) => {
+export const ListCommunities = ({ host, community, setCommunity, refresh }) => {
   const [showCreate, setShowCreate] = useState(false);
   const history = useHistory();
 
   const handleShowCreate = () => setShowCreate(true);
   const handleHideCreate = () => setShowCreate(false);
 
-  const { data: communities, isLoading, error, reload } = useAsync(fetchCommunities, { host });
+  const { data: communities, isLoading, error } = useAsync(fetchCommunities, { host });
 
   useEffect(() => {
     if (communities && !community) {
@@ -74,7 +74,7 @@ export const ListCommunities = ({ host, community, setCommunity }) => {
   return (
     <StyledCommunities>
       <h1>Communities</h1>
-      <CreateCommunity show={showCreate} hide={handleHideCreate} refresh={reload} />
+      <CreateCommunity show={showCreate} hide={handleHideCreate} refresh={refresh} />
       <ScrollContainer className="communities-list">
         {communities.map((c, i) => (
           <h3 key={i} onClick={() => handleSelect(c)} className={c === community ? "active" : ""}>

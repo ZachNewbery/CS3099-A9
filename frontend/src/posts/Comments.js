@@ -4,16 +4,25 @@ import moment from "moment";
 import { useAsync } from "react-async";
 import { fetchData, Spinner, Error, colors } from "../helpers";
 import { StyledBlock, StyledContent, renderContent } from "./PostContent";
+import { useUser } from "../index";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPencilAlt, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { EditComment } from "./EditComment";
 
-const loadChildPosts = async ({ children }) => {
+const loadChildPosts = async ({ children, addComment }) => {
   let posts = [];
 
   for (const child of children) {
     const post = await fetchData(`${process.env.REACT_APP_API}/posts/${child}`);
+    if (!post.deleted) addComment();
     posts.push(post);
   }
 
   return posts;
+};
+
+const deletePost = async ({ id }) => {
+  return fetchData(`${process.env.REACT_APP_API}/posts/${id}`, null, "DELETE");
 };
 
 const createComment = async ({ postId, communityId, content }) => {
@@ -59,11 +68,29 @@ const StyledComments = styled.div`
       }
     }
     & > .footer {
+      display: flex;
       margin: 0.25rem;
       margin-left: 3.5rem;
       & > p {
         margin: 0;
         font-size: 0.75rem;
+      }
+      & > .actions {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        margin-left: 0.5rem;
+        border-left: 1px solid ${colors.lightGray};
+        padding-left: 0.5rem;
+        & > svg {
+          margin-right: 0.5rem;
+          color: ${colors.darkGray};
+          cursor: pointer;
+          transition: all 0.3s;
+          &:hover {
+            color: ${colors.gray};
+          }
+        }
       }
     }
   }
@@ -123,36 +150,70 @@ export const CreateComment = ({ postId, communityId, refresh }) => {
   );
 };
 
-export const Comments = ({ children }) => {
-  const { data: comments, isLoading, error } = useAsync(loadChildPosts, { children });
+export const Comments = ({ children, addComment, removeComment }) => {
+  const { data: comments, isLoading, error, reload } = useAsync(loadChildPosts, { children, addComment });
+  const [showEdit, setShowEdit] = useState({ showModal: false, content: null, id: null });
+
+  const user = useUser();
 
   if (isLoading) return <Spinner />;
   if (error) return <Error message={error} />;
 
-  console.log(comments);
-
   return (
-    <StyledComments>
-      {comments.sort((a, b) => moment(b.created).unix() - moment(a.created).unix()).map((comment) => (
-        <div key={comment.id} className="comment">
-          <div className="main">
-            <div className="profile">
-              <img
-                alt="profile"
-                src={`https://eu.ui-avatars.com/api/?rounded=true&bold=true&background=0061ff&color=ffffff&uppercase=true&format=svg&name=${comment.author.id}`}
-              />
-            </div>
-            <div className="content">
-              {comment.content.map((block, i) => (
-                <StyledBlock key={i}>{renderContent(block)}</StyledBlock>
-              ))}
-            </div>
-          </div>
-          <div className="footer">
-            <p title={moment(comment.created).format("HH:mma - Do MMMM, YYYY")}>{moment(comment.created).fromNow()}</p>
-          </div>
-        </div>
-      ))}
-    </StyledComments>
+    <>
+      <EditComment
+        id={showEdit.id}
+        hide={() => setShowEdit({ showModal: false })}
+        show={showEdit.showModal}
+        initialContent={showEdit.content}
+        refresh={reload}
+      />
+      <StyledComments>
+        {comments
+          .filter((post) => !post.deleted)
+          .sort((a, b) => moment(b.created).unix() - moment(a.created).unix())
+          .map((comment) => {
+            const { author } = comment;
+            const isAdmin = author.id.toLowerCase() === user.username.toLowerCase() && author.host.toLowerCase() === user.host.toLowerCase();
+
+            const handleEdit = () => {
+              setShowEdit({ showModal: true, content: comment.content?.[0]?.text, id: comment.id });
+            };
+
+            const handleDelete = async () => {
+              await deletePost({ id: comment.id })
+                .then(() => removeComment())
+                .then(() => reload());
+            };
+
+            return (
+              <div key={comment.id} className="comment">
+                <div className="main">
+                  <div className="profile">
+                    <img
+                      alt="profile"
+                      src={`https://eu.ui-avatars.com/api/?rounded=true&bold=true&background=0061ff&color=ffffff&uppercase=true&format=svg&name=${comment.author.id}`}
+                    />
+                  </div>
+                  <div className="content">
+                    {comment.content.map((block, i) => (
+                      <StyledBlock key={i}>{renderContent(block)}</StyledBlock>
+                    ))}
+                  </div>
+                </div>
+                <div className="footer">
+                  <p title={moment(comment.created).utc(true).format("HH:mma - Do MMMM, YYYY")}>{moment(comment.created).utc(true).fromNow()}</p>
+                  {isAdmin && (
+                    <div className="actions">
+                      <FontAwesomeIcon onClick={handleEdit} icon={faPencilAlt} />
+                      <FontAwesomeIcon onClick={handleDelete} icon={faTrash} />
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+      </StyledComments>
+    </>
   );
 };

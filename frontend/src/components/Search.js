@@ -56,8 +56,6 @@ export const Search = () => {
     setSearch(text);
   };
 
-  console.log(search);
-
   return (
     <StyledSearch>
       <div className="search-area">

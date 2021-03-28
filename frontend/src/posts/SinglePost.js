@@ -6,6 +6,7 @@ import { useAsync } from "react-async";
 
 import { fetchData, Spinner, colors, fonts } from "../helpers";
 import { StyledBlock, StyledContent, renderContent } from "./PostContent";
+import { useUser } from "../index";
 import { Comments, CreateComment } from "./Comments";
 import { EditPost } from "./EditPost";
 
@@ -17,8 +18,8 @@ const loadSinglePost = async ({ id }) => {
 };
 
 const deletePost = async ({ id }) => {
-  return fetchData(`${process.env.REACT_APP_API}/posts`, JSON.stringify({ id }), "DELETE");
-}
+  return fetchData(`${process.env.REACT_APP_API}/posts/${id}`, null, "DELETE");
+};
 
 const StyledPostContainer = styled.div`
   width: 100%;
@@ -143,6 +144,7 @@ const StyledPost = styled.div`
 `;
 
 export const SinglePost = ({ community, setCommunity }) => {
+  const [commentCount, setCommentCount] = useState(0);
   const { postId } = useParams();
   const history = useHistory();
 
@@ -154,44 +156,47 @@ export const SinglePost = ({ community, setCommunity }) => {
     }
   }, [data, community, setCommunity]);
 
+  const addComment = () => setCommentCount(c => c + 1);
+  const removeComment = () => setCommentCount (c => c - 1);
+  
   if (isLoading) {
     return <Spinner />;
   }
 
   return (
     <StyledPostContainer>
-      <Post {...data} refresh={reload} />
+      <Post {...data} refresh={reload} commentCount={commentCount} />
       <CreateComment postId={data.id} refresh={reload} communityId={data.community.id} />
-      <Comments children={data.children} />
+      <Comments children={data.children} addComment={addComment} removeComment={removeComment} />
     </StyledPostContainer>
   );
 };
 
-export const Post = ({ id, title, content, created, children, author, refresh }) => {
+export const Post = ({ id, title, content, created, author, refresh, commentCount }) => {
   const history = useHistory();
   const [showEdit, setShowEdit] = useState(false);
 
-  const currentUser = { id: "", host: "" };
-  const isAdmin = true || (author.id.toLowerCase() === currentUser.id.toLowerCase() && author.host.toLowerCase() === currentUser.host.toLowerCase());
+  const user = useUser();
+  const isAdmin = author.id.toLowerCase() === user.username.toLowerCase() && author.host.toLowerCase() === user.host.toLowerCase();
 
   const handleEdit = () => {
     setShowEdit(true);
-  }
+  };
 
   const handleDelete = async () => {
-    await deletePost({ id });
-  }
-  
+    await deletePost({ id }).then(history.goBack());
+  };
+
   return (
     <StyledPost>
-      <EditPost id={id} hide={() => setShowEdit(false)} show={showEdit} initialTitle={title} initialContent={content[0].text} refresh={refresh} />
+      <EditPost id={id} hide={() => setShowEdit(false)} show={showEdit} initialTitle={title} initialContent={content?.[0]?.markdown} refresh={refresh} />
       <div className="header">
         <div className="back-icon" onClick={() => history.goBack()}>
           <FontAwesomeIcon icon={faArrowLeft} />
         </div>
         <div className="title">
           <h3>{title}</h3>
-          <p title={moment(created).format("HH:mma - MMMM D, YYYY")}>{moment(created).format("MMMM D, YYYY")}</p>
+          <p title={moment(created).utc(true).format("HH:mma - MMMM D, YYYY")}>{moment(created).utc(true).format("MMMM D, YYYY")}</p>
         </div>
         <div className="profile">
           <div className="details">
@@ -200,7 +205,10 @@ export const Post = ({ id, title, content, created, children, author, refresh })
           </div>
           <img
             alt="profile"
-            src={`https://eu.ui-avatars.com/api/?rounded=true&bold=true&background=0061ff&color=ffffff&uppercase=true&format=svg&name=${author.id}`}
+            src={
+              author.avatar ||
+              `https://eu.ui-avatars.com/api/?rounded=true&bold=true&background=0061ff&color=ffffff&uppercase=true&format=svg&name=${author.id}`
+            }
           />
         </div>
       </div>
@@ -216,7 +224,7 @@ export const Post = ({ id, title, content, created, children, author, refresh })
             <FontAwesomeIcon onClick={handleDelete} icon={faTrash} />
           </div>
         )}
-        <p>{`${children.length} ${children.length === 1 ? "comment" : "comments"}`}</p>
+        <p>{`${commentCount} ${commentCount === 1 ? "comment" : "comments"}`}</p>
       </div>
     </StyledPost>
   );

@@ -2,6 +2,7 @@ import React from "react";
 import styled from "styled-components";
 
 import { colors } from "../helpers";
+import { MarkdownEditor } from "../components/MarkdownEditor";
 
 export const StyledBlock = styled.div`
   padding: 0.8em 0;
@@ -24,11 +25,23 @@ export const StyledContent = styled.div`
   background: white;
   border: 1px solid ${colors.mediumLightGray};
   border-radius: 0.6rem;
-  padding: 1rem;
   margin-top: 1rem;
+  max-height: 20rem;
+  overflow: hidden;
+  position: relative;
+
+  &::after {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 22px;
+    background: linear-gradient(0, white 16%, rgba(255, 255, 255, 0.7) 70%, transparent);
+    bottom: 0;
+  }
 
   .header {
     display: flex;
+    padding: 1rem 1rem 0;
     .title {
       font-size: 1.5em;
       flex: 1;
@@ -38,6 +51,9 @@ export const StyledContent = styled.div`
       white-space: nowrap;
       text-overflow: ellipsis;
     }
+  }
+  .header + div {
+    padding: 0 0.5em 0.3rem;
   }
   .date-time {
     display: flex;
@@ -77,12 +93,8 @@ export const StyledContent = styled.div`
 `;
 
 export const renderContent = (content = []) => {
-  console.log(content);
   return (
-    <>
-      {content.text && <TextContent content={content.text} />}
-      {content.markdown && <TextContent content={content.markdown} />}
-    </>
+    <MarkdownEditor readOnly={true} name="content" defaultValue={content.text || content.markdown} />
   );
 };
 

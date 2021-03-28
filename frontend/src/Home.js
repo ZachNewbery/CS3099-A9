@@ -27,15 +27,17 @@ export const Home = ({ search, host }) => {
   const [community, setCommunity] = useState(null);
   const [i, setI] = useState(0);
 
-  const reload = () => setI(i => i + 1);
+  const reload = (communityId = null) => {
+    console.log({ community, communityId });
+    setCommunity(communityId);
+    setI(i => i + 1);
+  }
 
-  console.log(community);
-  
   return (
     <StyledContainer>
       <div className="communities-container">
-        {community && <SingleCommunity key={community} id={community} host={host} />}
-        <ListCommunities setCommunity={setCommunity} community={community} host={host} />
+        {community && <SingleCommunity key={community} id={community} host={host} refresh={reload} />}
+        <ListCommunities key={i} setCommunity={setCommunity} community={community} host={host} refresh={reload} />
       </div>
       <div className="posts-container">
         <Switch>
@@ -43,7 +45,7 @@ export const Home = ({ search, host }) => {
             <SinglePost community={community} setCommunity={setCommunity} />
           </ErrorHandledRoute>
           <Route path="/">
-            <CreatePost community={community} host={host} refresh={reload} />
+            <CreatePost key={community} community={community} host={host} refresh={() => reload(community)} />
             {community && <ListPosts key={`${community}${i}`} community={community} host={host} search={search} />}
           </Route>
         </Switch>

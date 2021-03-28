@@ -3,7 +3,8 @@ import styled from "styled-components";
 
 import { fetchData, colors, fonts } from "../helpers";
 import { StyledForm } from "../helpers/styles";
-import { Tooltip } from "../components/Tooltip"
+import { Tooltip } from "../components/Tooltip";
+import { MarkdownEditor } from "../components/MarkdownEditor";
 
 const createPost = async ({ title, community, content }) => {
   const post = {
@@ -50,6 +51,8 @@ const StyledContainer = styled.div`
 
 export const CreatePost = ({ community, host, refresh }) => {
   const formRef = useRef(null);
+  const [titleValue, setTitleValue] = useState(null);
+  const [bodyValue, setBodyValue] = useState(null);
   const [errors, setErrors] = useState({});
 
   const handleSubmit = async (e) => {
@@ -59,7 +62,9 @@ export const CreatePost = ({ community, host, refresh }) => {
     let { title, body } = formRef.current;
 
     title = title.value;
-    body = body.value;
+    body = body?.value || "";
+
+    setBodyValue(body);
 
     if (title.length < 5) {
       currentErrors.title = "Title is too short";
@@ -79,7 +84,10 @@ export const CreatePost = ({ community, host, refresh }) => {
 
     if (Object.keys(currentErrors).length === 0) {
       try {
-        await createPost({ title, community, content: { text: body } });
+        await createPost({ title, community, content: { markdown: body } });
+        formRef.current.title.value = "";
+        setBodyValue("");
+        setErrors({});
         return refresh();
       } catch (error) {
         currentErrors.body = error.message;
@@ -93,13 +101,15 @@ export const CreatePost = ({ community, host, refresh }) => {
     <StyledContainer>
       <StyledForm ref={formRef} onChange={() => setErrors({})}>
         <label>
-          <input type="text" name="title" placeholder="Title" />
+          <input type="text" name="title" placeholder="Title" onChange={(e) => setTitleValue(e.target.value)} />
           {errors.title && <Tooltip text={errors.title} />}
         </label>
-        <label>
-          <textarea type="text" name="body" placeholder="Start writing..." />
-          {errors.body && <Tooltip text={errors.body}/>}
-        </label>
+        {titleValue && (
+          <label>
+            <MarkdownEditor name="body" defaultValue={bodyValue} />
+            {errors.body && <Tooltip text={errors.body} />}
+          </label>
+        )}
         <button onClick={handleSubmit}>Post to {community} </button>
       </StyledForm>
     </StyledContainer>

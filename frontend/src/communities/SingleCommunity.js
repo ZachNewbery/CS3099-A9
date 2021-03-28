@@ -6,6 +6,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPencilAlt, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { fetchData, Spinner, Error, colors, fonts } from "../helpers";
 
+import { useUser } from "../index";
 import { EditCommunity } from "./EditCommunity";
 
 const StyledContainer = styled.div`
@@ -59,13 +60,15 @@ const fetchCommunity = async ({ id, host }) => {
 };
 
 const deleteCommunity = async ({ id }) => {
-  return await fetchData(`${process.env.REACT_APP_API}/communities`, JSON.stringify({ id }), "DELETE");
+  return await fetchData(`${process.env.REACT_APP_API}/communities/${id}`, null, "DELETE");
 };
 
-export const SingleCommunity = ({ id, host }) => {
+export const SingleCommunity = ({ id, host, refresh }) => {
   const [showCommunity, setShowCommunity] = useState(false);
 
-  const { data, isLoading, error, reload } = useAsync(fetchCommunity, { id, host });
+  const { data, isLoading, error } = useAsync(fetchCommunity, { id, host });
+
+  const user = useUser();
 
   const handleShowCommunity = () => setShowCommunity(true);
   const handleHideCommunity = () => setShowCommunity(false);
@@ -74,14 +77,14 @@ export const SingleCommunity = ({ id, host }) => {
   const handleDelete = async e => {
     e.preventDefault();
     await deleteCommunity({ id });
+    refresh();
   }
   
   const renderCommunity = () => {
     if (isLoading) return <Spinner />;
     if (error) return <Error message={error} />;
 
-    const currentUser = { id: "", host: "" };
-    const isAdmin = true || data.admins.find(admin => admin.id.toLowerCase() === currentUser.id.toLowerCase() && admin.host.toLowerCase() === currentUser.host.toLowerCase());
+    const isAdmin = data.admins.find(admin => admin.id.toLowerCase() === user.username.toLowerCase() && admin.host.toLowerCase() === user.host.toLowerCase());
     
     return (
       <>
@@ -101,7 +104,7 @@ export const SingleCommunity = ({ id, host }) => {
       <EditCommunity
         show={showCommunity}
         hide={handleHideCommunity}
-        refresh={reload}
+        refresh={refresh}
         id={id}
         initialTitle={data?.title}
         initialDescription={data?.description}

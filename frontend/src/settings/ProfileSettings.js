@@ -1,61 +1,48 @@
 import React, { useState, useRef } from "react";
 import { StyledForm, fetchData } from "../helpers";
+import { useUser } from "../index";
 
-const editProfile = async ({ password }) => {
-  return await fetchData(`${process.env.REACT_APP_API}/edit_profile`, JSON.stringify({ password }), "PUT");
+const editProfile = async ({ avatar, bio }) => {
+  return await fetchData(`${process.env.REACT_APP_API}/edit_profile`, JSON.stringify({ avatar, bio }), "PUT");
 };
 
 export const ProfileSettings = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  
-  const passwordRef = useRef(null);
-  const confirmPasswordRef = useRef(null);
+
+  const { setUser, ...user } = useUser();
+
+  const bioRef = useRef(null);
+  const avatarRef = useRef(null);
 
   const handleConfirm = async () => {
-    const password = passwordRef.current.value;
-    const confirmPassword = confirmPasswordRef.current.value;
-
-    let errors = [];
-    
-    if (password.length < 5) {
-      errors.push("Password too short");
-    }
-
-    if (password !== confirmPassword) {
-      errors.push("Passwords don't match");
-    }
-
-    setError(errors.join("; "));
-
-    if (Object.keys(errors).length !== 0) {
-      return;
-    }
-    
+    const bio = bioRef.current.value;
+    const avatar = avatarRef.current.value;
 
     setLoading(true);
 
-    const result = await editProfile({ password });
+    const result = await editProfile({ avatar, bio });
+
+    setUser(u => ({...u, bio, avatar}))
 
     sessionStorage.setItem("access-token", result.token);
 
-    setLoading("done");
-
-    passwordRef.current.value = "";
-    confirmPasswordRef.current.value = "";
+    setLoading(false);
   };
 
   return (
     <StyledForm>
       <label>
-        Change Password
-        <input type="password" ref={passwordRef} />
-        <p className="error">{error}</p>
+        Bio
+        <input ref={bioRef} defaultValue={user.bio} />
       </label>
       <label>
-        Confirm Password
-        <input type="password" ref={confirmPasswordRef} />
+        Avatar Link
+        <input ref={avatarRef} defaultValue={user.avatar} />
       </label>
+      <a href={user.avatar} target="_blank" rel="noopener noreferrer">
+        <img src={user.avatar} alt="User Avatar" style={{ width: "10rem", height: "10rem", borderRadius: "7.5rem", margin: "1rem" }} />
+      </a>
       <button type="button" onClick={handleConfirm}>
         {loading === true ? "Loading..." : loading === "done" ? "done!" : "Confirm"}
       </button>

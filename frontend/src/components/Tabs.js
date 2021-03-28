@@ -3,12 +3,11 @@ import styled from "styled-components";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
 import { colors, fonts } from "../helpers";
-import { TABS } from "./index";
 
-export const Tabs = ({ tab, setTab }) => {
+export const Tabs = ({ tab, setTab, tabs }) => {
   return (
     <StyledTabs>
-      {Object.entries(TABS).map(([key, value]) => (
+      {Object.entries(tabs).map(([key, value]) => (
         <Tab key={key} tab={value} selectedTab={tab} setTab={setTab} />
       ))}
     </StyledTabs>

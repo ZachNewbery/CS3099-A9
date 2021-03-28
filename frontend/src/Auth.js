@@ -8,21 +8,21 @@ import { Logout } from "./Logout";
 import { Registration } from "./Registration";
 import { ErrorHandledRoute } from "./components/ErrorHandledRoute";
 
-export const AuthRoutes = () => {
+export const AuthRoutes = ({ setUser }) => {
   return (
     <main>
       <StyledAuthRoutes>
-        <Switch>
-          <ErrorHandledRoute path="/auth/registration">
-            <Registration />
-          </ErrorHandledRoute>
-          <ErrorHandledRoute path="/auth/login">
-            <Login />
-          </ErrorHandledRoute>
-          <ErrorHandledRoute path="/auth/logout">
-            <Logout />
-          </ErrorHandledRoute>
-        </Switch>
+          <Switch>
+            <ErrorHandledRoute path="/auth/registration">
+              <Registration />
+            </ErrorHandledRoute>
+            <ErrorHandledRoute path="/auth/login">
+              <Login setUser={setUser} />
+            </ErrorHandledRoute>
+            <ErrorHandledRoute path="/auth/logout">
+              <Logout />
+            </ErrorHandledRoute>
+          </Switch>
       </StyledAuthRoutes>
     </main>
   );

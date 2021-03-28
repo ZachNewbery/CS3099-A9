@@ -5,8 +5,7 @@ import { Modal } from "../components/Modal";
 import { StyledForm, fetchData } from "../helpers";
 
 const createCommunity = async ({ title, description }) => {
-  const id = title.split(" ").join("").substring(0, 23);
-  return await fetchData(`${process.env.REACT_APP_API}/communities/create`, JSON.stringify({ id, title: id, description }), "POST");
+  return await fetchData(`${process.env.REACT_APP_API}/communities/create`, JSON.stringify({ id: title, title, description }), "POST");
 }
 
 const StyledContainer = styled.div`
@@ -39,7 +38,7 @@ export const CreateCommunity = ({ show, hide, refresh }) => {
 
     await createCommunity({ title, description });
 
-    refresh();
+    refresh(title);
     setLoading(false);
     hide();
   }
