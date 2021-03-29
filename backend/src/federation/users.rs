@@ -1,9 +1,9 @@
+use crate::database::actions::post::get_all_posts;
 use crate::database::actions::user::{get_local_users, get_user};
-use crate::database::actions::post::{get_all_posts};
 use crate::database::get_conn_from_pool;
 use crate::util::route_error::RouteError;
 use crate::DBPool;
-use actix_web::{get, post, web, HttpResponse, Result, HttpRequest};
+use actix_web::{get, post, web, HttpRequest, HttpResponse, Result};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -53,13 +53,13 @@ pub(crate) async fn user_by_id(
         .ok_or(RouteError::MissingClientHost)?
         .to_str()
         .map_err(RouteError::HeaderParse)?;
-    
+
     let conn = get_conn_from_pool(pool.clone())?;
     let _user = web::block(move || get_user(&conn, &id)).await?;
 
     let conn = get_conn_from_pool(pool)?;
     let mut _posts = web::block(move || get_all_posts(&conn));
-    
+
     // Return type: { id, posts }
     Ok(HttpResponse::NotImplemented().finish())
 }

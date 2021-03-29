@@ -29,9 +29,10 @@ pub(crate) fn get_user(
     uid: &u64,
 ) -> Result<Either<DatabaseLocalUser, DatabaseFederatedUser>, diesel::result::Error> {
     use crate::database::schema::Users::dsl::*;
-    let user = Users.filter(id.eq(uid))
-                    .first::<DatabaseUser>(conn)
-                    .optional()?;
+    let user = Users
+        .filter(id.eq(uid))
+        .first::<DatabaseUser>(conn)
+        .optional()?;
 
     match user {
         Some(x) => return get_user_detail(conn, &x),
