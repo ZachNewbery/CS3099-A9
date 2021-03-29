@@ -24,6 +24,21 @@ pub(crate) fn get_user_detail(
     Ok(local.map_or_else(|| Right(fed.unwrap()), Left))
 }
 
+pub(crate) fn get_user(
+    conn: &MysqlConnection,
+    uid: &u64,
+) -> Result<Either<DatabaseLocalUser, DatabaseFederatedUser>, diesel::result::Error> {
+    use crate::database::schema::Users::dsl::*;
+    let user = Users.filter(id.eq(uid))
+                    .first::<DatabaseUser>(conn)
+                    .optional()?;
+
+    match user {
+        Some(x) => return get_user_detail(conn, &x),
+        None => return Err(diesel::NotFound),
+    }
+}
+
 pub(crate) fn get_local_users(
     conn: &MysqlConnection,
 ) -> Result<Vec<(DatabaseUser, DatabaseLocalUser)>, diesel::result::Error> {

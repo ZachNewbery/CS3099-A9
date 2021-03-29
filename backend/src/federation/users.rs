@@ -1,7 +1,9 @@
-use crate::database::actions::user::get_local_users;
+use crate::database::actions::user::{get_local_users, get_user};
+use crate::database::actions::post::{get_all_posts};
 use crate::database::get_conn_from_pool;
+use crate::util::route_error::RouteError;
 use crate::DBPool;
-use actix_web::{get, post, web, HttpResponse, Result};
+use actix_web::{get, post, web, HttpResponse, Result, HttpRequest};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -39,8 +41,25 @@ pub(crate) async fn search_users(
 }
 
 #[get("/{id}")]
-pub(crate) async fn user_by_id(web::Path(_id): web::Path<String>) -> Result<HttpResponse> {
+pub(crate) async fn user_by_id(
+    web::Path(id): web::Path<u64>,
+    pool: web::Data<DBPool>,
+    request: HttpRequest,
+) -> Result<HttpResponse> {
     // TODO: /fed/users/id (GET)
+    let _client_host = request
+        .headers()
+        .get("Client-Host")
+        .ok_or(RouteError::MissingClientHost)?
+        .to_str()
+        .map_err(RouteError::HeaderParse)?;
+    
+    let conn = get_conn_from_pool(pool.clone())?;
+    let _user = web::block(move || get_user(&conn, &id)).await?;
+
+    let conn = get_conn_from_pool(pool)?;
+    let mut _posts = web::block(move || get_all_posts(&conn));
+    
     // Return type: { id, posts }
     Ok(HttpResponse::NotImplemented().finish())
 }
