@@ -8,9 +8,13 @@ use crypto::{digest::Digest, sha2::Sha512};
 
 use http_signature_normalization_actix::prelude::*;
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, TokenData, Validation};
+use openssl::hash::*;
+use openssl::pkey::*;
+use openssl::sign::*;
 
 use serde::{Deserialize, Serialize};
 
+use std::fs;
 use std::time::SystemTime;
 use uuid::Uuid;
 
@@ -99,49 +103,58 @@ pub async fn request_wrapper() -> String {
     let hex = hex::decode(digest.result_str()).expect("Hex string decoded");
     let _digest_header = base64::encode(hex);
     let date = SystemTime::now().into();
+    // println!("Digest: {}", &_digest_header);
 
     // create request to be signed
     let req = awc::Client::new()
-        .get("https://cs3099user-a7.host.cs.st-andrews.ac.uk/fed/posts")
+        .get("https://cs3099user-a10.host.cs.st-andrews.ac.uk/fed/posts")
         .header("User-Agent", "Actix Web")
-        // .header("Digest", ["sha-512=", &digest_header].join(""))
-        .set(actix_web::http::header::Date(date))
-        .send()
-        .await;
+        .header("Digest", ["sha-512=", &_digest_header].join(""))
+        .set(actix_web::http::header::Date(date));
+
     // builder().connector(
     //     awc::Connector::new()
     //             .timeout(Duration::from_secs(20))
     //             .finish(),
     // )
     // .finish()
+
     // construct string as per supergroup protocol
     // let header_map = req.headers();
-    // let mut string = String::new();
-    // string.push_str(&format!("(request-target): get {}\n", "/fed/posts"));
-    // string.push_str(&format!("host: {}\n", "https://cs3099user-a9.host.cs.st-andrews.ac.uk/"));
-    // string.push_str(&format!("client-host: {}\n", "https://cs3099user-a7.host.cs.st-andrews.ac.uk"));
-    // string.push_str(&format!("date: {}\n", date));
-    // string.push_str(&format!("digest: SHA-512={}", digest_header));
+    let mut string = String::new();
+    string.push_str(&format!("(request-target): get {}\n", "/fed/posts"));
+    string.push_str(&format!(
+        "host: {}\n",
+        "https://cs3099user-a9.host.cs.st-andrews.ac.uk/"
+    ));
+    string.push_str(&format!(
+        "client-host: {}\n",
+        "https://cs3099user-a7.host.cs.st-andrews.ac.uk/"
+    ));
+    string.push_str(&format!("date: {}\n", date));
+    string.push_str(&format!("digest: SHA-512={}", _digest_header));
+    // println!("String: {}", &string);
 
-    // // obtain private key from file and sign string
-    // let pkey = PKey::private_key_from_pem(&fs::read("fed_auth.pem").expect("reading key")).expect("Getting private key.");
-    // let mut signer = Signer::new(MessageDigest::sha512(), &pkey).unwrap();
-    // signer.update(string.as_bytes()).unwrap();
+    // obtain private key from file and sign string
+    // @TODO: implement PCKS#1 signing?
+    let pkey = PKey::private_key_from_pem(&fs::read("fed_auth.pem").expect("reading key"))
+        .expect("Getting private key.");
+    let mut signer = Signer::new(MessageDigest::sha512(), &pkey).unwrap();
+    signer.update(string.as_bytes()).unwrap();
 
-    // // base64 encode string
-    // let signature = signer.sign_to_vec().unwrap();
-    // let encoded_sign = base64::encode(signature);
+    // base64 encode string
+    let signature = signer.sign_to_vec().unwrap();
+    let encoded_sign = base64::encode(signature);
 
-    // // append header to request
-    // let mut header_val = String::new();
-    // header_val.push_str("keyId=\"rsa-global\",algorithm=\"hs2019\",headers=\"(request-target) host client-host date digest\",signature=");
-    // header_val.push_str(&encoded_sign);
-    // let new_req = req.header("Signature", header_val);
+    // append header to request
+    let str_header = format!("keyId=\"rsa-global\",algorithm=\"hs2019\",headers=\"(request-target) host client-host date digest\",signature=\"{}\"", encoded_sign);
+    // println!("Signed String: {}", str_header);
+    let new_req = req.header("Signature", str_header);
 
     // send request?
-    // let response = new_req.timeout(Duration::from_secs(20)).send().await;
+    let _response = new_req.send().await;
 
-    println!("Response: {:?}", req);
+    // println!("Response: {:?}", response);
 
     return "done".to_string();
 }
