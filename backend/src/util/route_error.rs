@@ -17,7 +17,7 @@ pub enum RouteError {
     #[error("missing Client-Host")]
     MissingClientHost,
     #[error("missing User-ID")]
-    MissingUserID,
+    MissingUserId,
     #[error(transparent)]
     Diesel(diesel::result::Error), // no "from" proc-macro here because we define it ourselves
     #[error("item not found in database")]
@@ -41,7 +41,7 @@ impl ResponseError for RouteError {
     fn status_code(&self) -> StatusCode {
         match self {
             RouteError::MissingClientHost => StatusCode::BAD_REQUEST,
-            RouteError::MissingUserID => StatusCode::BAD_REQUEST,
+            RouteError::MissingUserId => StatusCode::BAD_REQUEST,
             RouteError::Diesel(_) => StatusCode::INTERNAL_SERVER_ERROR,
             RouteError::NotFound => StatusCode::NOT_FOUND,
             RouteError::UuidParse(_) => StatusCode::INTERNAL_SERVER_ERROR,
@@ -52,7 +52,7 @@ impl ResponseError for RouteError {
     fn error_response(&self) -> HttpResponse {
         let title_message = match self {
             RouteError::MissingClientHost => "missing Client-Host".to_string(),
-            RouteError::MissingUserID => "missing User-ID".to_string(),
+            RouteError::MissingUserId => "missing User-ID".to_string(),
             RouteError::Diesel(e) => {
                 eprintln!("{}", e);
                 "internal database error".to_string()
@@ -67,7 +67,7 @@ impl ResponseError for RouteError {
 
         match self {
             RouteError::MissingClientHost => HttpResponse::BadRequest(),
-            RouteError::MissingUserID => HttpResponse::BadRequest(),
+            RouteError::MissingUserId => HttpResponse::BadRequest(),
             RouteError::Diesel(_) => HttpResponse::InternalServerError(),
             RouteError::NotFound => HttpResponse::NotFound(),
             RouteError::UuidParse(_) => HttpResponse::InternalServerError(),

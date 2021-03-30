@@ -1,7 +1,6 @@
-use chrono::NaiveDateTime;
-
+use chrono::serde::{ts_milliseconds, ts_milliseconds_option};
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-
 use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -50,7 +49,8 @@ pub(crate) struct UpdatePost {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct PostTimeStamp {
     id: Uuid,
-    modified: Option<NaiveDateTime>,
+    #[serde(with = "ts_milliseconds_option")]
+    modified: Option<DateTime<Utc>>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -63,6 +63,8 @@ pub(crate) struct Post {
     pub(crate) title: String,
     pub(crate) content: Vec<ContentType>,
     pub(crate) author: User,
-    pub(crate) modified: NaiveDateTime,
-    pub(crate) created: NaiveDateTime,
+    #[serde(with = "ts_milliseconds")]
+    pub(crate) modified: DateTime<Utc>,
+    #[serde(with = "ts_milliseconds")]
+    pub(crate) created: DateTime<Utc>,
 }

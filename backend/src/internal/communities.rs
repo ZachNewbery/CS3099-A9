@@ -7,11 +7,9 @@ use crate::database::models::DatabaseNewCommunity;
 use crate::federation::schemas::{Community, User};
 use crate::internal::authentication::authenticate;
 use crate::util::route_error::RouteError;
-use crate::util::HOSTNAME;
 use crate::DBPool;
 use actix_web::{delete, get, patch, post, web, HttpRequest, HttpResponse, Result};
 use diesel::Connection;
-use either::Either;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -96,16 +94,7 @@ pub(crate) async fn get_community_details(
     let admins = web::block(move || get_community_admins(&conn, &cmm))
         .await?
         .into_iter()
-        .map(|(u, d)| match d {
-            Either::Left(_) => User {
-                id: u.username,
-                host: HOSTNAME.to_string(),
-            },
-            Either::Right(r) => User {
-                id: u.username,
-                host: r.host,
-            },
-        })
+        .map(|ud| ud.into())
         .collect::<Vec<User>>();
 
     Ok(HttpResponse::Ok().json(Community {

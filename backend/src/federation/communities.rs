@@ -7,10 +7,9 @@ use crate::database::get_conn_from_pool;
 
 use crate::federation::schemas::{Community, User};
 use crate::util::route_error::RouteError;
-use crate::util::HOSTNAME;
 use crate::DBPool;
-use chrono::NaiveDateTime;
-use either::Either;
+use chrono::serde::ts_milliseconds;
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -57,16 +56,7 @@ pub(crate) async fn community_by_id(
 
     let admins = admins
         .into_iter()
-        .map(|(u, x)| match x {
-            Either::Left(_) => User {
-                id: u.username,
-                host: HOSTNAME.to_string(),
-            },
-            Either::Right(f) => User {
-                id: u.username,
-                host: f.host,
-            },
-        })
+        .map(|ud| ud.into())
         .collect::<Vec<User>>();
 
     Ok(HttpResponse::Ok().json(Community {
@@ -80,7 +70,8 @@ pub(crate) async fn community_by_id(
 #[derive(Clone, Serialize, Deserialize)]
 struct PostModified {
     id: Uuid,
-    modified: NaiveDateTime, // TODO: we have to serialise this to unix time!
+    #[serde(with = "ts_milliseconds")]
+    modified: DateTime<Utc>,
 }
 
 #[get("/{id}/timestamps")]
@@ -108,7 +99,7 @@ pub(crate) async fn community_by_id_timestamps(
     .map(|p| {
         Ok(PostModified {
             id: p.uuid.parse()?,
-            modified: p.modified,
+            modified: DateTime::<Utc>::from_utc(p.modified, Utc),
         })
     })
     .collect::<Result<Vec<PostModified>, RouteError>>()?;

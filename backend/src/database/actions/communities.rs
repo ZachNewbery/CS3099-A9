@@ -2,8 +2,7 @@ use diesel::prelude::*;
 use diesel::BelongingToDsl;
 
 use crate::database::models::*;
-use either::Either;
-use either::Either::{Left, Right};
+use crate::util::UserDetail;
 
 pub(crate) fn get_communities(
     conn: &MysqlConnection,
@@ -16,13 +15,7 @@ pub(crate) fn get_communities(
 pub(crate) fn get_community_admins(
     conn: &MysqlConnection,
     community: &DatabaseCommunity,
-) -> Result<
-    Vec<(
-        DatabaseUser,
-        Either<DatabaseLocalUser, DatabaseFederatedUser>,
-    )>,
-    diesel::result::Error,
-> {
+) -> Result<Vec<(DatabaseUser, UserDetail)>, diesel::result::Error> {
     let local_admins: Vec<(DatabaseUser, DatabaseLocalUser)> = {
         use crate::database::schema::LocalUsers::dsl::*;
         use crate::database::schema::Users::dsl::*;
@@ -44,11 +37,16 @@ pub(crate) fn get_community_admins(
     }?;
 
     let mut v = vec![];
-    v.append(&mut local_admins.into_iter().map(|l| (l.0, Left(l.1))).collect());
+    v.append(
+        &mut local_admins
+            .into_iter()
+            .map(|l| (l.0, UserDetail::Local(l.1)))
+            .collect(),
+    );
     v.append(
         &mut federated_admins
             .into_iter()
-            .map(|l| (l.0, Right(l.1)))
+            .map(|l| (l.0, UserDetail::Federated(l.1)))
             .collect(),
     );
 
