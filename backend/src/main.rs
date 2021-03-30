@@ -22,6 +22,7 @@ pub mod federation;
 pub mod internal;
 pub mod util;
 
+#[allow(clippy::upper_case_acronyms)]
 type DBPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 
 #[actix_web::main]

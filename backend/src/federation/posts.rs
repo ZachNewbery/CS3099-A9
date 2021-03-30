@@ -48,7 +48,7 @@ pub(crate) async fn post_matching_filters(
     let _user_id = req
         .headers()
         .get("User-ID")
-        .ok_or(RouteError::MissingUserID)?;
+        .ok_or(RouteError::MissingUserId)?;
 
     let conn = get_conn_from_pool(pool.clone())?;
     let inc = parameters.include_sub_children_posts;
@@ -200,7 +200,7 @@ pub(crate) async fn get_post_by_id(
     let _user_id = req
         .headers()
         .get("User-ID")
-        .ok_or(RouteError::MissingUserID)?
+        .ok_or(RouteError::MissingUserId)?
         .to_str()
         .map_err(RouteError::HeaderParse)?;
 
@@ -271,7 +271,7 @@ pub(crate) async fn edit_post(
     let _user_id = req
         .headers()
         .get("User-ID")
-        .ok_or(RouteError::MissingUserID)?;
+        .ok_or(RouteError::MissingUserId)?;
 
     let conn = get_conn_from_pool(pool)?;
     web::block(move || {
@@ -332,7 +332,7 @@ pub(crate) async fn delete_post(
     let _user_id = req
         .headers()
         .get("User-ID")
-        .ok_or(RouteError::MissingUserID)?;
+        .ok_or(RouteError::MissingUserId)?;
 
     let conn = get_conn_from_pool(pool)?;
     web::block(move || {
