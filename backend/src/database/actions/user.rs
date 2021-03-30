@@ -16,11 +16,11 @@ pub(crate) fn get_user_detail(
         .first::<DatabaseFederatedUser>(conn)
         .optional()?;
 
-    return match (local, fed) {
+    match (local, fed) {
         (None, None) => Err(diesel::NotFound),
         (Some(l), _) => Ok(UserDetail::Local(l)),
         (_, Some(f)) => Ok(UserDetail::Federated(f)),
-    };
+    }
 }
 
 pub(crate) fn get_user(
