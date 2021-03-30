@@ -46,6 +46,8 @@ pub(crate) async fn search_users(
 #[derive(Clone, Serialize, Deserialize)]
 struct UserDetails {
     id: String,
+    about: Option<String>,
+    avatar_url: Option<String>,
     posts: Vec<Post>,
 }
 
@@ -66,14 +68,14 @@ pub(crate) async fn user_by_id(
     let uid = id.parse::<u64>().unwrap_or_default();
 
     let conn = get_conn_from_pool(pool.clone())?;
-    let user = web::block(move || get_local_user_by_user_id(&conn, &uid))
+    let (user, luser) = web::block(move || get_local_user_by_user_id(&conn, &uid))
         .await
         .map_err(|_| HttpResponse::InternalServerError().finish())?
         .ok_or_else(|| HttpResponse::Unauthorized().finish())?;
 
     let conn = get_conn_from_pool(pool)?;
     let posts = web::block(move || {
-        let posts = get_posts_by_user(&conn, &user.0)?
+        let posts = get_posts_by_user(&conn, &user)?
             .unwrap_or_default()
             .into_iter()
             .map(|p| {
@@ -94,6 +96,8 @@ pub(crate) async fn user_by_id(
     // Return type: { id, posts }
     Ok(HttpResponse::Ok().json(UserDetails {
         id: id,
+        about: luser.bio,
+        avatar_url: luser.avatar,
         posts: posts,
     }))
 }
