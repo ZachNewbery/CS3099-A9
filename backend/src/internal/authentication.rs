@@ -11,6 +11,7 @@ use jsonwebtoken::{DecodingKey, EncodingKey, Header, TokenData, Validation};
 use openssl::hash::*;
 use openssl::pkey::*;
 use openssl::sign::*;
+use openssl::rsa::Padding;
 
 use serde::{Deserialize, Serialize};
 
@@ -100,27 +101,17 @@ pub async fn request_wrapper() -> String {
 
     // hash body of HTTP request (need to work out how to do for post requests!)
     digest.input_str("");
-    let hex = hex::decode(digest.result_str()).expect("Hex string decoded");
-    let _digest_header = base64::encode(hex);
+    let bytes = hex::decode(digest.result_str()).expect("Hex string decoded");
+    let digest_header = base64::encode(bytes);
     let date = SystemTime::now().into();
-    // println!("Digest: {}", &_digest_header);
 
-    // create request to be signed
+    // create request to be signed (for testing purposes!)
     let req = awc::Client::new()
         .get("https://cs3099user-a10.host.cs.st-andrews.ac.uk/fed/posts")
         .header("User-Agent", "Actix Web")
-        .header("Digest", ["sha-512=", &_digest_header].join(""))
+        .header("Digest", ["sha-512=", &digest_header].join(""))
         .set(actix_web::http::header::Date(date));
 
-    // builder().connector(
-    //     awc::Connector::new()
-    //             .timeout(Duration::from_secs(20))
-    //             .finish(),
-    // )
-    // .finish()
-
-    // construct string as per supergroup protocol
-    // let header_map = req.headers();
     let mut string = String::new();
     string.push_str(&format!("(request-target): get {}\n", "/fed/posts"));
     string.push_str(&format!(
@@ -132,14 +123,13 @@ pub async fn request_wrapper() -> String {
         "https://cs3099user-a7.host.cs.st-andrews.ac.uk/"
     ));
     string.push_str(&format!("date: {}\n", date));
-    string.push_str(&format!("digest: SHA-512={}", _digest_header));
-    // println!("String: {}", &string);
+    string.push_str(&format!("digest: SHA-512={}", digest_header));
 
     // obtain private key from file and sign string
-    // @TODO: implement PCKS#1 signing?
     let pkey = PKey::private_key_from_pem(&fs::read("fed_auth.pem").expect("reading key"))
         .expect("Getting private key.");
     let mut signer = Signer::new(MessageDigest::sha512(), &pkey).unwrap();
+    signer.set_rsa_padding(Padding::PKCS1).unwrap();
     signer.update(string.as_bytes()).unwrap();
 
     // base64 encode string
