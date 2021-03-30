@@ -3,15 +3,14 @@ use crate::database::actions::post::{
     put_post_contents, remove_post, remove_post_contents,
 };
 use crate::database::get_conn_from_pool;
-use crate::federation::schemas::{ContentType, NewPost, Post, User};
+use crate::federation::schemas::{ContentType, NewPost, Post};
 use crate::util::route_error::RouteError;
-use crate::util::HOSTNAME;
+use crate::util::{UserDetail, HOSTNAME};
 use crate::DBPool;
 use actix_web::{delete, get, post, put, web, HttpRequest};
 use actix_web::{HttpResponse, Result};
 use chrono::{DateTime, NaiveDateTime, Utc};
 use diesel::Connection;
-use either::Either;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -108,8 +107,8 @@ pub(crate) async fn post_matching_filters(
         posts = posts
             .into_iter()
             .filter(|(p, _)| match &p.user_details {
-                Either::Left(_) => host == HOSTNAME,
-                Either::Right(f) => host == &f.host,
+                UserDetail::Local(_) => host == HOSTNAME,
+                UserDetail::Federated(f) => host == &f.host,
             })
             .collect();
     }
@@ -137,13 +136,7 @@ pub(crate) async fn post_matching_filters(
                     .collect::<Result<Vec<_>, _>>()?,
                 title: p.post.title,
                 content: p.content,
-                author: User {
-                    id: p.user.username,
-                    host: match p.user_details {
-                        Either::Left(_) => HOSTNAME.to_string(),
-                        Either::Right(f) => f.host,
-                    },
-                },
+                author: (p.user, p.user_details).into(),
                 modified: DateTime::<Utc>::from_utc(p.post.modified, Utc),
                 created: DateTime::<Utc>::from_utc(p.post.created, Utc),
             })
@@ -235,13 +228,7 @@ pub(crate) async fn get_post_by_id(
             .collect::<Result<Vec<_>, RouteError>>()?,
         title: post.post.title,
         content: post.content,
-        author: User {
-            id: post.user.username,
-            host: match post.user_details {
-                Either::Left(_l) => HOSTNAME.to_string(),
-                Either::Right(f) => f.host,
-            },
-        },
+        author: (post.user, post.user_details).into(),
         modified: DateTime::<Utc>::from_utc(post.post.modified, Utc),
         created: DateTime::<Utc>::from_utc(post.post.created, Utc),
     };

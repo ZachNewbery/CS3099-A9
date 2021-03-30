@@ -1,14 +1,13 @@
 use crate::database::actions::user::get_user_detail;
 use crate::database::models::{
-    DatabaseCommunity, DatabaseFederatedUser, DatabaseLocalUser, DatabaseMarkdown, DatabaseNewPost,
-    DatabasePost, DatabaseText, DatabaseUser,
+    DatabaseCommunity, DatabaseMarkdown, DatabaseNewPost, DatabasePost, DatabaseText, DatabaseUser,
 };
 use crate::federation::schemas::ContentType;
 
 use diesel::prelude::*;
 use diesel::BelongingToDsl;
-use either::Either;
 
+use crate::util::UserDetail;
 use uuid::Uuid;
 
 pub(crate) fn get_all_top_level_posts(
@@ -46,7 +45,7 @@ pub struct PostInformation {
     pub content: Vec<ContentType>,
     pub community: DatabaseCommunity,
     pub user: DatabaseUser,
-    pub user_details: Either<DatabaseLocalUser, DatabaseFederatedUser>,
+    pub user_details: UserDetail,
     pub parent: Option<DatabasePost>,
 }
 

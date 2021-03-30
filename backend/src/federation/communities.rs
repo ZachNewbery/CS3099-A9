@@ -7,10 +7,8 @@ use crate::database::get_conn_from_pool;
 
 use crate::federation::schemas::{Community, User};
 use crate::util::route_error::RouteError;
-use crate::util::HOSTNAME;
 use crate::DBPool;
 use chrono::NaiveDateTime;
-use either::Either;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -57,16 +55,7 @@ pub(crate) async fn community_by_id(
 
     let admins = admins
         .into_iter()
-        .map(|(u, x)| match x {
-            Either::Left(_) => User {
-                id: u.username,
-                host: HOSTNAME.to_string(),
-            },
-            Either::Right(f) => User {
-                id: u.username,
-                host: f.host,
-            },
-        })
+        .map(|ud| ud.into())
         .collect::<Vec<User>>();
 
     Ok(HttpResponse::Ok().json(Community {

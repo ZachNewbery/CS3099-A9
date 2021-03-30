@@ -1,14 +1,13 @@
 use crate::database::models::{DatabaseFederatedUser, DatabaseLocalUser, DatabaseUser};
 
+use crate::util::UserDetail;
 use diesel::prelude::*;
 use diesel::MysqlConnection;
-use either::Either;
-use either::Either::{Left, Right};
 
 pub(crate) fn get_user_detail(
     conn: &MysqlConnection,
     user: &DatabaseUser,
-) -> Result<Either<DatabaseLocalUser, DatabaseFederatedUser>, diesel::result::Error> {
+) -> Result<UserDetail, diesel::result::Error> {
     let local: Option<DatabaseLocalUser> = DatabaseLocalUser::belonging_to(user)
         .first::<DatabaseLocalUser>(conn)
         .optional()?;
@@ -17,17 +16,17 @@ pub(crate) fn get_user_detail(
         .first::<DatabaseFederatedUser>(conn)
         .optional()?;
 
-    if local.is_none() && fed.is_none() {
-        return Err(diesel::NotFound);
-    }
-
-    Ok(local.map_or_else(|| Right(fed.unwrap()), Left))
+    return match (local, fed) {
+        (None, None) => Err(diesel::NotFound),
+        (Some(l), _) => Ok(UserDetail::Local(l)),
+        (_, Some(f)) => Ok(UserDetail::Federated(f)),
+    };
 }
 
 pub(crate) fn get_user(
     conn: &MysqlConnection,
     uid: &u64,
-) -> Result<Either<DatabaseLocalUser, DatabaseFederatedUser>, diesel::result::Error> {
+) -> Result<UserDetail, diesel::result::Error> {
     use crate::database::schema::Users::dsl::*;
     let user: Option<DatabaseUser> = Users
         .filter(id.eq(uid))
