@@ -1,7 +1,9 @@
-use crate::database::actions::post::get_post;
+use crate::database::actions::local::get_local_user_by_user_id;
 use crate::database::actions::post::get_posts_by_user;
-use crate::database::actions::user::{get_local_users, get_user};
+use crate::database::actions::post::{get_children_posts_of, get_post};
+use crate::database::actions::user::get_local_users;
 use crate::database::get_conn_from_pool;
+use crate::federation::schemas::Post;
 use crate::util::route_error::RouteError;
 use crate::DBPool;
 use actix_web::{get, post, web, HttpRequest, HttpResponse, Result};
@@ -43,15 +45,17 @@ pub(crate) async fn search_users(
 
 #[derive(Clone, Serialize, Deserialize)]
 struct UserDetails {
-    id: u64,
+    id: String,
+    posts: Vec<Post>,
 }
 
 #[get("/{id}")]
 pub(crate) async fn user_by_id(
-    web::Path(id): web::Path<u64>,
+    web::Path(id): web::Path<String>,
     pool: web::Data<DBPool>,
     request: HttpRequest,
 ) -> Result<HttpResponse> {
+    use std::convert::TryInto;
     // TODO: /fed/users/id (GET)
     let _client_host = request
         .headers()
@@ -59,26 +63,39 @@ pub(crate) async fn user_by_id(
         .ok_or(RouteError::MissingClientHost)?
         .to_str()
         .map_err(RouteError::HeaderParse)?;
+    let uid = id.parse::<u64>().unwrap_or_default();
 
     let conn = get_conn_from_pool(pool.clone())?;
-    let (user, _posts) = web::block(move || {
-        let user = get_user(&conn, &id)?.ok_or(diesel::NotFound)?;
-        let _posts = get_posts_by_user(&conn, &user)?
+    let user = web::block(move || get_local_user_by_user_id(&conn, &uid))
+        .await
+        .map_err(|_| HttpResponse::InternalServerError().finish())?
+        .ok_or_else(|| HttpResponse::Unauthorized().finish())?;
+
+    let conn = get_conn_from_pool(pool)?;
+    let posts = web::block(move || {
+        let posts = get_posts_by_user(&conn, &user.0)?
             .unwrap_or_default()
             .into_iter()
             .map(|p| {
-                Ok::<_, RouteError>(
-                    get_post(&conn, &p.uuid.parse().map_err(RouteError::UuidParse)?)?
-                        .ok_or(RouteError::Diesel(diesel::NotFound))?,
+                Ok::<Post, RouteError>(
+                    (
+                        get_post(&conn, &p.uuid.parse().map_err(RouteError::UuidParse)?)?
+                            .ok_or(RouteError::Diesel(diesel::NotFound))?,
+                        get_children_posts_of(&conn, &p)?,
+                    )
+                        .try_into()?,
                 )
             })
-            .collect::<Result<Vec<_>, RouteError>>()?;
-        Ok::<(_, _), RouteError>((user, _posts))
+            .collect::<Result<Vec<Post>, RouteError>>()?;
+        Ok::<_, RouteError>(posts)
     })
     .await?;
 
     // Return type: { id, posts }
-    Ok(HttpResponse::Ok().json(UserDetails { id: user.id }))
+    Ok(HttpResponse::Ok().json(UserDetails {
+        id: id,
+        posts: posts,
+    }))
 }
 
 #[post("/{id}")]

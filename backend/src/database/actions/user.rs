@@ -23,17 +23,6 @@ pub(crate) fn get_user_detail(
     }
 }
 
-pub(crate) fn get_user(
-    conn: &MysqlConnection,
-    uid: &u64,
-) -> Result<Option<DatabaseUser>, diesel::result::Error> {
-    use crate::database::schema::Users::dsl::*;
-    Users
-        .filter(id.eq(uid))
-        .first::<DatabaseUser>(conn)
-        .optional()
-}
-
 pub(crate) fn get_local_users(
     conn: &MysqlConnection,
 ) -> Result<Vec<(DatabaseUser, DatabaseLocalUser)>, diesel::result::Error> {

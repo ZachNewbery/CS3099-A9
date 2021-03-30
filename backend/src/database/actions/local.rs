@@ -64,6 +64,21 @@ pub(crate) fn get_local_user_by_credentials(
         .optional()
 }
 
+pub(crate) fn get_local_user_by_user_id(
+    conn: &MysqlConnection,
+    uid: &u64,
+) -> Result<Option<(DatabaseUser, DatabaseLocalUser)>, diesel::result::Error> {
+    use crate::database::schema::LocalUsers::dsl::*;
+    use crate::database::schema::Users::dsl::*;
+
+    Users
+        .filter(userId.eq(uid))
+        .inner_join(LocalUsers)
+        .select((Users::all_columns(), LocalUsers::all_columns()))
+        .first::<(_, _)>(conn)
+        .optional()
+}
+
 pub(crate) fn insert_new_local_user(
     conn: &MysqlConnection,
     new_user: NewLocalUser,
