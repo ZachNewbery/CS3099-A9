@@ -9,9 +9,10 @@ use crate::util::{UserDetail, HOSTNAME};
 use crate::DBPool;
 use actix_web::{delete, get, post, put, web, HttpRequest};
 use actix_web::{HttpResponse, Result};
-use chrono::{DateTime, NaiveDateTime, Utc};
+use chrono::NaiveDateTime;
 use diesel::Connection;
 use serde::{Deserialize, Serialize};
+use std::convert::{TryFrom, TryInto};
 use uuid::Uuid;
 
 const fn true_func() -> bool {
@@ -64,7 +65,7 @@ pub(crate) async fn post_matching_filters(
                 Ok::<_, RouteError>((
                     get_post(&conn, &p.uuid.parse().map_err(RouteError::UuidParse)?)?
                         .ok_or(RouteError::Diesel(diesel::NotFound))?,
-                    get_children_posts_of(&conn, &p)?.unwrap_or_default(),
+                    get_children_posts_of(&conn, &p)?,
                 ))
             })
             .collect::<Result<Vec<_>, _>>()?;
@@ -122,26 +123,8 @@ pub(crate) async fn post_matching_filters(
 
     let posts = posts
         .into_iter()
-        .map(|(p, c)| {
-            Ok::<_, RouteError>(Post {
-                id: p.user.username.parse().map_err(RouteError::UuidParse)?,
-                community: p.community.name,
-                parent_post: p
-                    .parent
-                    .map(|u| u.uuid.parse().map_err(RouteError::UuidParse))
-                    .transpose()?,
-                children: c
-                    .into_iter()
-                    .map(|h| h.post.uuid.parse().map_err(RouteError::UuidParse))
-                    .collect::<Result<Vec<_>, _>>()?,
-                title: p.post.title,
-                content: p.content,
-                author: (p.user, p.user_details).into(),
-                modified: DateTime::<Utc>::from_utc(p.post.modified, Utc),
-                created: DateTime::<Utc>::from_utc(p.post.created, Utc),
-            })
-        })
-        .collect::<Result<Vec<_>, _>>()?;
+        .map(|x| x.try_into())
+        .collect::<Result<Vec<Post>, _>>()?;
 
     // Return type: Vec<Post>
     Ok(HttpResponse::Ok().json(posts))
@@ -211,29 +194,9 @@ pub(crate) async fn get_post_by_id(
     let conn = get_conn_from_pool(pool.clone())?;
 
     let parent = post.post.clone();
-    let children = web::block(move || get_children_posts_of(&conn, &parent))
-        .await?
-        .unwrap_or_default();
+    let children = web::block(move || get_children_posts_of(&conn, &parent)).await?;
 
-    let p = Post {
-        id: post.user.username.parse().map_err(RouteError::UuidParse)?,
-        community: post.community.name,
-        parent_post: post
-            .parent
-            .map(|u| u.uuid.parse().map_err(RouteError::UuidParse))
-            .transpose()?,
-        children: children
-            .into_iter()
-            .map(|p| Ok(p.post.uuid.parse()?))
-            .collect::<Result<Vec<_>, RouteError>>()?,
-        title: post.post.title,
-        content: post.content,
-        author: (post.user, post.user_details).into(),
-        modified: DateTime::<Utc>::from_utc(post.post.modified, Utc),
-        created: DateTime::<Utc>::from_utc(post.post.created, Utc),
-    };
-
-    Ok(HttpResponse::Created().json(p))
+    Ok(HttpResponse::Created().json(Post::try_from((post, children))?))
 }
 
 #[derive(Clone, Serialize, Deserialize)]
