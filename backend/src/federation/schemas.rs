@@ -1,4 +1,4 @@
-use chrono::NaiveDateTime;
+use chrono::{DateTime, Utc};
 
 use serde::{Deserialize, Serialize};
 
@@ -50,7 +50,7 @@ pub(crate) struct UpdatePost {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct PostTimeStamp {
     id: Uuid,
-    modified: Option<NaiveDateTime>,
+    modified: Option<DateTime<Utc>>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -63,6 +63,6 @@ pub(crate) struct Post {
     pub(crate) title: String,
     pub(crate) content: Vec<ContentType>,
     pub(crate) author: User,
-    pub(crate) modified: NaiveDateTime,
-    pub(crate) created: NaiveDateTime,
+    pub(crate) modified: DateTime<Utc>,
+    pub(crate) created: DateTime<Utc>,
 }

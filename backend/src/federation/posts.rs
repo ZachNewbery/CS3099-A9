@@ -9,7 +9,7 @@ use crate::util::HOSTNAME;
 use crate::DBPool;
 use actix_web::{delete, get, post, put, web, HttpRequest};
 use actix_web::{HttpResponse, Result};
-use chrono::NaiveDateTime;
+use chrono::{DateTime, NaiveDateTime, Utc};
 use diesel::Connection;
 use either::Either;
 use serde::{Deserialize, Serialize};
@@ -144,8 +144,8 @@ pub(crate) async fn post_matching_filters(
                         Either::Right(f) => f.host,
                     },
                 },
-                modified: p.post.modified,
-                created: p.post.created,
+                modified: DateTime::<Utc>::from_utc(p.post.modified, Utc),
+                created: DateTime::<Utc>::from_utc(p.post.created, Utc),
             })
         })
         .collect::<Result<Vec<_>, _>>()?;
@@ -242,8 +242,8 @@ pub(crate) async fn get_post_by_id(
                 Either::Right(f) => f.host,
             },
         },
-        modified: post.post.modified,
-        created: post.post.created,
+        modified: DateTime::<Utc>::from_utc(post.post.modified, Utc),
+        created: DateTime::<Utc>::from_utc(post.post.created, Utc),
     };
 
     Ok(HttpResponse::Created().json(p))

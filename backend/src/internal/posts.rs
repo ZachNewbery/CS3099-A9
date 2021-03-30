@@ -14,7 +14,7 @@ use crate::util::route_error::RouteError;
 use crate::util::HOSTNAME;
 use crate::DBPool;
 use actix_web::{delete, get, patch, post, web, HttpRequest, HttpResponse, Result};
-use chrono::{NaiveDateTime, Utc};
+use chrono::{DateTime, Utc};
 use diesel::Connection;
 use either::Either;
 use serde::{Deserialize, Serialize};
@@ -36,8 +36,8 @@ pub(crate) struct LocatedPost {
     pub(crate) title: String,
     pub(crate) content: Vec<ContentType>,
     pub(crate) author: User,
-    pub(crate) modified: NaiveDateTime,
-    pub(crate) created: NaiveDateTime,
+    pub(crate) modified: DateTime<Utc>,
+    pub(crate) created: DateTime<Utc>,
     pub(crate) deleted: bool,
 }
 
@@ -98,8 +98,8 @@ pub(crate) async fn get_post(
                 Either::Right(f) => f.host,
             },
         },
-        modified: post.post.modified,
-        created: post.post.created,
+        modified: DateTime::<Utc>::from_utc(post.post.modified, Utc),
+        created: DateTime::<Utc>::from_utc(post.post.created, Utc),
         deleted: post.post.deleted,
     };
 
@@ -164,8 +164,8 @@ pub(crate) async fn list_posts(
                         Either::Right(f) => f.host,
                     },
                 },
-                modified: p.post.modified,
-                created: p.post.created,
+                modified: DateTime::<Utc>::from_utc(p.post.modified, Utc),
+                created: DateTime::<Utc>::from_utc(p.post.created, Utc),
                 deleted: p.post.deleted,
             })
         })
@@ -247,8 +247,8 @@ pub(crate) async fn search_posts(
                         Either::Right(f) => f.host,
                     },
                 },
-                modified: p.post.modified,
-                created: p.post.created,
+                modified: DateTime::<Utc>::from_utc(p.post.modified, Utc),
+                created: DateTime::<Utc>::from_utc(p.post.created, Utc),
                 deleted: p.post.deleted,
             })
         })
