@@ -40,13 +40,13 @@ pub(crate) fn get_community_admins(
     v.append(
         &mut local_admins
             .into_iter()
-            .map(|l| (l.0, UserDetail::Local(l.1)))
+            .map(|(u, l)| (u, l.into()))
             .collect(),
     );
     v.append(
         &mut federated_admins
             .into_iter()
-            .map(|l| (l.0, UserDetail::Federated(l.1)))
+            .map(|(u, f)| (u, f.into()))
             .collect(),
     );
 

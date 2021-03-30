@@ -25,3 +25,15 @@ impl From<(DatabaseUser, UserDetail)> for User {
         }
     }
 }
+
+impl From<DatabaseLocalUser> for UserDetail {
+    fn from(value: DatabaseLocalUser) -> Self {
+        UserDetail::Local(value)
+    }
+}
+
+impl From<DatabaseFederatedUser> for UserDetail {
+    fn from(value: DatabaseFederatedUser) -> Self {
+        UserDetail::Federated(value)
+    }
+}

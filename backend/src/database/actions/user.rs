@@ -18,8 +18,8 @@ pub(crate) fn get_user_detail(
 
     match (local, fed) {
         (None, None) => Err(diesel::NotFound),
-        (Some(l), _) => Ok(UserDetail::Local(l)),
-        (_, Some(f)) => Ok(UserDetail::Federated(f)),
+        (Some(l), _) => Ok(l.into()),
+        (_, Some(f)) => Ok(f.into()),
     }
 }
 
