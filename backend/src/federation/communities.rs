@@ -8,7 +8,8 @@ use crate::database::get_conn_from_pool;
 use crate::federation::schemas::{Community, User};
 use crate::util::route_error::RouteError;
 use crate::DBPool;
-use chrono::NaiveDateTime;
+use chrono::serde::ts_milliseconds;
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -69,7 +70,8 @@ pub(crate) async fn community_by_id(
 #[derive(Clone, Serialize, Deserialize)]
 struct PostModified {
     id: Uuid,
-    modified: NaiveDateTime, // TODO: we have to serialise this to unix time!
+    #[serde(with = "ts_milliseconds")]
+    modified: DateTime<Utc>,
 }
 
 #[get("/{id}/timestamps")]
@@ -97,7 +99,7 @@ pub(crate) async fn community_by_id_timestamps(
     .map(|p| {
         Ok(PostModified {
             id: p.uuid.parse()?,
-            modified: p.modified,
+            modified: DateTime::<Utc>::from_utc(p.modified, Utc),
         })
     })
     .collect::<Result<Vec<PostModified>, RouteError>>()?;
