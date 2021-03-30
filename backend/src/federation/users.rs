@@ -1,4 +1,5 @@
-use crate::database::actions::post::get_all_posts;
+use crate::database::actions::post::get_post;
+use crate::database::actions::post::get_posts_by_user;
 use crate::database::actions::user::{get_local_users, get_user};
 use crate::database::get_conn_from_pool;
 use crate::util::route_error::RouteError;
@@ -40,6 +41,11 @@ pub(crate) async fn search_users(
     ))
 }
 
+#[derive(Clone, Serialize, Deserialize)]
+struct UserDetails {
+    id: u64,
+}
+
 #[get("/{id}")]
 pub(crate) async fn user_by_id(
     web::Path(id): web::Path<u64>,
@@ -55,13 +61,24 @@ pub(crate) async fn user_by_id(
         .map_err(RouteError::HeaderParse)?;
 
     let conn = get_conn_from_pool(pool.clone())?;
-    let _user = web::block(move || get_user(&conn, &id)).await?;
-
-    let conn = get_conn_from_pool(pool)?;
-    let mut _posts = web::block(move || get_all_posts(&conn));
+    let (user, _posts) = web::block(move || {
+        let user = get_user(&conn, &id)?.ok_or(diesel::NotFound)?;
+        let _posts = get_posts_by_user(&conn, &user)?
+            .unwrap_or_default()
+            .into_iter()
+            .map(|p| {
+                Ok::<_, RouteError>(
+                    get_post(&conn, &p.uuid.parse().map_err(RouteError::UuidParse)?)?
+                        .ok_or(RouteError::Diesel(diesel::NotFound))?,
+                )
+            })
+            .collect::<Result<Vec<_>, RouteError>>()?;
+        Ok::<(_, _), RouteError>((user, _posts))
+    })
+    .await?;
 
     // Return type: { id, posts }
-    Ok(HttpResponse::NotImplemented().finish())
+    Ok(HttpResponse::Ok().json(UserDetails { id: user.id }))
 }
 
 #[post("/{id}")]

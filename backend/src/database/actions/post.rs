@@ -40,6 +40,14 @@ pub(crate) fn get_top_level_posts_of_community(
         .optional()
 }
 
+pub(crate) fn get_posts_by_user(
+    conn: &MysqlConnection,
+    user: &DatabaseUser,
+) -> Result<Option<Vec<DatabasePost>>, diesel::result::Error> {
+    use crate::database::schema::Posts::dsl::*;
+    Posts.filter(authorId.eq(user.id)).load(conn).optional()
+}
+
 #[derive(Clone, Debug)]
 pub struct PostInformation {
     pub post: DatabasePost,
