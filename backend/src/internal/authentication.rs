@@ -107,7 +107,7 @@ pub async fn request_wrapper() -> String {
 
     // create request to be signed (for testing purposes!)
     let req = awc::Client::new()
-        .get("https://nebula0.herokuapp.com/fed/posts")
+        .get("https://nebula0.herokuapp.com/fed/communities")
         .header("User-Agent", "Actix Web")
         .header("Host", "nebula0.herokuapp.com")
         .header("Client-Host", "cs3099user-a9.host.cs.st-andrews.ac.uk")
@@ -115,7 +115,7 @@ pub async fn request_wrapper() -> String {
         .set(actix_web::http::header::Date(date));
 
     let mut string = String::new();
-    string.push_str(&format!("(request-target): get {}\n", "/fed/posts"));
+    string.push_str(&format!("(request-target): get {}\n", "/fed/communities"));
     string.push_str(&format!("host: {}\n", "nebula0.herokuapp.com"));
     string.push_str(&format!(
         "client-host: {}\n",
