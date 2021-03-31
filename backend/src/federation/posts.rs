@@ -1,6 +1,6 @@
 use crate::database::actions::post::{
     get_all_posts, get_all_top_level_posts, get_children_posts_of, get_post, modify_post_title,
-    put_post_contents, remove_post, remove_post_contents,
+    put_post_contents, remove_post, remove_post_contents, touch_post,
 };
 use crate::database::get_conn_from_pool;
 use crate::federation::schemas::{ContentType, NewPost, Post};
@@ -223,6 +223,8 @@ pub(crate) async fn edit_post(
         .get("User-ID")
         .ok_or(RouteError::MissingUserId)?;
 
+    // TODO: Check permissions
+
     let conn = get_conn_from_pool(pool)?;
     web::block(move || {
         // Start new transaction
@@ -252,7 +254,7 @@ pub(crate) async fn edit_post(
                     put_post_contents(&conn, &post, &n)?;
                 }
             }
-
+            touch_post(&conn, post)?;
             Ok::<(), diesel::result::Error>(())
         })
     })
