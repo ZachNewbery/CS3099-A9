@@ -95,7 +95,12 @@ pub fn authenticate(
     Ok((token, local_user))
 }
 
-pub async fn request_wrapper(host: String, endpoint: String, body: String) -> String {
+pub async fn request_wrapper(
+    host: String,
+    endpoint: String,
+    body: String,
+    uid: Option<String>,
+) -> String {
     let _config = Config::default();
     let mut digest = Sha512::new();
 
@@ -114,12 +119,16 @@ pub async fn request_wrapper(host: String, endpoint: String, body: String) -> St
         "client-host: {}\n",
         "cs3099user-a9.host.cs.st-andrews.ac.uk"
     ));
+    if let Some(u) = &uid {
+        string.push_str(&format!("user-id: {}\n", &u));
+    }
     string.push_str(&format!("date: {}\n", date));
     string.push_str(&format!("digest: SHA-512={}", digest_header));
 
     // create request to be signed (for testing purposes!)
-    let req = awc::Client::new()
-        .get(full_path)
+    let req = awc::Client::new().get(full_path);
+
+    let req = req
         .header("User-Agent", "Actix Web")
         .header("Host", host)
         .header("Client-Host", "cs3099user-a9.host.cs.st-andrews.ac.uk")
@@ -138,11 +147,24 @@ pub async fn request_wrapper(host: String, endpoint: String, body: String) -> St
     let encoded_sign = base64::encode(signature);
 
     // append header to request
-    let str_header = format!("keyId=\"global\",algorithm=\"rsa-sha512\",headers=\"(request-target) host client-host date digest\",signature=\"{}\"", encoded_sign);
-    // println!("Signed String: {}", str_header);
-    let new_req = req.header("Signature", str_header);
-    println!("Request: {:?}", new_req);
+    let header_str = match &uid {
+        Some(_) => "(request-target) host client-host user-id date digest",
+        None => "(request-target) host client-host date digest",
+    };
+
+    let str_header = format!(
+        "keyId=\"global\",algorithm=\"rsa-sha512\",headers=\"{}\",signature=\"{}\"",
+        header_str, encoded_sign
+    );
+    let new_req = match &uid {
+        Some(_) => req
+            .header("User-ID", uid.unwrap())
+            .header("Signature", str_header),
+        None => req.header("Signature", str_header),
+    };
+
     // send request?
+    println!("Request: {:?}", new_req);
     let mut response = new_req.send().await.unwrap();
 
     println!("Response: {:?}", response);
