@@ -138,7 +138,7 @@ pub async fn request_wrapper() -> String {
     let encoded_sign = base64::encode(signature);
 
     // append header to request
-    let str_header = format!("keyId=\"rsa-global\",algorithm=\"hs2019\",headers=\"(request-target) host client-host date digest\",signature=\"{}\"", encoded_sign);
+    let str_header = format!("keyId=\"global\",algorithm=\"rsa-sha512\",headers=\"(request-target) host client-host date digest\",signature=\"{}\"", encoded_sign);
     // println!("Signed String: {}", str_header);
     let new_req = req.header("Signature", str_header);
 
