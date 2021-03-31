@@ -10,8 +10,8 @@ use http_signature_normalization_actix::prelude::*;
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, TokenData, Validation};
 use openssl::hash::*;
 use openssl::pkey::*;
-use openssl::sign::*;
 use openssl::rsa::Padding;
+use openssl::sign::*;
 
 use serde::{Deserialize, Serialize};
 
