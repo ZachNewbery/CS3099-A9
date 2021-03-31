@@ -4,7 +4,16 @@ use std::fs;
 
 #[get("/hello/{name}")]
 pub async fn hello(web::Path(name): web::Path<String>) -> Result<String> {
-    Ok(format!("Hello {}: {}", name, request_wrapper().await))
+    Ok(format!(
+        "Hello {}: {}",
+        name,
+        request_wrapper(
+            "nebula0.herokuapp.com".to_string(),
+            "/fed/communities".to_string(),
+            "".to_string()
+        )
+        .await
+    ))
 }
 
 #[get("/key")]
