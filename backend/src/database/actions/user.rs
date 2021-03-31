@@ -29,10 +29,10 @@ pub(crate) fn get_user_detail_by_name(
 ) -> Result<DatabaseUser, diesel::result::Error> {
     use crate::database::schema::Users::dsl::*;
     let user = Users
-                .filter(username.eq(name))
-                .first::<DatabaseUser>(conn)
-                .optional()?;
-    
+        .filter(username.eq(name))
+        .first::<DatabaseUser>(conn)
+        .optional()?;
+
     match user {
         None => Err(diesel::NotFound),
         Some(u) => Ok(u),

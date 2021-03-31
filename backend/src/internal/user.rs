@@ -2,20 +2,20 @@ use crate::database::actions::local::{
     get_local_user_by_credentials, get_local_user_by_username_email, insert_new_local_user,
     update_local_user, update_session,
 };
-use crate::database::actions::user::{get_user_detail_by_name, get_user_detail};
 use crate::database::actions::post::get_posts_by_user;
 use crate::database::actions::post::{get_children_posts_of, get_post};
+use crate::database::actions::user::{get_user_detail, get_user_detail_by_name};
 use crate::database::get_conn_from_pool;
-use crate::internal::authentication::{authenticate, generate_session, Token};
-use crate::util::HOSTNAME;
-use crate::util::UserDetail;
-use crate::{database, DBPool};
 use crate::federation::schemas::Post;
+use crate::internal::authentication::{authenticate, generate_session, Token};
+use crate::util::route_error::RouteError;
+use crate::util::UserDetail;
+use crate::util::HOSTNAME;
+use crate::{database, DBPool};
 use actix_web::{get, post, put, HttpResponse};
 use actix_web::{web, HttpRequest};
 use diesel::Connection;
 use serde::{Deserialize, Serialize};
-use crate::util::route_error::RouteError;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct NewLocalUser {
@@ -182,14 +182,12 @@ pub(crate) async fn get_user(
 ) -> actix_web::Result<HttpResponse> {
     use std::convert::TryInto;
     let conn = get_conn_from_pool(pool.clone())?;
-    let user = web::block(move || get_user_detail_by_name(&conn, &name))
-        .await?;
+    let user = web::block(move || get_user_detail_by_name(&conn, &name)).await?;
     let uname = user.clone().username;
-    
+
     let conn = get_conn_from_pool(pool.clone())?;
     let user_copy = user.clone();
-    let user_details = web::block(move || get_user_detail(&conn, &user_copy))
-        .await?;
+    let user_details = web::block(move || get_user_detail(&conn, &user_copy)).await?;
 
     let conn = get_conn_from_pool(pool)?;
     let posts = web::block(move || {

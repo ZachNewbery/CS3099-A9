@@ -115,10 +115,7 @@ pub async fn request_wrapper() -> String {
 
     let mut string = String::new();
     string.push_str(&format!("(request-target): get {}\n", "/fed/posts"));
-    string.push_str(&format!(
-        "host: {}\n",
-        "nebula0.herokuapp.com"
-    ));
+    string.push_str(&format!("host: {}\n", "nebula0.herokuapp.com"));
     string.push_str(&format!(
         "client-host: {}\n",
         "cs3099user-a9.host.cs.st-andrews.ac.uk"

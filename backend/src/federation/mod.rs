@@ -11,9 +11,7 @@ pub async fn hello(web::Path(name): web::Path<String>) -> Result<String> {
 pub(crate) async fn key() -> Result<HttpResponse> {
     Ok(HttpResponse::Ok()
         .header(http::header::CONTENT_TYPE, "application/x-pem-file")
-        .body(
-            fs::read_to_string("fed_auth_pub.pem")?,
-        ))
+        .body(fs::read_to_string("fed_auth_pub.pem")?))
 }
 
 #[get("/discover")]
