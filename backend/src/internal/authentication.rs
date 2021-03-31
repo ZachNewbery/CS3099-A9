@@ -141,7 +141,7 @@ pub async fn request_wrapper() -> String {
     let str_header = format!("keyId=\"global\",algorithm=\"rsa-sha512\",headers=\"(request-target) host client-host date digest\",signature=\"{}\"", encoded_sign);
     // println!("Signed String: {}", str_header);
     let new_req = req.header("Signature", str_header);
-
+    println!("Request: {:?}", new_req);
     // send request?
     let mut response = new_req.send().await.unwrap();
 
