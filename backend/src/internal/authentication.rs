@@ -109,6 +109,7 @@ pub async fn request_wrapper() -> String {
     let req = awc::Client::new()
         .get("https://nebula0.herokuapp.com/fed/posts")
         .header("User-Agent", "Actix Web")
+        .header("Host", "https://nebula0.herokuapp.com")
         .header("Client-Host", "https://cs3099user-a9.host.cs.st-andrews.ac.uk")
         .header("Digest", ["sha-512=", &digest_header].join(""))
         .set(actix_web::http::header::Date(date));
@@ -117,11 +118,11 @@ pub async fn request_wrapper() -> String {
     string.push_str(&format!("(request-target): get {}\n", "/fed/posts"));
     string.push_str(&format!(
         "host: {}\n",
-        "https://cs3099user-a9.host.cs.st-andrews.ac.uk"
+        "https://nebula0.herokuapp.com"
     ));
     string.push_str(&format!(
         "client-host: {}\n",
-        "https://nebula0.herokuapp.com"
+        "https://cs3099user-a9.host.cs.st-andrews.ac.uk"
     ));
     string.push_str(&format!("date: {}\n", date));
     string.push_str(&format!("digest: SHA-512={}", digest_header));
