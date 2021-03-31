@@ -107,7 +107,7 @@ pub async fn request_wrapper() -> String {
 
     // create request to be signed (for testing purposes!)
     let req = awc::Client::new()
-        .get("https://cs3099user-a1.host.cs.st-andrews.ac.uk/fed/posts")
+        .get("https://nebula0.herokuapp.com/fed/posts")
         .header("User-Agent", "Actix Web")
         .header("Digest", ["sha-512=", &digest_header].join(""))
         .set(actix_web::http::header::Date(date));
@@ -120,7 +120,7 @@ pub async fn request_wrapper() -> String {
     ));
     string.push_str(&format!(
         "client-host: {}\n",
-        "https://cs3099user-a1.host.cs.st-andrews.ac.uk/"
+        "https://nebula0.herokuapp.com/"
     ));
     string.push_str(&format!("date: {}\n", date));
     string.push_str(&format!("digest: SHA-512={}", digest_header));
