@@ -10,8 +10,8 @@ use http_signature_normalization_actix::prelude::*;
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, TokenData, Validation};
 use openssl::hash::*;
 use openssl::pkey::*;
-use openssl::sign::*;
 use openssl::rsa::Padding;
+use openssl::sign::*;
 
 use serde::{Deserialize, Serialize};
 
@@ -107,7 +107,7 @@ pub async fn request_wrapper() -> String {
 
     // create request to be signed (for testing purposes!)
     let req = awc::Client::new()
-        .get("https://cs3099user-a10.host.cs.st-andrews.ac.uk/fed/posts")
+        .get("https://cs3099user-a1.host.cs.st-andrews.ac.uk/fed/posts")
         .header("User-Agent", "Actix Web")
         .header("Digest", ["sha-512=", &digest_header].join(""))
         .set(actix_web::http::header::Date(date));
@@ -120,7 +120,7 @@ pub async fn request_wrapper() -> String {
     ));
     string.push_str(&format!(
         "client-host: {}\n",
-        "https://cs3099user-a7.host.cs.st-andrews.ac.uk/"
+        "https://cs3099user-a1.host.cs.st-andrews.ac.uk/"
     ));
     string.push_str(&format!("date: {}\n", date));
     string.push_str(&format!("digest: SHA-512={}", digest_header));
@@ -142,9 +142,9 @@ pub async fn request_wrapper() -> String {
     let new_req = req.header("Signature", str_header);
 
     // send request?
-    let _response = new_req.send().await;
+    let response = new_req.send().await;
 
-    // println!("Response: {:?}", response);
+    println!("Response: {:?}", response);
 
     return "done".to_string();
 }

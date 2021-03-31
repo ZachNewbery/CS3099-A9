@@ -3,8 +3,7 @@ use actix_web::{get, http, web, HttpResponse, Result};
 
 #[get("/hello/{name}")]
 pub async fn hello(web::Path(name): web::Path<String>) -> Result<String> {
-    request_wrapper().await;
-    Ok(format!("Hello {}", name))
+    Ok(format!("Hello {}: {}", name, request_wrapper().await))
 }
 
 #[get("/key")]
