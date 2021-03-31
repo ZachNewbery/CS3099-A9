@@ -23,6 +23,22 @@ pub(crate) fn get_user_detail(
     }
 }
 
+pub(crate) fn get_user_detail_by_name(
+    conn: &MysqlConnection,
+    name: &String,
+) -> Result<DatabaseUser, diesel::result::Error> {
+    use crate::database::schema::Users::dsl::*;
+    let user = Users
+                .filter(username.eq(name))
+                .first::<DatabaseUser>(conn)
+                .optional()?;
+    
+    match user {
+        None => Err(diesel::NotFound),
+        Some(u) => Ok(u),
+    }
+}
+
 pub(crate) fn get_local_users(
     conn: &MysqlConnection,
 ) -> Result<Vec<(DatabaseUser, DatabaseLocalUser)>, diesel::result::Error> {

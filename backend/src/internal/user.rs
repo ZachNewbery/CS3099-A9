@@ -2,14 +2,20 @@ use crate::database::actions::local::{
     get_local_user_by_credentials, get_local_user_by_username_email, insert_new_local_user,
     update_local_user, update_session,
 };
+use crate::database::actions::user::{get_user_detail_by_name, get_user_detail};
+use crate::database::actions::post::get_posts_by_user;
+use crate::database::actions::post::{get_children_posts_of, get_post};
 use crate::database::get_conn_from_pool;
 use crate::internal::authentication::{authenticate, generate_session, Token};
 use crate::util::HOSTNAME;
+use crate::util::UserDetail;
 use crate::{database, DBPool};
-use actix_web::{post, put, HttpResponse};
+use crate::federation::schemas::Post;
+use actix_web::{get, post, put, HttpResponse};
 use actix_web::{web, HttpRequest};
 use diesel::Connection;
 use serde::{Deserialize, Serialize};
+use crate::util::route_error::RouteError;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct NewLocalUser {
@@ -159,4 +165,66 @@ pub(crate) async fn edit_profile(
         token,
         token_type: String::from("bearer"),
     }))
+}
+
+#[derive(Serialize, Deserialize)]
+struct UserProfile {
+    pub username: String,
+    pub avatar: Option<String>,
+    pub bio: Option<String>,
+    pub posts: Vec<Post>,
+}
+
+#[get("/user/{name}")]
+pub(crate) async fn get_user(
+    web::Path(name): web::Path<String>,
+    pool: web::Data<DBPool>,
+) -> actix_web::Result<HttpResponse> {
+    use std::convert::TryInto;
+    let conn = get_conn_from_pool(pool.clone())?;
+    let user = web::block(move || get_user_detail_by_name(&conn, &name))
+        .await?;
+    let uname = user.clone().username;
+    
+    let conn = get_conn_from_pool(pool.clone())?;
+    let user_copy = user.clone();
+    let user_details = web::block(move || get_user_detail(&conn, &user_copy))
+        .await?;
+
+    let conn = get_conn_from_pool(pool)?;
+    let posts = web::block(move || {
+        let posts = get_posts_by_user(&conn, &user)?
+            .unwrap_or_default()
+            .into_iter()
+            .map(|p| {
+                Ok::<Post, RouteError>(
+                    (
+                        get_post(&conn, &p.uuid.parse().map_err(RouteError::UuidParse)?)?
+                            .ok_or(RouteError::Diesel(diesel::NotFound))?,
+                        get_children_posts_of(&conn, &p)?,
+                    )
+                        .try_into()?,
+                )
+            })
+            .collect::<Result<Vec<Post>, RouteError>>()?;
+        Ok::<_, RouteError>(posts)
+    })
+    .await?;
+
+    let profile = match user_details {
+        UserDetail::Local(l) => UserProfile {
+            username: uname,
+            avatar: l.avatar,
+            bio: l.bio,
+            posts: posts,
+        },
+        UserDetail::Federated(_) => UserProfile {
+            username: uname,
+            avatar: None,
+            bio: None,
+            posts: posts,
+        },
+    };
+
+    Ok(HttpResponse::Ok().json(profile))
 }
