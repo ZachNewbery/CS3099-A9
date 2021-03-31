@@ -142,9 +142,10 @@ pub async fn request_wrapper() -> String {
     let new_req = req.header("Signature", str_header);
 
     // send request?
-    let response = new_req.send().await;
+    let mut response = new_req.send().await.unwrap();
 
     println!("Response: {:?}", response);
+    println!("Body: {:?}", response.body().await);
 
     return "done".to_string();
 }
