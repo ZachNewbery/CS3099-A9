@@ -193,6 +193,7 @@ pub(crate) async fn get_user(
             .unwrap_or_default()
             .into_iter()
             .map(|p| {
+                println!("{}", &p.uuid);
                 Ok::<Post, RouteError>(
                     (
                         get_post(&conn, &p.uuid.parse().map_err(RouteError::UuidParse)?)?
