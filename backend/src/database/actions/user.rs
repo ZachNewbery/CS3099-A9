@@ -25,7 +25,7 @@ pub(crate) fn get_user_detail(
 
 pub(crate) fn get_user_detail_by_name(
     conn: &MysqlConnection,
-    name: &String,
+    name: &str,
 ) -> Result<DatabaseUser, diesel::result::Error> {
     use crate::database::schema::Users::dsl::*;
     let user = Users

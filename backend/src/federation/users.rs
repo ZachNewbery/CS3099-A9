@@ -78,14 +78,12 @@ pub(crate) async fn user_by_id(
             .unwrap_or_default()
             .into_iter()
             .map(|p| {
-                Ok::<Post, RouteError>(
-                    (
-                        get_post(&conn, &p.uuid.parse().map_err(RouteError::UuidParse)?)?
-                            .ok_or(RouteError::Diesel(diesel::NotFound))?,
-                        get_children_posts_of(&conn, &p)?,
-                    )
-                        .try_into()?,
+                (
+                    get_post(&conn, &p.uuid.parse().map_err(RouteError::UuidParse)?)?
+                        .ok_or(RouteError::Diesel(diesel::NotFound))?,
+                    get_children_posts_of(&conn, &p)?,
                 )
+                    .try_into()
             })
             .collect::<Result<Vec<Post>, RouteError>>()?;
         Ok::<_, RouteError>(posts)

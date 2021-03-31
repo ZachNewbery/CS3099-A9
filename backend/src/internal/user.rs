@@ -194,14 +194,12 @@ pub(crate) async fn get_user(
             .into_iter()
             .map(|p| {
                 println!("{}", &p.uuid);
-                Ok::<Post, RouteError>(
-                    (
-                        get_post(&conn, &p.uuid.parse().map_err(RouteError::UuidParse)?)?
-                            .ok_or(RouteError::Diesel(diesel::NotFound))?,
-                        get_children_posts_of(&conn, &p)?,
-                    )
-                        .try_into()?,
+                (
+                    get_post(&conn, &p.uuid.parse()?)?
+                        .ok_or(RouteError::Diesel(diesel::NotFound))?,
+                    get_children_posts_of(&conn, &p)?,
                 )
+                    .try_into()
             })
             .collect::<Result<Vec<Post>, RouteError>>()?;
         Ok::<_, RouteError>(posts)
@@ -213,13 +211,13 @@ pub(crate) async fn get_user(
             username: uname,
             avatar: l.avatar,
             bio: l.bio,
-            posts: posts,
+            posts,
         },
         UserDetail::Federated(_) => UserProfile {
             username: uname,
             avatar: None,
             bio: None,
-            posts: posts,
+            posts,
         },
     };
 
