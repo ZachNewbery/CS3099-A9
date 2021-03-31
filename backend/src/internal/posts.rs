@@ -1,7 +1,7 @@
 use crate::database::actions::communities::{get_community, get_community_admins};
 use crate::database::actions::post::{
     get_all_top_level_posts, get_children_posts_of, get_top_level_posts_of_community,
-    modify_post_title, put_post, put_post_contents, remove_post, remove_post_contents,
+    modify_post_title, put_post, put_post_contents, remove_post, remove_post_contents, touch_post,
     PostInformation,
 };
 use crate::database::get_conn_from_pool;
@@ -332,6 +332,7 @@ pub(crate) async fn edit_post(
                     put_post_contents(&conn, &post.post, n)?;
                 }
             }
+            touch_post(&conn, post.post)?;
             Ok::<(), diesel::result::Error>(())
         })
     })

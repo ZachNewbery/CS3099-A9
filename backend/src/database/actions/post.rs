@@ -8,6 +8,7 @@ use diesel::prelude::*;
 use diesel::BelongingToDsl;
 
 use crate::util::UserDetail;
+use chrono::Utc;
 use uuid::Uuid;
 
 pub(crate) fn get_all_top_level_posts(
@@ -268,4 +269,17 @@ pub(crate) fn put_post_contents(
         }
     }
     Ok(())
+}
+
+pub(crate) fn touch_post(
+    conn: &MysqlConnection,
+    post: DatabasePost,
+) -> Result<DatabasePost, diesel::result::Error> {
+    use crate::database::schema::Posts::dsl::*;
+
+    diesel::update(&post)
+        .set(modified.eq(Utc::now().naive_utc()))
+        .execute(conn)?;
+
+    Posts.filter(id.eq(post.id)).first(conn)
 }
