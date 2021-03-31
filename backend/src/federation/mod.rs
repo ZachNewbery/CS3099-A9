@@ -1,10 +1,21 @@
-use crate::internal::authentication::request_wrapper;
+use crate::internal::authentication::{request_wrapper, RequestType};
 use actix_web::{get, http, web, HttpResponse, Result};
 use std::fs;
 
 #[get("/hello/{name}")]
 pub async fn hello(web::Path(name): web::Path<String>) -> Result<String> {
-    Ok(format!("Hello {}: {}", name, request_wrapper().await))
+    Ok(format!(
+        "Hello {}: {}",
+        name,
+        request_wrapper(
+            "nebula0.herokuapp.com".to_string(),
+            "fed/communities".to_string(),
+            RequestType::GET,
+            "".to_string(),
+            None
+        )
+        .await
+    ))
 }
 
 #[get("/key")]
