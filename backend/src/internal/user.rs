@@ -193,7 +193,6 @@ pub(crate) async fn get_user(
             .unwrap_or_default()
             .into_iter()
             .map(|p| {
-                println!("{}", &p.uuid);
                 (
                     get_post(&conn, &p.uuid.parse()?)?
                         .ok_or(RouteError::Diesel(diesel::NotFound))?,
