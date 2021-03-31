@@ -9,9 +9,9 @@ pub async fn hello(web::Path(name): web::Path<String>) -> Result<String> {
         name,
         request_wrapper(
             "nebula0.herokuapp.com".to_string(),
-            "/fed/communities".to_string(),
+            "/fed/posts".to_string(),
             "".to_string(),
-            None,
+            Some("zn6".to_string()),
         )
         .await
     ))
