@@ -65,13 +65,12 @@ pub(crate) async fn user_by_id(
         .ok_or(RouteError::MissingClientHost)?
         .to_str()
         .map_err(RouteError::HeaderParse)?;
-    let uid = id.parse::<u64>().unwrap_or_default();
 
     let conn = get_conn_from_pool(pool.clone())?;
-    let (user, luser) = web::block(move || get_local_user_by_user_id(&conn, &uid))
-        .await
-        .map_err(|_| HttpResponse::InternalServerError().finish())?
-        .ok_or_else(|| HttpResponse::Unauthorized().finish())?;
+    let username = id.clone();
+    let (user, local) = web::block(move || get_local_user_by_user_id(&conn, &username))
+        .await?
+        .ok_or(RouteError::NotFound)?;
 
     let conn = get_conn_from_pool(pool)?;
     let posts = web::block(move || {
@@ -95,10 +94,10 @@ pub(crate) async fn user_by_id(
 
     // Return type: { id, posts }
     Ok(HttpResponse::Ok().json(UserDetails {
-        id: id,
-        about: luser.bio,
-        avatar_url: luser.avatar,
-        posts: posts,
+        id,
+        about: local.bio,
+        avatar_url: local.avatar,
+        posts,
     }))
 }
 
