@@ -26,13 +26,6 @@ use crate::DBPool;
 
 pub static JWT_SECRET_KEY: [u8; 16] = *include_bytes!("../../jwt_secret.key");
 
-pub enum RequestType {
-    GET,
-    POST,
-    PATCH,
-    DELETE,
-}
-
 // Timeout of one week in seconds
 const TIMEOUT: i64 = 60 * 60 * 24 * 7;
 
@@ -102,44 +95,34 @@ pub fn authenticate(
     Ok((token, local_user))
 }
 
-pub async fn request_wrapper(
-    host: String,
-    endpoint: String,
-    _rtype: RequestType,
-    body: String,
-    _uid: Option<String>,
-) -> String {
+pub async fn request_wrapper() -> String {
     let _config = Config::default();
     let mut digest = Sha512::new();
 
     // hash body of HTTP request (need to work out how to do for post requests!)
-    digest.input_str(&body);
+    digest.input_str("");
     let bytes = hex::decode(digest.result_str()).expect("Hex string decoded");
     let digest_header = base64::encode(bytes);
     let date = SystemTime::now().into();
 
-    let mut full_path = String::new();
-    full_path.push_str(&format!("https://{}/{}", host, endpoint));
+    // create request to be signed (for testing purposes!)
+    let req = awc::Client::new()
+        .get("https://nebula0.herokuapp.com/fed/communities")
+        .header("User-Agent", "Actix Web")
+        .header("Host", "nebula0.herokuapp.com")
+        .header("Client-Host", "cs3099user-a9.host.cs.st-andrews.ac.uk")
+        .header("Digest", ["sha-512=", &digest_header].join(""))
+        .set(actix_web::http::header::Date(date));
 
-    // generate string to be signed
     let mut string = String::new();
-    string.push_str(&format!("(request-target): get {}\n", endpoint));
-    string.push_str(&format!("host: {}\n", host));
+    string.push_str(&format!("(request-target): get {}\n", "/fed/communities"));
+    string.push_str(&format!("host: {}\n", "nebula0.herokuapp.com"));
     string.push_str(&format!(
         "client-host: {}\n",
         "cs3099user-a9.host.cs.st-andrews.ac.uk"
     ));
     string.push_str(&format!("date: {}\n", date));
     string.push_str(&format!("digest: SHA-512={}", digest_header));
-
-    // create request to be sent
-    let req = awc::Client::new()
-        .get(full_path)
-        .header("User-Agent", "Actix Web")
-        .header("Host", host)
-        .header("Client-Host", "cs3099user-a9.host.cs.st-andrews.ac.uk")
-        .header("Digest", ["sha-512=", &digest_header].join(""))
-        .set(actix_web::http::header::Date(date));
 
     // obtain private key from file and sign string
     let pkey = PKey::private_key_from_pem(&fs::read("fed_auth.pem").expect("reading key"))
