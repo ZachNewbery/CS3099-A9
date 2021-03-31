@@ -80,7 +80,7 @@ impl TryFrom<(PostInformation, Option<Vec<PostInformation>>)> for Post {
     ) -> Result<Self, Self::Error> {
         let (post, children) = value;
         Ok(Post {
-            id: post.user.username.parse()?,
+            id: post.post.uuid.parse()?,
             community: post.community.name,
             parent_post: post.parent.map(|u| u.uuid.parse()).transpose()?,
             children: children
