@@ -6,7 +6,7 @@ use actix_web::{middleware, web, App, HttpServer};
 use diesel::prelude::*;
 use diesel::r2d2::ConnectionManager;
 
-use internal::user::{login, logout, new_user};
+use internal::user::{get_user, login, logout, new_user};
 
 use crate::federation::communities::{communities, community_by_id, community_by_id_timestamps};
 use crate::federation::posts::{
@@ -82,6 +82,7 @@ async fn main() -> std::io::Result<()> {
                     .service(login)
                     .service(logout)
                     .service(edit_profile)
+                    .service(get_user)
                     .service(get_post)
                     .service(list_posts)
                     .service(search_posts)
