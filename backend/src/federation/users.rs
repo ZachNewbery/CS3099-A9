@@ -79,7 +79,7 @@ pub(crate) async fn user_by_id(
             .into_iter()
             .map(|p| {
                 (
-                    get_post(&conn, &p.uuid.parse().map_err(RouteError::UuidParse)?)?
+                    get_post(&conn, &p.uuid.parse()?)?
                         .ok_or(RouteError::Diesel(diesel::NotFound))?,
                     get_children_posts_of(&conn, &p)?,
                 )
