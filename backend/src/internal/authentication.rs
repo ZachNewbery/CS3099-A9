@@ -105,7 +105,7 @@ pub async fn request_wrapper(host: String, endpoint: String, body: String) -> St
     let digest_header = base64::encode(bytes);
     let date = SystemTime::now().into();
 
-    let full_path = format!("{}{}", host, endpoint);
+    let full_path = format!("https://{}{}", host, endpoint);
 
     let mut string = String::new();
     string.push_str(&format!("(request-target): get {}\n", endpoint));
