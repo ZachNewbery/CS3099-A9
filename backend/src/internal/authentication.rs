@@ -118,8 +118,20 @@ where
 
     let full_path = format!("https://{}{}", host, endpoint);
 
+    // create request to be signed (for testing purposes!)
+    let req = rq_ctor(&awc::Client::new(), full_path)
+        .header("User-Agent", "Actix Web")
+        .header("Host", host.clone())
+        .header("Client-Host", "cs3099user-a9.host.cs.st-andrews.ac.uk")
+        .header("Digest", ["sha-512=", &digest_header].join(""))
+        .set(actix_web::http::header::Date(date));
+
     let mut string = String::new();
-    string.push_str(&format!("(request-target): get {}\n", endpoint));
+    string.push_str(&format!(
+        "(request-target): {} {}\n",
+        req.get_method().as_str().to_lowercase(),
+        endpoint
+    ));
     string.push_str(&format!("host: {}\n", host));
     string.push_str(&format!(
         "client-host: {}\n",
@@ -131,14 +143,6 @@ where
     }
     string.push_str(&format!("date: {}\n", date));
     string.push_str(&format!("digest: SHA-512={}", digest_header));
-
-    // create request to be signed (for testing purposes!)
-    let req = rq_ctor(&awc::Client::new(), full_path)
-        .header("User-Agent", "Actix Web")
-        .header("Host", host)
-        .header("Client-Host", "cs3099user-a9.host.cs.st-andrews.ac.uk")
-        .header("Digest", ["sha-512=", &digest_header].join(""))
-        .set(actix_web::http::header::Date(date));
 
     // Obtain private key from file and sign string
     let pkey = PKey::private_key_from_pem(&fs::read("fed_auth.pem").expect("reading key"))
