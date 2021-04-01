@@ -28,6 +28,8 @@ pub enum RouteError {
     HeaderParse(#[from] ToStrError),
     #[error(transparent)]
     JsonSerde(#[from] serde_json::Error),
+    #[error(transparent)]
+    OpenSsl(#[from] openssl::error::ErrorStack)
 }
 
 impl From<diesel::result::Error> for RouteError {
@@ -49,6 +51,7 @@ impl ResponseError for RouteError {
             RouteError::UuidParse(_) => StatusCode::INTERNAL_SERVER_ERROR,
             RouteError::HeaderParse(_) => StatusCode::BAD_REQUEST,
             RouteError::JsonSerde(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            RouteError::OpenSsl(_) => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 
@@ -67,6 +70,7 @@ impl ResponseError for RouteError {
             }
             RouteError::HeaderParse(_) => "bad headers".to_string(),
             RouteError::JsonSerde(_) => "could not parse json".to_string(),
+            RouteError::OpenSsl(_) => "openssl error".to_string(),
         };
 
         match self {
@@ -77,6 +81,7 @@ impl ResponseError for RouteError {
             RouteError::UuidParse(_) => HttpResponse::InternalServerError(),
             RouteError::HeaderParse(_) => HttpResponse::BadRequest(),
             RouteError::JsonSerde(_) => HttpResponse::InternalServerError(),
+            RouteError::OpenSsl(_) => HttpResponse::InternalServerError(),
         }
         .json(BadResponse {
             title: title_message.clone(),

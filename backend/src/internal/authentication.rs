@@ -143,12 +143,12 @@ where
     // Obtain private key from file and sign string
     let pkey = PKey::private_key_from_pem(&fs::read("fed_auth.pem").expect("reading key"))
         .expect("Getting private key.");
-    let mut signer = Signer::new(MessageDigest::sha512(), &pkey).unwrap();
-    signer.set_rsa_padding(Padding::PKCS1).unwrap();
-    signer.update(string.as_bytes()).unwrap();
+    let mut signer = Signer::new(MessageDigest::sha512(), &pkey)?;
+    signer.set_rsa_padding(Padding::PKCS1)?;
+    signer.update(string.as_bytes())?;
 
     // Base64 encode string
-    let signature = signer.sign_to_vec().unwrap();
+    let signature = signer.sign_to_vec()?;
     let encoded_sign = base64::encode(signature);
 
     // Append header to request
@@ -163,8 +163,8 @@ where
     );
 
     let new_req = match &uid {
-        Some(_) => req
-            .header("User-ID", uid.unwrap())
+        Some(t) => req
+            .header("User-ID", t.clone())
             .header("Signature", str_header),
         None => req.header("Signature", str_header),
     };
