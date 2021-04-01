@@ -25,7 +25,13 @@ pub(crate) async fn key() -> Result<HttpResponse> {
 
 #[get("/discover")]
 pub(crate) async fn discover() -> Result<HttpResponse> {
-    Ok(HttpResponse::NotImplemented().finish())
+    let file = fs::File::open("known_hosts.txt").expect("file should open read only");
+    let json: serde_json::Value =
+        serde_json::from_reader(file).expect("file should be proper JSON");
+
+    Ok(HttpResponse::Ok()
+        .header(http::header::CONTENT_TYPE, "application/json")
+        .body(json))
 }
 
 pub mod communities;

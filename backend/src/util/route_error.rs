@@ -29,7 +29,7 @@ pub enum RouteError {
     #[error(transparent)]
     JsonSerde(#[from] serde_json::Error),
     #[error(transparent)]
-    OpenSsl(#[from] openssl::error::ErrorStack)
+    OpenSsl(#[from] openssl::error::ErrorStack),
 }
 
 impl From<diesel::result::Error> for RouteError {
