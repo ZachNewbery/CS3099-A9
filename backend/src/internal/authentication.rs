@@ -22,16 +22,11 @@ use uuid::Uuid;
 use crate::database::actions::local::validate_session;
 use crate::database::get_conn_from_pool;
 use crate::database::models::DatabaseLocalUser;
+use crate::util::route_error::RouteError;
 use crate::DBPool;
+use awc::{ClientRequest, SendClientRequest};
 
 pub static JWT_SECRET_KEY: [u8; 16] = *include_bytes!("../../jwt_secret.key");
-
-pub enum RequestType {
-    POST,
-    GET,
-    PUT,
-    DEL,
-}
 
 // Timeout of one week in seconds
 const TIMEOUT: i64 = 60 * 60 * 24 * 7;
@@ -102,18 +97,21 @@ pub fn authenticate(
     Ok((token, local_user))
 }
 
-pub async fn request_wrapper(
-    rtype: RequestType,
+pub async fn make_federated_request<T>(
+    rq_ctor: fn(&awc::Client, url: String) -> ClientRequest,
     host: String,
     endpoint: String,
-    body: String,
+    body: T,
     uid: Option<String>,
-) -> String {
+) -> Result<SendClientRequest, RouteError>
+where
+    T: Serialize,
+{
     let _config = Config::default();
     let mut digest = Sha512::new();
 
     // hash body of HTTP request (need to work out how to do for post requests!)
-    digest.input_str(&body);
+    digest.input_str(&serde_json::to_string(&body)?);
     let bytes = hex::decode(digest.result_str()).expect("Hex string decoded");
     let digest_header = base64::encode(bytes);
     let date = SystemTime::now().into();
@@ -127,6 +125,7 @@ pub async fn request_wrapper(
         "client-host: {}\n",
         "cs3099user-a9.host.cs.st-andrews.ac.uk"
     ));
+
     if let Some(u) = &uid {
         string.push_str(&format!("user-id: {}\n", &u));
     }
@@ -134,32 +133,25 @@ pub async fn request_wrapper(
     string.push_str(&format!("digest: SHA-512={}", digest_header));
 
     // create request to be signed (for testing purposes!)
-    let req = match rtype {
-        RequestType::GET => awc::Client::new().get(full_path),
-        RequestType::DEL => awc::Client::new().delete(full_path),
-        RequestType::POST => awc::Client::new().post(full_path),
-        RequestType::PUT => awc::Client::new().put(full_path),
-    };
-
-    let req = req
+    let req = rq_ctor(&awc::Client::new(), full_path)
         .header("User-Agent", "Actix Web")
         .header("Host", host)
         .header("Client-Host", "cs3099user-a9.host.cs.st-andrews.ac.uk")
         .header("Digest", ["sha-512=", &digest_header].join(""))
         .set(actix_web::http::header::Date(date));
 
-    // obtain private key from file and sign string
+    // Obtain private key from file and sign string
     let pkey = PKey::private_key_from_pem(&fs::read("fed_auth.pem").expect("reading key"))
         .expect("Getting private key.");
     let mut signer = Signer::new(MessageDigest::sha512(), &pkey).unwrap();
     signer.set_rsa_padding(Padding::PKCS1).unwrap();
     signer.update(string.as_bytes()).unwrap();
 
-    // base64 encode string
+    // Base64 encode string
     let signature = signer.sign_to_vec().unwrap();
     let encoded_sign = base64::encode(signature);
 
-    // append header to request
+    // Append header to request
     let header_str = match &uid {
         Some(_) => "(request-target) host client-host user-id date digest",
         None => "(request-target) host client-host date digest",
@@ -169,7 +161,7 @@ pub async fn request_wrapper(
         "keyId=\"global\",algorithm=\"rsa-sha512\",headers=\"{}\",signature=\"{}\"",
         header_str, encoded_sign
     );
-    
+
     let new_req = match &uid {
         Some(_) => req
             .header("User-ID", uid.unwrap())
@@ -177,14 +169,8 @@ pub async fn request_wrapper(
         None => req.header("Signature", str_header),
     };
 
-    // send request?
-    println!("Request: {:?}", new_req);
-    let mut response = new_req.send().await.unwrap();
-
-    println!("Response: {:?}", response);
-    println!("Body: {:?}", response.body().await);
-
-    return "done".to_string();
+    // send request
+    Ok(new_req.send())
 }
 
 #[derive(Debug, thiserror::Error)]

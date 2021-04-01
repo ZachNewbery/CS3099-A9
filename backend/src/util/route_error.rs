@@ -26,6 +26,8 @@ pub enum RouteError {
     UuidParse(#[from] uuid::Error),
     #[error(transparent)]
     HeaderParse(#[from] ToStrError),
+    #[error(transparent)]
+    JsonSerde(#[from] serde_json::Error),
 }
 
 impl From<diesel::result::Error> for RouteError {
@@ -46,6 +48,7 @@ impl ResponseError for RouteError {
             RouteError::NotFound => StatusCode::NOT_FOUND,
             RouteError::UuidParse(_) => StatusCode::INTERNAL_SERVER_ERROR,
             RouteError::HeaderParse(_) => StatusCode::BAD_REQUEST,
+            RouteError::JsonSerde(_) => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 
@@ -63,6 +66,7 @@ impl ResponseError for RouteError {
                 "internal server error".to_string()
             }
             RouteError::HeaderParse(_) => "bad headers".to_string(),
+            RouteError::JsonSerde(_) => "could not parse json".to_string(),
         };
 
         match self {
@@ -72,6 +76,7 @@ impl ResponseError for RouteError {
             RouteError::NotFound => HttpResponse::NotFound(),
             RouteError::UuidParse(_) => HttpResponse::InternalServerError(),
             RouteError::HeaderParse(_) => HttpResponse::BadRequest(),
+            RouteError::JsonSerde(_) => HttpResponse::InternalServerError(),
         }
         .json(BadResponse {
             title: title_message.clone(),
