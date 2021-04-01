@@ -224,8 +224,15 @@ where
     digest.input_str(&serde_json::to_string(&body)?);
     // encode output of hash
     let bytes = hex::decode(digest.result_str()).expect("Hex string decoded");
-    let _digest_header = ["sha-512=", &base64::encode(bytes)].join("");
+    let digest_header = ["sha-512=", &base64::encode(bytes)].join("");
     // match digest header from request with above output
+    assert_eq!(
+        digest_header,
+        format!(
+            "{:?}",
+            headers.get("Digest").ok_or("Missing Digest Header.")
+        )
+    );
 
     Ok(true)
 }
