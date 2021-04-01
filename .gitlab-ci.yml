@@ -1,0 +1,23 @@
+stages:
+  - triggers
+
+# Since the components in the frontend and the backend are quite dissimilar, we will use the "child/parent pipeline".
+# Read more: https://docs.gitlab.com/ee/ci/pipelines/pipeline_architectures.html#child--parent-pipelines
+  
+trigger_backend:
+  stage: triggers
+  trigger:
+    include: backend/.gitlab-ci.yml
+    strategy: depend
+  rules:
+    - changes:
+        - backend/**/*
+
+trigger_frontend:
+  stage: triggers
+  trigger:
+    include: frontend/.gitlab-ci.yml
+    strategy: depend
+  rules:
+   - changes:
+      - frontend/**/*

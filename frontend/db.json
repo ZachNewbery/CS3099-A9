@@ -1,0 +1,337 @@
+{
+  "communities": [
+    {
+      "id": "0",
+      "title": "Computer Science",
+      "description": "This is the CS community 🎉",
+      "userIds": [
+        "0",
+        "1"
+      ]
+    },
+    {
+      "id": "1",
+      "title": "Maths",
+      "description": "This is the Maths community 🧮",
+      "userIds": [
+        "tHQYE8r",
+        "mh_fVnS"
+      ]
+    }
+  ],
+  "posts": [
+    {
+      "id": "0",
+      "communityId": "0",
+      "title": "First Post",
+      "body": [
+        {
+          "content": "First Post content",
+          "contentType": "text"
+        },
+        {
+          "content": {
+            "url": "https://www.snopes.com/tachyon/2019/11/trump-rocky.png",
+            "caption": "Trump as Rocky"
+          },
+          "contentType": "image"
+        }
+      ],
+      "commentsCount": 2,
+      "likesCount": 4,
+      "timestamp": "2020-10-27T12:24:39+00:00",
+      "userId": "0"
+    },
+    {
+      "id": "1",
+      "communityId": "0",
+      "title": "Second post",
+      "body": [
+        {
+          "content": "Second post content",
+          "contentType": "text"
+        }
+      ],
+      "commentsCount": 2,
+      "likesCount": 7,
+      "timestamp": "2020-10-27T12:24:39+00:00",
+      "userId": "1"
+    },
+    {
+      "title": "This is a test post",
+      "communityId": "1",
+      "body": [
+        {
+          "content": "here is the test content",
+          "contentType": "text"
+        }
+      ],
+      "commentsCount": 0,
+      "likesCount": 0,
+      "timestamp": "2020-11-09T13:26:45.913Z",
+      "userId": "1",
+      "id": "YiNUFEF"
+    },
+    {
+      "title": "testing ",
+      "body": [
+        {
+          "content": "testing",
+          "contentType": "text"
+        }
+      ],
+      "commentsCount": 0,
+      "likesCount": 0,
+      "timestamp": "2020-11-19T10:40:26.284Z",
+      "user": "1",
+      "id": "ZsIl_Oc"
+    },
+    {
+      "title": "Demo Post",
+      "body": [
+        {
+          "content": "some amazing content",
+          "contentType": "text"
+        }
+      ],
+      "commentsCount": 0,
+      "likesCount": 0,
+      "timestamp": "2020-11-19T13:27:51.012Z",
+      "user": "1",
+      "id": "g0926UB"
+    }
+  ],
+  "comments": [
+    {
+      "id": "1",
+      "postId": "0",
+      "timestamp": "2020-10-27T12:24:39+00:00",
+      "body": [
+        {
+          "content": "This is a comment",
+          "contentType": "text"
+        },
+        {
+          "content": {
+            "url": "https://www.snopes.com/tachyon/2019/11/trump-rocky.png",
+            "caption": "Trump as Rocky"
+          },
+          "contentType": "image"
+        }
+      ],
+      "likesCount": 2,
+      "userId": "0",
+      "edited": true
+    },
+    {
+      "id": "2",
+      "postId": "0",
+      "timestamp": "2020-10-27T12:24:39+00:00",
+      "body": [
+        {
+          "content": "This is another comment",
+          "contentType": "text"
+        }
+      ],
+      "likesCount": 3,
+      "userId": "1"
+    },
+    {
+      "id": "3",
+      "postId": "1",
+      "timestamp": "2020-10-27T12:24:39+00:00",
+      "body": [
+        {
+          "content": "This is a comment",
+          "contentType": "text"
+        },
+        {
+          "content": {
+            "url": "https://www.snopes.com/tachyon/2019/11/trump-rocky.png",
+            "caption": "Trump as Rocky"
+          },
+          "contentType": "image"
+        }
+      ],
+      "likesCount": 3,
+      "userId": "1"
+    },
+    {
+      "id": "4",
+      "postId": "1",
+      "timestamp": "2020-10-27T12:24:39+00:00",
+      "body": [
+        {
+          "content": "This is another comment",
+          "contentType": "text"
+        }
+      ],
+      "likesCount": 2,
+      "userId": "0",
+      "edited": true
+    },
+    {
+      "postId": "0",
+      "timestamp": "2020-11-09T14:23:07.973Z",
+      "body": [
+        {
+          "content": "test comment",
+          "contentType": "text"
+        }
+      ],
+      "likesCount": 0,
+      "userId": "0",
+      "edited": false,
+      "id": "3DobDFT"
+    },
+    {
+      "postId": "0",
+      "timestamp": "2020-11-09T14:23:12.048Z",
+      "body": [
+        {
+          "content": "Artwork",
+          "contentType": "text"
+        }
+      ],
+      "likesCount": 0,
+      "userId": "0",
+      "edited": false,
+      "id": "EGNdGzH"
+    },
+    {
+      "postId": "0",
+      "timestamp": "2020-11-09T14:30:58.788Z",
+      "body": [
+        {
+          "content": "this is another test",
+          "contentType": "text"
+        }
+      ],
+      "likesCount": 0,
+      "userId": "0",
+      "edited": false,
+      "id": "OXBSXMX"
+    },
+    {
+      "postId": "YiNUFEF",
+      "timestamp": "2020-11-09T14:31:17.899Z",
+      "body": [
+        {
+          "content": "Test comment",
+          "contentType": "text"
+        }
+      ],
+      "likesCount": 0,
+      "userId": "0",
+      "edited": false,
+      "id": "wYavcnQ"
+    },
+    {
+      "postId": "YiNUFEF",
+      "timestamp": "2020-11-12T21:22:06.310Z",
+      "body": [
+        {
+          "content": "Another test comment",
+          "contentType": "text"
+        }
+      ],
+      "likesCount": 0,
+      "userId": "0",
+      "edited": false,
+      "id": "7ucHo5A"
+    },
+    {
+      "postId": "1",
+      "timestamp": "2020-11-17T14:18:37.416Z",
+      "body": [
+        {
+          "content": "third comment",
+          "contentType": "text"
+        }
+      ],
+      "likesCount": 0,
+      "userId": "0",
+      "edited": false,
+      "id": "VJxlWYS"
+    },
+    {
+      "postId": "0",
+      "timestamp": "2020-11-19T10:40:17.685Z",
+      "body": [
+        {
+          "content": "testing",
+          "contentType": "text"
+        }
+      ],
+      "likesCount": 0,
+      "userId": "0",
+      "edited": false,
+      "id": "Qlqqi0U"
+    },
+    {
+      "postId": "0",
+      "timestamp": "2020-11-19T13:27:26.328Z",
+      "body": [
+        {
+          "content": "demo comment",
+          "contentType": "text"
+        }
+      ],
+      "likesCount": 0,
+      "userId": "0",
+      "edited": false,
+      "id": "274d-K_"
+    },
+    {
+      "postId": "g0926UB",
+      "timestamp": "2020-11-19T13:28:10.024Z",
+      "body": [
+        {
+          "content": "demo comment",
+          "contentType": "text"
+        }
+      ],
+      "likesCount": 0,
+      "userId": "0",
+      "edited": false,
+      "id": "gt9pnq_"
+    }
+  ],
+  "users": [
+    {
+      "id": "0",
+      "firstName": "Bob",
+      "lastName": "Dillan",
+      "userName": "BDMan2000",
+      "password": "hello12"
+    },
+    {
+      "id": "1",
+      "firstName": "Alice",
+      "lastName": "Murphy",
+      "userName": "GamerGirl2000",
+      "password": "password"
+    },
+    {
+      "firstName": "Fraser",
+      "lastName": "Muir",
+      "userName": "test username",
+      "password": "password!",
+      "id": "mh_fVnS"
+    },
+    {
+      "firstName": "bob",
+      "lastName": "smith",
+      "userName": "bob.smith",
+      "password": "password",
+      "id": "tHQYE8r"
+    },
+    {
+      "firstName": "test",
+      "lastName": "test",
+      "userName": "test",
+      "password": "testing",
+      "id": "BrIwyua"
+    }
+  ]
+}
