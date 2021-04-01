@@ -1,4 +1,4 @@
-use crate::internal::authentication::request_wrapper;
+use crate::internal::authentication::{request_wrapper, RequestType};
 use actix_web::{get, http, web, HttpResponse, Result};
 use std::fs;
 
@@ -8,6 +8,7 @@ pub async fn hello(web::Path(name): web::Path<String>) -> Result<String> {
         "Hello {}: {}",
         name,
         request_wrapper(
+            RequestType::GET,
             "nebula0.herokuapp.com".to_string(),
             "/fed/posts".to_string(),
             "".to_string(),

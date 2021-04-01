@@ -26,6 +26,13 @@ use crate::DBPool;
 
 pub static JWT_SECRET_KEY: [u8; 16] = *include_bytes!("../../jwt_secret.key");
 
+pub enum RequestType {
+    POST,
+    GET,
+    PUT,
+    DEL,
+}
+
 // Timeout of one week in seconds
 const TIMEOUT: i64 = 60 * 60 * 24 * 7;
 
@@ -96,6 +103,7 @@ pub fn authenticate(
 }
 
 pub async fn request_wrapper(
+    rtype: RequestType,
     host: String,
     endpoint: String,
     body: String,
@@ -126,7 +134,12 @@ pub async fn request_wrapper(
     string.push_str(&format!("digest: SHA-512={}", digest_header));
 
     // create request to be signed (for testing purposes!)
-    let req = awc::Client::new().get(full_path);
+    let req = match rtype {
+        RequestType::GET => awc::Client::new().get(full_path),
+        RequestType::DEL => awc::Client::new().delete(full_path),
+        RequestType::POST => awc::Client::new().post(full_path),
+        RequestType::PUT => awc::Client::new().put(full_path),
+    };
 
     let req = req
         .header("User-Agent", "Actix Web")
@@ -156,6 +169,7 @@ pub async fn request_wrapper(
         "keyId=\"global\",algorithm=\"rsa-sha512\",headers=\"{}\",signature=\"{}\"",
         header_str, encoded_sign
     );
+    
     let new_req = match &uid {
         Some(_) => req
             .header("User-ID", uid.unwrap())
