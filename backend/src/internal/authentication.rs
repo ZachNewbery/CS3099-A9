@@ -16,6 +16,7 @@ use openssl::sign::*;
 use serde::{Deserialize, Serialize};
 
 use std::fs;
+use std::str;
 use std::time::SystemTime;
 use uuid::Uuid;
 
@@ -107,7 +108,6 @@ pub async fn make_federated_request<T>(
 where
     T: Serialize,
 {
-    let _config = Config::default();
     let mut digest = Sha512::new();
 
     // hash body of HTTP request (need to work out how to do for post requests!)
@@ -171,6 +171,60 @@ where
 
     // send request
     Ok(new_req.send())
+}
+
+pub async fn verify_federated_request<T>(
+    request: HttpRequest,
+    // need_user_id: bool,
+    body: T,
+) -> Result<bool, RouteError>
+where
+    T: Serialize,
+{
+    // Verify signature
+    // get host from request
+    let headers = request.headers();
+    let host = format!("{:?}", headers.get("Host").ok_or("Missing Host Header."));
+    let key_path = format!("{}{}{}", "https://", host, "/fed/key");
+
+    // construct and send GET request to host/fed/key
+    let date = SystemTime::now().into();
+    let key_req = awc::Client::new()
+        .get(key_path)
+        .header("User-Agent", "Actix Web")
+        .header("Host", host)
+        .header("Client-Host", "cs3099user-a9.host.cs.st-andrews.ac.uk")
+        .set(actix_web::http::header::Date(date))
+        .send()
+        .await
+        .unwrap()
+        .body()
+        .await?;
+
+    // using body of response, remove trailing lines from public key
+    let pkey = PKey::public_key_from_pem(&key_req).expect("Error decoding public key.");
+
+    // @TODO: generate the signature string :(
+    let sign_str = "to-do".to_string();
+    // @TODO: obtain base64 signature from header Signature (some string pattern matching?)
+    let signature = "get signature!".to_string();
+    // use openssl::Verifier with PCKS#1 to verify signature (and passing constructed string)
+    let mut verifier = Verifier::new(MessageDigest::sha256(), &pkey)?;
+    verifier.set_rsa_padding(Padding::PKCS1)?;
+    verifier.update(sign_str.as_bytes())?;
+    assert!(verifier.verify(signature.as_bytes())?);
+
+
+    // Verify digest header
+    let mut digest = Sha512::new();
+    // hash body of request
+    digest.input_str(&serde_json::to_string(&body)?);
+    // encode output of hash
+    let bytes = hex::decode(digest.result_str()).expect("Hex string decoded");
+    let _digest_header = ["sha-512=", &base64::encode(bytes)].join("");
+    // match digest header from request with above output
+
+    Ok(true)
 }
 
 #[derive(Debug, thiserror::Error)]

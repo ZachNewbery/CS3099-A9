@@ -23,6 +23,8 @@ pub enum RouteError {
     #[error("item not found in database")]
     NotFound,
     #[error(transparent)]
+    ActixWeb(#[from] actix_web::error::PayloadError),
+    #[error(transparent)]
     UuidParse(#[from] uuid::Error),
     #[error(transparent)]
     HeaderParse(#[from] ToStrError),
@@ -52,6 +54,7 @@ impl ResponseError for RouteError {
             RouteError::HeaderParse(_) => StatusCode::BAD_REQUEST,
             RouteError::JsonSerde(_) => StatusCode::INTERNAL_SERVER_ERROR,
             RouteError::OpenSsl(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            RouteError::ActixWeb(_) => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 
@@ -71,6 +74,7 @@ impl ResponseError for RouteError {
             RouteError::HeaderParse(_) => "bad headers".to_string(),
             RouteError::JsonSerde(_) => "could not parse json".to_string(),
             RouteError::OpenSsl(_) => "openssl error".to_string(),
+            RouteError::ActixWeb(_) => "actix-web error".to_string(),
         };
 
         match self {
@@ -82,6 +86,7 @@ impl ResponseError for RouteError {
             RouteError::HeaderParse(_) => HttpResponse::BadRequest(),
             RouteError::JsonSerde(_) => HttpResponse::InternalServerError(),
             RouteError::OpenSsl(_) => HttpResponse::InternalServerError(),
+            RouteError::ActixWeb(_) => HttpResponse::InternalServerError(),
         }
         .json(BadResponse {
             title: title_message.clone(),
