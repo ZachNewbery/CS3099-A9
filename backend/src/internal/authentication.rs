@@ -214,7 +214,6 @@ where
     verifier.update(sign_str.as_bytes())?;
     assert!(verifier.verify(signature.as_bytes())?);
 
-
     // Verify digest header
     let mut digest = Sha512::new();
     // hash body of request
