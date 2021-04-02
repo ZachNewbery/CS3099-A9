@@ -96,7 +96,7 @@ pub fn authenticate(
     Ok((token, local_user))
 }
 
-pub async fn make_federated_request<T>(
+pub fn make_federated_request<T>(
     rq_ctor: fn(&awc::Client, url: String) -> ClientRequest,
     host: String,
     endpoint: String,
