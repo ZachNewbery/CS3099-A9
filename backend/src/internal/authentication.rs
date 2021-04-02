@@ -1,5 +1,5 @@
 use actix_web::http::header::Header as ActixHeader;
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{web, FromRequest, HttpRequest, HttpResponse};
 use actix_web_httpauth::headers::authorization::{Authorization, Bearer};
 
 use chrono::Utc;
@@ -190,6 +190,15 @@ where
     // encode output of hash
     let bytes = hex::decode(digest.result_str())?;
     let digest_header = &base64::encode(bytes);
+
+    // TODO: Hash this
+    let _h = String::from_utf8(
+        web::Bytes::extract(&request)
+            .await
+            .map_err(|_| RouteError::ActixInternal)?
+            .to_vec(),
+    )
+    .map_err(|_| RouteError::ActixInternal)?;
 
     // Verify signature
     // get host from request
