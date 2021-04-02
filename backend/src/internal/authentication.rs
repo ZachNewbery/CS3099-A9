@@ -4,12 +4,12 @@ use actix_web_httpauth::headers::authorization::{Authorization, Bearer};
 
 use chrono::Utc;
 use crypto::{digest::Digest, sha2::Sha512};
-use std::time::Duration;
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, TokenData, Validation};
 use openssl::hash::*;
 use openssl::pkey::*;
 use openssl::rsa::Padding;
 use openssl::sign::*;
+use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 
@@ -197,9 +197,9 @@ pub async fn verify_federated_request(request: HttpRequest) -> Result<bool, Rout
     // get host from request
     let headers = request.headers();
     let client_host = headers
-            .get("Client-Host")
-            .ok_or(RouteError::MissingClientHost)?
-            .to_str()?;
+        .get("Client-Host")
+        .ok_or(RouteError::MissingClientHost)?
+        .to_str()?;
     let key_path = format!("https://{}/fed/key", client_host);
     println!("Client-Host: {}", client_host);
     println!("Key Path: {}", key_path);
@@ -253,36 +253,24 @@ pub async fn verify_federated_request(request: HttpRequest) -> Result<bool, Rout
     }
     string.push_str(&format!(
         "date: {}\n",
-        headers.get("Date").ok_or(RouteError::MissingDate)?.to_str()?
+        headers
+            .get("Date")
+            .ok_or(RouteError::MissingDate)?
+            .to_str()?
     ));
     string.push_str(&format!("digest: SHA-512={}", digest_header));
     println!("Constructed String: {}", string);
     //obtain base64 signature from header Signature and match it
-    let header_str = match headers.get("User-ID") {
-        Some(_) => "(request-target) host client-host user-id date digest",
-        None => "(request-target) host client-host date digest",
-    };
-
-    let str_header = format!(
-        "keyId=\"global\",algorithm=\"rsa-sha512\",headers=\"{}\"",
-        header_str
-    );
-
     let sign_header = headers
-            .get("Signature")
-            .ok_or(RouteError::MissingSignature)?
-            .to_str()?;
+        .get("Signature")
+        .ok_or(RouteError::MissingSignature)?
+        .to_str()?;
 
-    let signature = sign_header
-        .split(",signature=")
-        .collect::<Vec<_>>()
-        .pop()
-        .ok_or(RouteError::BadSignHeader)?;
+    let mut split = sign_header.split(",signature=").collect::<Vec<_>>();
 
-    if signature != str_header {
-        println!("Could not match signature prefix: {} with expected {}", signature, str_header);
-        return Ok(false);
-    }
+    let _ = split.pop().ok_or(RouteError::BadSignHeader)?;
+
+    let signature = split.pop().ok_or(RouteError::BadSignHeader)?;
 
     // use openssl::Verifier with PCKS#1 to verify signature with expected string
     let mut verifier = Verifier::new(MessageDigest::sha256(), &pkey)?;
@@ -292,7 +280,10 @@ pub async fn verify_federated_request(request: HttpRequest) -> Result<bool, Rout
     println!("Verified signature.");
     // match digest header from request with above output
     let exp_digest = ["sha-512=", digest_header].join("");
-    let given_digest = headers.get("Digest").ok_or(RouteError::BadDigest)?.to_str()?;
+    let given_digest = headers
+        .get("Digest")
+        .ok_or(RouteError::BadDigest)?
+        .to_str()?;
     if exp_digest != given_digest {
         println!("Could not match digest. Expected {}", exp_digest);
         println!("Given digest {}", given_digest);
