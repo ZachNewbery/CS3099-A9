@@ -104,8 +104,6 @@ pub fn make_federated_request(
     body: String,
     uid: Option<String>,
 ) -> Result<SendClientRequest, RouteError> {
-    // let mut digest = Sha512::new();
-
     // hash body of HTTP request (need to work out how to do for post requests!)
     let digest_header = &base64::encode(Sha512::digest(&body.as_bytes()));
     let date = SystemTime::now().into();
@@ -172,10 +170,7 @@ pub fn make_federated_request(
 }
 
 pub async fn verify_federated_request(request: HttpRequest) -> Result<bool, RouteError> {
-    println!("received request");
     // Verify digest header
-    // let mut digest = Sha512::new();
-
     // hash body of request
     let body = web::Bytes::extract(&request)
         .await
@@ -214,7 +209,7 @@ pub async fn verify_federated_request(request: HttpRequest) -> Result<bool, Rout
     let key_req = key_req.unwrap().body().await?;
     // using body of response, get public key
     let pkey = PKey::public_key_from_pem(&key_req)?;
-    println!("Got public key: {:?}", pkey);
+    println!("Decoded public key successfully: {:?}", pkey);
     // generate expected signature string
     let mut string = String::new();
     string.push_str(&format!(
@@ -239,7 +234,6 @@ pub async fn verify_federated_request(request: HttpRequest) -> Result<bool, Rout
             .to_str()?
     ));
     string.push_str(&format!("digest: SHA-512={}", digest_header));
-    println!("Constructed String: {}", string);
     //obtain base64 signature from header Signature and match it
     let sign_header = headers
         .get("Signature")
@@ -269,7 +263,7 @@ pub async fn verify_federated_request(request: HttpRequest) -> Result<bool, Rout
         println!("Given digest {}", given_digest);
         Err(RouteError::BadDigest)
     } else {
-        println!("Verification successful!");
+        println!("Digest Verification successful!");
         Ok(true)
     }
 }
