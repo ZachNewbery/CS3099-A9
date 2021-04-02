@@ -280,7 +280,7 @@ pub async fn verify_federated_request(request: HttpRequest) -> Result<bool, Rout
         .ok_or(RouteError::BadSignHeader)?;
 
     if signature != str_header {
-        println!("Could not match signature prefix.");
+        println!("Could not match signature prefix: {} with expected {}", signature, str_header);
         return Ok(false);
     }
 
