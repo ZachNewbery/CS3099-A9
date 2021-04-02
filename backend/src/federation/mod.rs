@@ -4,16 +4,15 @@ use std::fs;
 
 #[get("/hello/{name}")]
 pub async fn hello(web::Path(name): web::Path<String>) -> Result<String> {
-    let _ = make_federated_request(
+    let test = make_federated_request(
         awc::Client::get,
-        "nebula0.herokuapp.com".to_string(),
+        "cs3099user-a9.host.cs.st-andrews.ac.uk".to_string(),
         "/fed/posts".to_string(),
         "".to_string(),
         Some("zn6".to_string()),
-    )
-    .await?;
+    ).await?.await?;
 
-    Ok(format!("Hello {}", name))
+    Ok(format!("Hello {} \nVerification: {:?}", name, test))
 }
 
 #[get("/key")]
