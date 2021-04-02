@@ -97,19 +97,18 @@ pub fn authenticate(
     Ok((token, local_user))
 }
 
-pub fn make_federated_request(
+pub fn make_federated_request<T>(
     rq_ctor: fn(&awc::Client, url: String) -> ClientRequest,
     host: String,
     endpoint: String,
-    body: String,
+    body: T,
     uid: Option<String>,
-) -> Result<SendClientRequest, RouteError> {
-    // let mut digest = Sha512::new();
-
+) -> Result<SendClientRequest, RouteError>
+where
+    T: Serialize,
+{
     // hash body of HTTP request (need to work out how to do for post requests!)
-    // digest.input_str(&serde_json::to_string(&body)?);
-    // let bytes = hex::decode(digest.result_str())?;
-    let digest_header = &base64::encode(Sha512::digest(&body.as_bytes()));
+    let digest_header = &base64::encode(Sha512::digest(&serde_json::to_string(&body)?.as_bytes()));
     let date = SystemTime::now().into();
 
     let full_path = format!("https://{}{}", host, endpoint);

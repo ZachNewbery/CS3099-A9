@@ -8,7 +8,7 @@ pub async fn hello(web::Path(name): web::Path<String>) -> Result<String> {
         awc::Client::get,
         "cs3099user-a1.host.cs.st-andrews.ac.uk".to_string(),
         "/fed/communities".to_string(),
-        "".to_string(),
+        "{}".to_string(),
         Some("zn6".to_string()),
     )?
     .await?;
@@ -17,7 +17,7 @@ pub async fn hello(web::Path(name): web::Path<String>) -> Result<String> {
         awc::Client::get,
         "nebula0.herokuapp.com".to_string(),
         "/fed/communities".to_string(),
-        "".to_string(),
+        "{}".to_string(),
         Some("zn6".to_string()),
     )?
     .await?;
