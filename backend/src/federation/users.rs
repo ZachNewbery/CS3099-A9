@@ -20,7 +20,7 @@ pub struct SearchUsersParameters {
     prefix: Option<String>,
 }
 
-#[get("/")]
+#[get("")]
 pub(crate) async fn search_users(
     pool: web::Data<DBPool>,
     web::Query(query): web::Query<SearchUsersParameters>,

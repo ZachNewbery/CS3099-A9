@@ -33,7 +33,7 @@ pub struct PostFilters {
     content_type: Option<ContentType>,
 }
 
-#[get("/")]
+#[get("")]
 pub(crate) async fn post_matching_filters(
     pool: web::Data<DBPool>,
     req: HttpRequest,
@@ -130,7 +130,7 @@ pub(crate) async fn post_matching_filters(
     Ok(HttpResponse::Ok().json(posts))
 }
 
-#[post("/")]
+#[post("")]
 pub(crate) async fn new_post_federated(
     _pool: web::Data<DBPool>,
     req: HttpRequest,
