@@ -18,6 +18,10 @@ pub enum RouteError {
     MissingClientHost,
     #[error("missing User-ID")]
     MissingUserId,
+    #[error("missing Date")]
+    MissingDate,
+    #[error("missing Signature")]
+    MissingSignature,
     #[error("bad Digest")]
     BadDigest,
     #[error("bad Signature Header")]
@@ -58,6 +62,8 @@ impl ResponseError for RouteError {
         match self {
             RouteError::MissingClientHost => StatusCode::BAD_REQUEST,
             RouteError::MissingUserId => StatusCode::BAD_REQUEST,
+            RouteError::MissingDate => StatusCode::BAD_REQUEST,
+            RouteError::MissingSignature => StatusCode::BAD_REQUEST,
             RouteError::BadDigest => StatusCode::BAD_REQUEST,
             RouteError::BadSignHeader => StatusCode::BAD_REQUEST,
             RouteError::Diesel(_) => StatusCode::INTERNAL_SERVER_ERROR,
@@ -77,6 +83,8 @@ impl ResponseError for RouteError {
         let title_message = match self {
             RouteError::MissingClientHost => "missing Client-Host".to_string(),
             RouteError::MissingUserId => "missing User-ID".to_string(),
+            RouteError::MissingDate => "missing Date".to_string(),
+            RouteError::MissingSignature => "missing Signature".to_string(),
             RouteError::BadDigest => "bad Digest".to_string(),
             RouteError::BadSignHeader => {
                 "bad Signature header: is user-id required in headers= for this request?"
@@ -103,6 +111,8 @@ impl ResponseError for RouteError {
         match self {
             RouteError::MissingClientHost => HttpResponse::BadRequest(),
             RouteError::MissingUserId => HttpResponse::BadRequest(),
+            RouteError::MissingDate => HttpResponse::BadRequest(),
+            RouteError::MissingSignature => HttpResponse::BadRequest(),
             RouteError::BadDigest => HttpResponse::BadRequest(),
             RouteError::BadSignHeader => HttpResponse::BadRequest(),
             RouteError::Diesel(_) => HttpResponse::InternalServerError(),

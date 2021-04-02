@@ -200,7 +200,7 @@ pub async fn verify_federated_request(request: HttpRequest) -> Result<bool, Rout
         "{:?}",
         headers
             .get("Client-Host")
-            .ok_or("Missing Client-Host Header.")
+            .ok_or(RouteError::MissingClientHost)?
     );
     let key_path = format!("{}{}{}", "https://", client_host, "/fed/key");
     println!("Client-Host: {}", client_host);
@@ -240,7 +240,7 @@ pub async fn verify_federated_request(request: HttpRequest) -> Result<bool, Rout
     }
     string.push_str(&format!(
         "date: {}\n",
-        format!("{:?}", headers.get("Date").ok_or("Missing Date Header."))
+        format!("{:?}", headers.get("Date").ok_or(RouteError::MissingDate)?)
     ));
     string.push_str(&format!("digest: SHA-512={}", digest_header));
     println!("Constructed String: {}", string);
@@ -257,7 +257,9 @@ pub async fn verify_federated_request(request: HttpRequest) -> Result<bool, Rout
 
     let sign_header = format!(
         "{:?}",
-        headers.get("Signature").ok_or("Missing Signature Header.")
+        headers
+            .get("Signature")
+            .ok_or(RouteError::MissingSignature)?
     );
     let signature = sign_header
         .split(",signature=")
