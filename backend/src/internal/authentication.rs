@@ -196,19 +196,17 @@ pub async fn verify_federated_request(request: HttpRequest) -> Result<bool, Rout
     // Verify signature
     // get host from request
     let headers = request.headers();
-    let client_host = format!(
-        "{:?}",
-        headers
+    let client_host = headers
             .get("Client-Host")
             .ok_or(RouteError::MissingClientHost)?
-    );
-    let key_path = format!("{}{}{}", "https://", client_host, "/fed/key");
+            .to_str()?;
+    let key_path = format!("https://{}/fed/key", client_host);
     println!("Client-Host: {}", client_host);
     println!("Key Path: {}", key_path);
     // construct and send GET request to host/fed/key
     let date = SystemTime::now().into();
     let key_req = awc::Client::new()
-        .get(key_path)
+        .get(&key_path)
         .header("User-Agent", "Actix Web")
         .header("Host", client_host.clone())
         .header("Client-Host", "cs3099user-a9.host.cs.st-andrews.ac.uk")
@@ -235,12 +233,12 @@ pub async fn verify_federated_request(request: HttpRequest) -> Result<bool, Rout
     ));
     string.push_str(&format!("client-host: {}\n", client_host));
     if let Some(userid) = headers.get("User-ID") {
-        let uid = format!("{:?}", userid);
+        let uid = userid.to_str()?;
         string.push_str(&format!("user-id: {}\n", &uid));
     }
     string.push_str(&format!(
         "date: {}\n",
-        format!("{:?}", headers.get("Date").ok_or(RouteError::MissingDate)?)
+        headers.get("Date").ok_or(RouteError::MissingDate)?.to_str()?
     ));
     string.push_str(&format!("digest: SHA-512={}", digest_header));
     println!("Constructed String: {}", string);
@@ -255,12 +253,11 @@ pub async fn verify_federated_request(request: HttpRequest) -> Result<bool, Rout
         header_str
     );
 
-    let sign_header = format!(
-        "{:?}",
-        headers
+    let sign_header = headers
             .get("Signature")
             .ok_or(RouteError::MissingSignature)?
-    );
+            .to_str()?;
+
     let signature = sign_header
         .split(",signature=")
         .collect::<Vec<_>>()
@@ -280,7 +277,7 @@ pub async fn verify_federated_request(request: HttpRequest) -> Result<bool, Rout
     println!("Verified signature.");
     // match digest header from request with above output
     let exp_digest = ["sha-512=", digest_header].join("");
-    let given_digest = format!("{:?}", headers.get("Digest").ok_or(RouteError::BadDigest)?);
+    let given_digest = headers.get("Digest").ok_or(RouteError::BadDigest)?.to_str()?;
     if exp_digest != given_digest {
         println!("Could not match digest. Expected {}", exp_digest);
         println!("Given digest {}", given_digest);
