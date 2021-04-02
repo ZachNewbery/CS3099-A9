@@ -1,4 +1,3 @@
-use actix_web::error::BlockingError;
 use actix_web::http::header::Header as ActixHeader;
 use actix_web::{web, HttpRequest, HttpResponse};
 use actix_web_httpauth::headers::authorization::{Authorization, Bearer};
@@ -6,7 +5,6 @@ use actix_web_httpauth::headers::authorization::{Authorization, Bearer};
 use chrono::Utc;
 use crypto::{digest::Digest, sha2::Sha512};
 
-use http_signature_normalization_actix::prelude::*;
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, TokenData, Validation};
 use openssl::hash::*;
 use openssl::pkey::*;
@@ -112,7 +110,7 @@ where
 
     // hash body of HTTP request (need to work out how to do for post requests!)
     digest.input_str(&serde_json::to_string(&body)?);
-    let bytes = hex::decode(digest.result_str()).expect("Hex string decoded");
+    let bytes = hex::decode(digest.result_str())?;
     let digest_header = base64::encode(bytes);
     let date = SystemTime::now().into();
 
@@ -179,24 +177,37 @@ where
 
 pub async fn verify_federated_request<T>(
     request: HttpRequest,
-    // need_user_id: bool,
+    need_user_id: bool,
     body: T,
 ) -> Result<bool, RouteError>
 where
     T: Serialize,
 {
+    // Verify digest header
+    let mut digest = Sha512::new();
+    // hash body of request
+    digest.input_str(&serde_json::to_string(&body)?);
+    // encode output of hash
+    let bytes = hex::decode(digest.result_str())?;
+    let digest_header = &base64::encode(bytes);
+
     // Verify signature
     // get host from request
     let headers = request.headers();
-    let host = format!("{:?}", headers.get("Host").ok_or("Missing Host Header."));
-    let key_path = format!("{}{}{}", "https://", host, "/fed/key");
+    let client_host = format!(
+        "{:?}",
+        headers
+            .get("Client-Host")
+            .ok_or("Missing Client-Host Header.")
+    );
+    let key_path = format!("{}{}{}", "https://", client_host, "/fed/key");
 
     // construct and send GET request to host/fed/key
     let date = SystemTime::now().into();
     let key_req = awc::Client::new()
         .get(key_path)
         .header("User-Agent", "Actix Web")
-        .header("Host", host)
+        .header("Host", client_host.clone())
         .header("Client-Host", "cs3099user-a9.host.cs.st-andrews.ac.uk")
         .set(actix_web::http::header::Date(date))
         .send()
@@ -205,64 +216,81 @@ where
         .body()
         .await?;
 
-    // using body of response, remove trailing lines from public key
-    let pkey = PKey::public_key_from_pem(&key_req).expect("Error decoding public key.");
+    // using body of response, get public key
+    let pkey = PKey::public_key_from_pem(&key_req)?;
 
-    // @TODO: generate the signature string :(
-    let sign_str = "to-do".to_string();
-    // @TODO: obtain base64 signature from header Signature (some string pattern matching?)
-    let signature = "get signature!".to_string();
-    // use openssl::Verifier with PCKS#1 to verify signature (and passing constructed string)
+    // generate expected signature string
+    let mut string = String::new();
+    string.push_str(&format!(
+        "(request-target): {} {}\n",
+        request.method().as_str().to_lowercase(),
+        request.path()
+    ));
+    string.push_str(&format!(
+        "host: {}\n",
+        "cs3099user-a9.host.cs.st-andrews.ac.uk"
+    ));
+    string.push_str(&format!("client-host: {}\n", client_host));
+
+    if need_user_id {
+        let uid = format!(
+            "{:?}",
+            headers.get("User-ID").ok_or("Missing User-ID Header.")
+        );
+        string.push_str(&format!("user-id: {}\n", &uid));
+    }
+    string.push_str(&format!(
+        "date: {}\n",
+        format!("{:?}", headers.get("Date").ok_or("Missing Date Header."))
+    ));
+    string.push_str(&format!("digest: SHA-512={}", digest_header));
+
+    //obtain base64 signature from header Signature and match it
+    let header_str = match need_user_id {
+        true => "(request-target) host client-host user-id date digest",
+        false => "(request-target) host client-host date digest",
+    };
+
+    let str_header = format!(
+        "keyId=\"global\",algorithm=\"rsa-sha512\",headers=\"{}\"",
+        header_str
+    );
+
+    let sign_header = format!(
+        "{:?}",
+        headers.get("Signature").ok_or("Missing Signature Header.")
+    );
+    let mut signature: Vec<&str> = sign_header.split(",signature=").collect();
+    if signature
+        .pop()
+        .ok_or("Could not parse Signature header")
+        .unwrap()
+        != str_header
+    {
+        return Err(RouteError::BadSignHeader);
+    }
+
+    // use openssl::Verifier with PCKS#1 to verify signature with expected string
     let mut verifier = Verifier::new(MessageDigest::sha256(), &pkey)?;
     verifier.set_rsa_padding(Padding::PKCS1)?;
-    verifier.update(sign_str.as_bytes())?;
-    assert!(verifier.verify(signature.as_bytes())?);
+    verifier.update(string.as_bytes())?;
+    verifier.verify(
+        signature
+            .pop()
+            .ok_or("Could not parse Signature header")
+            .unwrap()
+            .as_bytes(),
+    )?;
 
-    // Verify digest header
-    let mut digest = Sha512::new();
-    // hash body of request
-    digest.input_str(&serde_json::to_string(&body)?);
-    // encode output of hash
-    let bytes = hex::decode(digest.result_str()).expect("Hex string decoded");
-    let digest_header = ["sha-512=", &base64::encode(bytes)].join("");
     // match digest header from request with above output
-    assert_eq!(
-        digest_header,
-        format!(
+    if ["sha-512=", digest_header].join("")
+        != format!(
             "{:?}",
             headers.get("Digest").ok_or("Missing Digest Header.")
         )
-    );
-
-    Ok(true)
-}
-
-#[derive(Debug, thiserror::Error)]
-pub enum MyError {
-    #[error("Failed to read header, {0}")]
-    Convert(#[from] ToStrError),
-
-    #[error("Failed to create header, {0}")]
-    Header(#[from] InvalidHeaderValue),
-
-    #[error("Failed to send request")]
-    SendRequest,
-
-    #[error("Failed to retrieve request body")]
-    Body,
-
-    #[error("Failed to prepare signing")]
-    Sign(#[from] PrepareSignError),
-
-    #[error("Blocking operation was canceled")]
-    Canceled,
-}
-
-impl From<BlockingError<MyError>> for MyError {
-    fn from(b: BlockingError<MyError>) -> Self {
-        match b {
-            BlockingError::Error(e) => e,
-            _ => MyError::Canceled,
-        }
+    {
+        Err(RouteError::BadDigest)
+    } else {
+        Ok(true)
     }
 }
