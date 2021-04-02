@@ -8,6 +8,9 @@ import { useUser } from "../index";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPencilAlt, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { EditComment } from "./EditComment";
+import { useDebouncedCallback } from "use-debounce";
+import { Tooltip } from "../components/Tooltip";
+import { Profile } from "../components/Profile";
 
 const loadChildPosts = async ({ children, addComment }) => {
   let posts = [];
@@ -55,10 +58,7 @@ const StyledComments = styled.div`
     & > .main {
       display: flex;
       align-items: center;
-      & > .profile > img {
-        height: 2.5rem;
-        width: 2.5rem;
-        border-radius: 1.5rem;
+      & > .profile > div {
         margin-right: 0.5rem;
       }
       & > .content {
@@ -104,7 +104,10 @@ const StyledComments = styled.div`
 const StyledCreateComment = styled.div`
   padding: 0.8rem 0;
   margin: 0 0.8rem;
-  & > input {
+  label {
+    position: relative;
+  }
+  input {
     border: 1px solid ${colors.veryLightGray};
     width: 100%;
     border-radius: 0.6em;
@@ -127,11 +130,12 @@ export const CreateComment = ({ postId, communityId, refresh }) => {
     const content = contentRef.current.value;
 
     if (content.length < 5) {
-      currentErrors.content = "Comment is too short";
+      currentErrors.content = "Too short";
     }
 
     if (Object.keys(currentErrors).length === 0) {
       try {
+        contentRef.current.value = "";
         await createComment({ postId, content, communityId });
         return refresh();
       } catch (error) {
@@ -142,15 +146,18 @@ export const CreateComment = ({ postId, communityId, refresh }) => {
     setErrors(currentErrors);
   };
 
-  const handleKeyDown = async (e) => {
+  const [handleKeyDownDebounced] = useDebouncedCallback(async (e) => {
     if (e.key === "Enter") {
       await handleSubmit(e);
     }
-  };
+  }, 500);
 
   return (
     <StyledCreateComment>
-      <input ref={contentRef} placeholder="Write a comment..." onKeyDown={handleKeyDown} />
+      <label>
+        <input ref={contentRef} placeholder="Write a comment..." onKeyDown={handleKeyDownDebounced} onChange={() => setErrors({})} />
+        {errors.content && <Tooltip text={errors.content} />}
+      </label>
     </StyledCreateComment>
   );
 };
@@ -197,13 +204,7 @@ export const Comments = ({ children, addComment, removeComment }) => {
               <div key={comment.id} className="comment">
                 <div className="main">
                   <div className="profile">
-                    <img
-                      alt="profile"
-                      src={
-                        comment.user.avatar ||
-                        `https://eu.ui-avatars.com/api/?rounded=true&bold=true&background=0061ff&color=ffffff&uppercase=true&format=svg&name=${comment.author.id}`
-                      }
-                    />
+                    <Profile user={comment.user} />
                   </div>
                   <div className="content">
                     {comment.content.map((block, i) => (

@@ -14,8 +14,9 @@ const StyledContainer = styled.div`
   & > .communities-container {
     width: 15rem;
     min-height: 20rem;
-    max-height: 30rem;
+    height: 100%;
     margin-right: 1rem;
+    margin-bottom: 1rem;
   }
 
   & > .posts-container {

@@ -16,6 +16,7 @@ const StyledCommunities = styled.div`
   border: 1px solid ${colors.mediumLightGray};
   border-radius: 0.6rem;
   padding: 1rem 0;
+
   & > .communities-list {
     flex: 1;
     padding: 0.25rem 1rem;
@@ -23,6 +24,9 @@ const StyledCommunities = styled.div`
     & > h3 {
       margin: 0.25rem 0;
       cursor: pointer;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
       &.active {
         color: ${colors.blue};
       }
@@ -77,7 +81,7 @@ export const ListCommunities = ({ host, community, setCommunity, refresh }) => {
       <CreateCommunity show={showCreate} hide={handleHideCreate} refresh={refresh} />
       <ScrollContainer className="communities-list">
         {communities.map((c, i) => (
-          <h3 key={i} onClick={() => handleSelect(c)} className={c === community ? "active" : ""}>
+          <h3 key={i} onClick={() => handleSelect(c)} className={c === community ? "active" : ""} title={c}>
             {c}
           </h3>
         ))}

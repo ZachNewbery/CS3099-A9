@@ -27,26 +27,20 @@ export const EditCommunity = ({ show, hide, id, initialTitle, initialDescription
     const description = descriptionRef.current.value;
 
     if (title.length < 5) {
-      currentErrors.title = "Title is too short";
-      setLoading(false);
+      currentErrors.title = "Too short";
     }
 
     if (title.length === 0) {
-      currentErrors.title = "Missing title";
-      setLoading(false);
+      currentErrors.title = "No title";
     }
 
     if (description.length < 5) {
-      currentErrors.description = "Description is too short";
-      setLoading(false);
+      currentErrors.description = "Too short";
     }
 
     if (description.length === 0) {
-      currentErrors.description = "Missing description";
-      setLoading(false);
+      currentErrors.description = "No description";
     }
-
-    
 
     if (Object.keys(currentErrors).length === 0) {
       try {
@@ -60,12 +54,13 @@ export const EditCommunity = ({ show, hide, id, initialTitle, initialDescription
       }
     }
 
+    setLoading(false);
     setErrors(currentErrors);
   };
 
   return (
     <Modal title="Edit Community" showModal={show} hide={hide} childrenStyle={{ padding: "2rem" }}>
-      <StyledForm style={{ width: "100%" }}>
+      <StyledForm style={{ width: "100%" }} onChange={() => setErrors({})}>
         <label>
           Title
           <input ref={titleRef} defaultValue={initialTitle} />
@@ -73,7 +68,7 @@ export const EditCommunity = ({ show, hide, id, initialTitle, initialDescription
         </label>
         <label>
           Description
-          <input ref={descriptionRef} defaultValue={initialDescription} />
+          <textarea ref={descriptionRef} defaultValue={initialDescription} />
           {errors.description && <Tooltip text={errors.description} />}
         </label>
         <button onClick={handleSubmit}>{loading ? "Loading..." : "Change"}</button>

@@ -2,9 +2,9 @@ import React from "react";
 import styled from "styled-components";
 import { colors, fonts } from "../helpers";
 
-export const Tooltip = ({ text }) => {
+export const Tooltip = ({ text, ...props }) => {
   return (
-    <StyledTooltip>
+    <StyledTooltip {...props}>
       <p>{text}</p>
     </StyledTooltip>
   );
@@ -22,6 +22,7 @@ const StyledTooltip = styled.div`
   position: absolute;
   z-index: 1;
   left: 100%;
+  top: 0;
   margin: 0 1rem;
 
   &::after {
@@ -42,5 +43,8 @@ const StyledTooltip = styled.div`
 
   p {
     margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 `;

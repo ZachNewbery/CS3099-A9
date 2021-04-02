@@ -73,5 +73,13 @@ export const StyledForm = styled.form`
       color: white;
       background: ${colors.lightBlueGradient};
     }
+
+    & > p {
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      margin: 0;
+      padding: 0 1rem;
+    }
   }
 `;

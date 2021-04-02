@@ -9,6 +9,7 @@ import { StyledBlock, StyledContent, renderContent } from "./PostContent";
 import { useUser } from "../index";
 import { Comments, CreateComment } from "./Comments";
 import { EditPost } from "./EditPost";
+import { Profile } from "../components/Profile";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeft, faPencilAlt, faTrash } from "@fortawesome/free-solid-svg-icons";
@@ -32,7 +33,6 @@ const StyledPostContainer = styled.div`
   border-radius: 0.6rem;
   display: flex;
   flex-flow: column nowrap;
-  overflow: hidden;
 `;
 
 const StyledPost = styled.div`
@@ -83,12 +83,10 @@ const StyledPost = styled.div`
 
     & > .profile {
       display: flex;
-      & > img {
-        width: 2.5rem;
-        height: 2.5rem;
-        border-radius: 1.5rem;
-        margin-left: 1rem;
+      & > .profile-picture {
+        margin-left: 1rem;        
       }
+      
       & > .details {
         justify-content: center;
         display: flex;
@@ -209,13 +207,7 @@ export const Post = ({ id, title, content, created, modified, author, user: _use
             <h3>{author.id}</h3>
             <p title={author.host}>{author.host}</p>
           </div>
-          <img
-            alt="profile"
-            src={
-              _user.avatar ||
-              `https://eu.ui-avatars.com/api/?rounded=true&bold=true&background=0061ff&color=ffffff&uppercase=true&format=svg&name=${author.id}`
-            }
-          />
+          <Profile user={_user} />
         </div>
       </div>
       <div className="content">

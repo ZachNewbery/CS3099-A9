@@ -16,28 +16,37 @@ const StyledContainer = styled.div`
   box-shadow: ${colors.blueInsetShadow};
   border-radius: 0.6rem;
   margin-bottom: 1rem;
-  padding: 1rem 0;
-  position: relative;
+  padding: 0 1rem;
 
   & > h1 {
-    margin: 0 1rem;
+    margin: 0;
     font-family: ${fonts.accent};
     color: ${colors.white};
     font-weight: normal;
     font-size: 1.25rem;
     letter-spacing: 0.5px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
   & > .actions {
-    position: absolute;
-    top: 0.75rem;
-    right: 0.75rem;
     display: flex;
+    padding: 0.75rem 0 0;
+    & > p {
+      margin: 0;
+      font-size: 0.8rem;
+      color: ${colors.softWhite};
+      font-family: ${fonts.accent};
+      letter-spacing: 0.5px;
+      flex: 1;
+    }
     & > svg {
       color: ${colors.softWhite};
       transition: all 0.3s;
-      font-size: 1rem;
-      margin-left: 0.75rem;
+      font-size: 0.75rem;
+      margin-left: 0.5rem;
       cursor: pointer;
       &:hover {
         color: ${colors.white};
@@ -48,8 +57,12 @@ const StyledContainer = styled.div`
   & > .content {
     & > p {
       color: ${colors.white};
-      margin: 1rem;
+      margin: 0.5rem 0 1rem;
       font-size: 1rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 6;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
   }
 `;
@@ -74,26 +87,32 @@ export const SingleCommunity = ({ id, host, refresh }) => {
   const handleHideCommunity = () => setShowCommunity(false);
 
   const handleEdit = () => handleShowCommunity();
-  const handleDelete = async e => {
+  const handleDelete = async (e) => {
     e.preventDefault();
     await deleteCommunity({ id });
     refresh();
-  }
-  
+  };
+
   const renderCommunity = () => {
     if (isLoading) return <Spinner />;
     if (error) return <Error message={error} />;
 
-    const isAdmin = data.admins.find(admin => admin.id.toLowerCase() === user.username.toLowerCase() && admin.host.toLowerCase() === user.host.toLowerCase());
-    
+    const isAdmin = data.admins.find((admin) => admin.id.toLowerCase() === user.username.toLowerCase() && admin.host.toLowerCase() === user.host.toLowerCase());
+
     return (
       <>
-        {isAdmin && (<div className="actions">
-          <FontAwesomeIcon onClick={handleEdit} icon={faPencilAlt} />
-          <FontAwesomeIcon onClick={handleDelete} icon={faTrash} />
-        </div>)}
+        <div className="actions">
+          <p>{`${data.admins.length} ${data.admins.length === 1 ? "admin" : "admins"}`}</p>
+          {isAdmin && (
+            <>
+              <FontAwesomeIcon onClick={handleEdit} icon={faPencilAlt} />
+              <FontAwesomeIcon onClick={handleDelete} icon={faTrash} />
+            </>
+          )}
+        </div>
+        <h1 title={id}>{id}</h1>
         <div className="content">
-          <p>{data.description}</p>
+          <p title={data.description}>{data.description}</p>
         </div>
       </>
     );
@@ -110,10 +129,7 @@ export const SingleCommunity = ({ id, host, refresh }) => {
         initialDescription={data?.description}
       />
 
-      <StyledContainer>
-        <h1>{id}</h1>
-        {renderCommunity()}
-      </StyledContainer>
+      <StyledContainer>{renderCommunity()}</StyledContainer>
     </>
   );
 };

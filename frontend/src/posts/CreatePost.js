@@ -110,7 +110,7 @@ export const CreatePost = ({ community, host, refresh }) => {
             {errors.body && <Tooltip text={errors.body} />}
           </label>
         )}
-        <button onClick={handleSubmit}>Post to {community} </button>
+        <button onClick={handleSubmit} title={`Post to ${community}`}><p>Post to {community}</p></button>
       </StyledForm>
     </StyledContainer>
   );
