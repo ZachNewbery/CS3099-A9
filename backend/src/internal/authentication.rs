@@ -4,7 +4,7 @@ use actix_web_httpauth::headers::authorization::{Authorization, Bearer};
 
 use chrono::Utc;
 use crypto::{digest::Digest, sha2::Sha512};
-
+use std::time::Duration;
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, TokenData, Validation};
 use openssl::hash::*;
 use openssl::pkey::*;
@@ -204,19 +204,35 @@ pub async fn verify_federated_request(request: HttpRequest) -> Result<bool, Rout
     println!("Client-Host: {}", client_host);
     println!("Key Path: {}", key_path);
     // construct and send GET request to host/fed/key
-    let date = SystemTime::now().into();
-    let key_req = awc::Client::new()
-        .get(&key_path)
-        .header("User-Agent", "Actix Web")
-        .header("Host", client_host.clone())
-        .header("Client-Host", "cs3099user-a9.host.cs.st-andrews.ac.uk")
-        .set(actix_web::http::header::Date(date))
-        .send()
-        .await
-        .map_err(|_| RouteError::ExternalService)?
-        .body()
-        .await?;
+    // let date = SystemTime::now().into();
 
+    let connector = awc::Connector::new()
+        .timeout(Duration::from_secs(3))
+        .finish();
+
+    let client = awc::Client::builder()
+        .connector(connector)
+        .timeout(Duration::from_secs(5))
+        .finish();
+
+    let key_req = client
+        .get("https://cs3099user-a9.host.cs.st-andrews.ac.uk/fed/key")
+        // .header("User-Agent", "Actix Web")
+        // .header("Host", client_host.clone())
+        // .header("Client-Host", "cs3099user-a9.host.cs.st-andrews.ac.uk")
+        // .set(actix_web::http::header::Date(date))
+        .send()
+        .await;
+    //     .map_err(|e| {
+    //         println!("{}", e);
+    //         RouteError::ExternalService
+    //     })
+    //     .and_then(|response| {              // <- server http response
+    //         println!("Response: {:?}", response);
+    //         Ok(())
+    //    });
+    println!("Response: {:?}", key_req);
+    let key_req = "hi".as_bytes();
     // using body of response, get public key
     let pkey = PKey::public_key_from_pem(&key_req)?;
     println!("Got public key: {:?}", pkey);
