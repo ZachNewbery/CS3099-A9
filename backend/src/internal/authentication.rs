@@ -176,6 +176,7 @@ where
 }
 
 pub async fn verify_federated_request(request: HttpRequest) -> Result<bool, RouteError> {
+    println!("received request");
     // Verify digest header
     let mut digest = Sha512::new();
 
@@ -202,7 +203,7 @@ pub async fn verify_federated_request(request: HttpRequest) -> Result<bool, Rout
             .ok_or("Missing Client-Host Header.")
     );
     let key_path = format!("{}{}{}", "https://", client_host, "/fed/key");
-
+    println!("Client-Host: {}", client_host);
     // construct and send GET request to host/fed/key
     let date = SystemTime::now().into();
     let key_req = awc::Client::new()
@@ -219,7 +220,7 @@ pub async fn verify_federated_request(request: HttpRequest) -> Result<bool, Rout
 
     // using body of response, get public key
     let pkey = PKey::public_key_from_pem(&key_req)?;
-
+    println!("Got public key: {:?}", pkey);
     // generate expected signature string
     let mut string = String::new();
     string.push_str(&format!(
@@ -241,7 +242,7 @@ pub async fn verify_federated_request(request: HttpRequest) -> Result<bool, Rout
         format!("{:?}", headers.get("Date").ok_or("Missing Date Header."))
     ));
     string.push_str(&format!("digest: SHA-512={}", digest_header));
-
+    println!("Constructed String: {}", string);
     //obtain base64 signature from header Signature and match it
     let header_str = match headers.get("User-ID") {
         Some(_) => "(request-target) host client-host user-id date digest",
@@ -264,6 +265,7 @@ pub async fn verify_federated_request(request: HttpRequest) -> Result<bool, Rout
         .ok_or(RouteError::BadSignHeader)?;
 
     if signature != str_header {
+        println!("Could not match signature prefix.");
         return Ok(false);
     }
 
@@ -272,13 +274,16 @@ pub async fn verify_federated_request(request: HttpRequest) -> Result<bool, Rout
     verifier.set_rsa_padding(Padding::PKCS1)?;
     verifier.update(string.as_bytes())?;
     verifier.verify(signature.as_bytes())?;
-
+    println!("Verified signature.");
     // match digest header from request with above output
-    if ["sha-512=", digest_header].join("")
-        != format!("{:?}", headers.get("Digest").ok_or(RouteError::BadDigest)?)
-    {
+    let exp_digest = ["sha-512=", digest_header].join("");
+    let given_digest = format!("{:?}", headers.get("Digest").ok_or(RouteError::BadDigest)?);
+    if exp_digest != given_digest {
+        println!("Could not match digest. Expected {}", exp_digest);
+        println!("Given digest {}", given_digest);
         Err(RouteError::BadDigest)
     } else {
+        println!("Verification successful!");
         Ok(true)
     }
 }
