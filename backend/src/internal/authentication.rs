@@ -204,8 +204,6 @@ pub async fn verify_federated_request(request: HttpRequest) -> Result<bool, Rout
     println!("Client-Host: {}", client_host);
     println!("Key Path: {}", key_path);
     // construct and send GET request to host/fed/key
-    // let date = SystemTime::now().into();
-
     let connector = awc::Connector::new()
         .timeout(Duration::from_secs(3))
         .finish();
@@ -217,10 +215,9 @@ pub async fn verify_federated_request(request: HttpRequest) -> Result<bool, Rout
 
     let key_req = client
         .get("https://cs3099user-a9.host.cs.st-andrews.ac.uk/fed/key")
-        // .header("User-Agent", "Actix Web")
-        // .header("Host", client_host.clone())
-        // .header("Client-Host", "cs3099user-a9.host.cs.st-andrews.ac.uk")
-        // .set(actix_web::http::header::Date(date))
+        .header("User-Agent", "Actix Web")
+        .header("Host", client_host.clone())
+        .header("Client-Host", "cs3099user-a9.host.cs.st-andrews.ac.uk")
         .send()
         .await;
     //     .map_err(|e| {
@@ -231,8 +228,9 @@ pub async fn verify_federated_request(request: HttpRequest) -> Result<bool, Rout
     //         println!("Response: {:?}", response);
     //         Ok(())
     //    });
+
     println!("Response: {:?}", key_req);
-    let key_req = "hi".as_bytes();
+    let key_req = key_req.unwrap().body().await?;
     // using body of response, get public key
     let pkey = PKey::public_key_from_pem(&key_req)?;
     println!("Got public key: {:?}", pkey);
