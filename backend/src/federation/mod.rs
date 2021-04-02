@@ -7,7 +7,7 @@ pub async fn hello(web::Path(name): web::Path<String>) -> Result<String> {
     let test = make_federated_request(
         awc::Client::get,
         "cs3099user-a9.host.cs.st-andrews.ac.uk".to_string(),
-        "/fed/posts".to_string(),
+        "/fed/communities".to_string(),
         "".to_string(),
         Some("zn6".to_string()),
     )
