@@ -6,6 +6,7 @@ use crate::database::actions::post::get_top_level_posts_of_community;
 use crate::database::get_conn_from_pool;
 
 use crate::federation::schemas::{Community, User};
+use crate::internal::authentication::verify_federated_request;
 use crate::util::route_error::RouteError;
 use crate::DBPool;
 use chrono::serde::ts_milliseconds;
@@ -20,6 +21,7 @@ pub(crate) async fn communities(pool: web::Data<DBPool>, req: HttpRequest) -> Re
         .get("Client-Host")
         .ok_or(RouteError::MissingClientHost)?;
     // TODO: Parse the client host
+    verify_federated_request(req, true, "").await?;
 
     let conn = get_conn_from_pool(pool.clone())?;
 
