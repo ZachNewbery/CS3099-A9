@@ -214,7 +214,7 @@ pub async fn verify_federated_request(request: HttpRequest) -> Result<bool, Rout
         .finish();
 
     let key_req = client
-        .get("https://cs3099user-a9.host.cs.st-andrews.ac.uk/fed/key")
+        .get(key_path)
         .header("User-Agent", "Actix Web")
         .header("Host", client_host.clone())
         .header("Client-Host", "cs3099user-a9.host.cs.st-andrews.ac.uk")
