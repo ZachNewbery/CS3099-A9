@@ -3,12 +3,13 @@ use actix_web::{web, FromRequest, HttpRequest, HttpResponse};
 use actix_web_httpauth::headers::authorization::{Authorization, Bearer};
 
 use chrono::Utc;
-use crypto::{digest::Digest, sha2::Sha512};
+// use crypto::{digest::Digest, sha2::Sha512};
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, TokenData, Validation};
 use openssl::hash::*;
 use openssl::pkey::*;
 use openssl::rsa::Padding;
 use openssl::sign::*;
+use sha2::*;
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
@@ -106,12 +107,12 @@ pub fn make_federated_request<T>(
 where
     T: Serialize,
 {
-    let mut digest = Sha512::new();
+    // let mut digest = Sha512::new();
 
     // hash body of HTTP request (need to work out how to do for post requests!)
-    digest.input_str(&serde_json::to_string(&body)?);
-    let bytes = hex::decode(digest.result_str())?;
-    let digest_header = base64::encode(bytes);
+    // digest.input_str(&serde_json::to_string(&body)?);
+    // let bytes = hex::decode(digest.result_str())?;
+    let digest_header = &base64::encode(Sha512::digest(&serde_json::to_string(&body)?.as_bytes()));
     let date = SystemTime::now().into();
 
     let full_path = format!("https://{}{}", host, endpoint);
@@ -178,22 +179,15 @@ where
 pub async fn verify_federated_request(request: HttpRequest) -> Result<bool, RouteError> {
     println!("received request");
     // Verify digest header
-    let mut digest = Sha512::new();
+    // let mut digest = Sha512::new();
 
     // hash body of request
-    let body = String::from_utf8(
-        web::Bytes::extract(&request)
-            .await
-            .map_err(|_| RouteError::ActixInternal)?
-            .to_vec(),
-    )
-    .map_err(|_| RouteError::ActixInternal)?;
-    let body_json = serde_json::to_string(&body)?;
-    println!("Parsed Body: {}", body_json);
-    digest.input_str(&body_json);
-    // encode output of hash
-    let bytes = hex::decode(digest.result_str())?;
-    let digest_header = &base64::encode(bytes);
+    let body = web::Bytes::extract(&request)
+        .await
+        .map_err(|_| RouteError::ActixInternal)?
+        .to_vec();
+
+    let digest_header = &base64::encode(Sha512::digest(&body));
 
     // Verify signature
     // get host from request
