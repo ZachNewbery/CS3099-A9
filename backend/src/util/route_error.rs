@@ -27,7 +27,9 @@ pub enum RouteError {
     #[error("item not found in database")]
     NotFound,
     #[error(transparent)]
-    ActixWeb(#[from] actix_web::error::PayloadError),
+    ActixPayload(#[from] actix_web::error::PayloadError),
+    #[error("external service error")]
+    ExternalService,
     #[error(transparent)]
     UuidParse(#[from] uuid::Error),
     #[error(transparent)]
@@ -63,7 +65,8 @@ impl ResponseError for RouteError {
             RouteError::Hex(_) => StatusCode::INTERNAL_SERVER_ERROR,
             RouteError::JsonSerde(_) => StatusCode::INTERNAL_SERVER_ERROR,
             RouteError::OpenSsl(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            RouteError::ActixWeb(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            RouteError::ActixPayload(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            RouteError::ExternalService => StatusCode::BAD_GATEWAY,
         }
     }
 
@@ -89,7 +92,8 @@ impl ResponseError for RouteError {
             RouteError::Hex(_) => "could not decode hex".to_string(),
             RouteError::JsonSerde(_) => "could not parse json".to_string(),
             RouteError::OpenSsl(_) => "openssl error".to_string(),
-            RouteError::ActixWeb(_) => "actix-web error".to_string(),
+            RouteError::ActixPayload(_) => "actix-web error".to_string(),
+            RouteError::ExternalService => "could not query external service".to_string(),
         };
 
         match self {
@@ -104,7 +108,8 @@ impl ResponseError for RouteError {
             RouteError::Hex(_) => HttpResponse::InternalServerError(),
             RouteError::JsonSerde(_) => HttpResponse::InternalServerError(),
             RouteError::OpenSsl(_) => HttpResponse::InternalServerError(),
-            RouteError::ActixWeb(_) => HttpResponse::InternalServerError(),
+            RouteError::ActixPayload(_) => HttpResponse::InternalServerError(),
+            RouteError::ExternalService => HttpResponse::BadGateway(),
         }
         .json(BadResponse {
             title: title_message.clone(),

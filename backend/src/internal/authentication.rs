@@ -212,7 +212,7 @@ where
         .set(actix_web::http::header::Date(date))
         .send()
         .await
-        .unwrap()
+        .map_err(|_| RouteError::ExternalService)?
         .body()
         .await?;
 
@@ -246,9 +246,10 @@ where
     string.push_str(&format!("digest: SHA-512={}", digest_header));
 
     //obtain base64 signature from header Signature and match it
-    let header_str = match need_user_id {
-        true => "(request-target) host client-host user-id date digest",
-        false => "(request-target) host client-host date digest",
+    let header_str = if need_user_id {
+        "(request-target) host client-host user-id date digest"
+    } else {
+        "(request-target) host client-host date digest"
     };
 
     let str_header = format!(
@@ -260,34 +261,25 @@ where
         "{:?}",
         headers.get("Signature").ok_or("Missing Signature Header.")
     );
-    let mut signature: Vec<&str> = sign_header.split(",signature=").collect();
-    if signature
+    let signature = sign_header
+        .split(",signature=")
+        .collect::<Vec<_>>()
         .pop()
-        .ok_or("Could not parse Signature header")
-        .unwrap()
-        != str_header
-    {
-        return Err(RouteError::BadSignHeader);
+        .ok_or(RouteError::BadSignHeader)?;
+
+    if signature != str_header {
+        return Ok(false);
     }
 
     // use openssl::Verifier with PCKS#1 to verify signature with expected string
     let mut verifier = Verifier::new(MessageDigest::sha256(), &pkey)?;
     verifier.set_rsa_padding(Padding::PKCS1)?;
     verifier.update(string.as_bytes())?;
-    verifier.verify(
-        signature
-            .pop()
-            .ok_or("Could not parse Signature header")
-            .unwrap()
-            .as_bytes(),
-    )?;
+    verifier.verify(signature.as_bytes())?;
 
     // match digest header from request with above output
     if ["sha-512=", digest_header].join("")
-        != format!(
-            "{:?}",
-            headers.get("Digest").ok_or("Missing Digest Header.")
-        )
+        != format!("{:?}", headers.get("Digest").ok_or(RouteError::BadDigest)?)
     {
         Err(RouteError::BadDigest)
     } else {
