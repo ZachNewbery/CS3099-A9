@@ -21,7 +21,7 @@ pub(crate) async fn communities(pool: web::Data<DBPool>, req: HttpRequest) -> Re
         .get("Client-Host")
         .ok_or(RouteError::MissingClientHost)?;
     // TODO: Parse the client host
-    verify_federated_request(req, true).await?;
+    verify_federated_request(req).await?;
 
     let conn = get_conn_from_pool(pool.clone())?;
 

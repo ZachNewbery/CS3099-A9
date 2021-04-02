@@ -175,10 +175,7 @@ where
     Ok(new_req.send())
 }
 
-pub async fn verify_federated_request(
-    request: HttpRequest,
-    need_user_id: bool,
-) -> Result<bool, RouteError> {
+pub async fn verify_federated_request(request: HttpRequest) -> Result<bool, RouteError> {
     // Verify digest header
     let mut digest = Sha512::new();
 
@@ -235,12 +232,8 @@ pub async fn verify_federated_request(
         "cs3099user-a9.host.cs.st-andrews.ac.uk"
     ));
     string.push_str(&format!("client-host: {}\n", client_host));
-
-    if need_user_id {
-        let uid = format!(
-            "{:?}",
-            headers.get("User-ID").ok_or("Missing User-ID Header.")
-        );
+    if let Some(userid) = headers.get("User-ID") {
+        let uid = format!("{:?}", userid);
         string.push_str(&format!("user-id: {}\n", &uid));
     }
     string.push_str(&format!(
@@ -250,10 +243,9 @@ pub async fn verify_federated_request(
     string.push_str(&format!("digest: SHA-512={}", digest_header));
 
     //obtain base64 signature from header Signature and match it
-    let header_str = if need_user_id {
-        "(request-target) host client-host user-id date digest"
-    } else {
-        "(request-target) host client-host date digest"
+    let header_str = match headers.get("User-ID") {
+        Some(_) => "(request-target) host client-host user-id date digest",
+        None => "(request-target) host client-host date digest",
     };
 
     let str_header = format!(
