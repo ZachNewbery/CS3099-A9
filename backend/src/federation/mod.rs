@@ -10,7 +10,9 @@ pub async fn hello(web::Path(name): web::Path<String>) -> Result<String> {
         "/fed/posts".to_string(),
         "".to_string(),
         Some("zn6".to_string()),
-    ).await?.await?;
+    )
+    .await?
+    .await?;
 
     Ok(format!("Hello {} \nVerification: {:?}", name, test))
 }
