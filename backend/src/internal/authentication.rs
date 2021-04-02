@@ -204,7 +204,6 @@ pub async fn verify_federated_request(request: HttpRequest) -> Result<bool, Rout
         .to_str()?;
     let key_path = format!("https://{}/fed/key", client_host);
     println!("Client-Host: {}", client_host);
-    println!("Key Path: {}", key_path);
     // construct and send GET request to host/fed/key
     let connector = awc::Connector::new()
         .timeout(Duration::from_secs(3))
@@ -222,19 +221,9 @@ pub async fn verify_federated_request(request: HttpRequest) -> Result<bool, Rout
         .header("Client-Host", "cs3099user-a9.host.cs.st-andrews.ac.uk")
         .send()
         .await;
-    //     .map_err(|e| {
-    //         println!("{}", e);
-    //         RouteError::ExternalService
-    //     })
-    //     .and_then(|response| {              // <- server http response
-    //         println!("Response: {:?}", response);
-    //         Ok(())
-    //    });
 
-    println!("Response: {:?}", key_req);
     let key_req = key_req.unwrap().body().await?;
     // using body of response, get public key
-    println!("Key Body: {:?}", key_req);
     let pkey = PKey::public_key_from_pem(&key_req)?;
     println!("Got public key: {:?}", pkey);
     // generate expected signature string
