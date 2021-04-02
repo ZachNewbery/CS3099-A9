@@ -34,7 +34,7 @@ export const StyledContent = styled.div`
     content: "";
     position: absolute;
     width: 100%;
-    height: 22px;
+    height: 15px;
     background: linear-gradient(0, white 16%, rgba(255, 255, 255, 0.7) 70%, transparent);
     bottom: 0;
   }
@@ -92,12 +92,8 @@ export const StyledContent = styled.div`
   }
 `;
 
-export const renderContent = (content = []) => {
+export const renderContent = (content = {}) => {
   return (
     <MarkdownEditor readOnly={true} name="content" defaultValue={content.text || content.markdown} />
   );
-};
-
-const TextContent = ({ content }) => {
-  return <p>{content}</p>;
 };

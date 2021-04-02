@@ -3,6 +3,7 @@ export * from "./fonts";
 export * from "./breakpoints";
 export * from "./auth";
 export * from "./fetchData";
+export * from "./getFormValues";
 export * from "./styles";
 export * from "../assets/Error";
 export * from "../assets/Spinner";

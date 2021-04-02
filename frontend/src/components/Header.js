@@ -18,6 +18,8 @@ const StyledHeader = styled.header`
   justify-content: space-between;
   z-index: 10;
   box-shadow: 0 10px 70px -30px rgb(6 27 225 / 40%);
+  position: sticky;
+  top: 0;
 
   & > .logo-container {
     text-decoration: none;

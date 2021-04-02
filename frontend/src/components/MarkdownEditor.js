@@ -22,6 +22,7 @@ const StyledEditor = styled.div`
     .react-mde {
       border: none;
       width: 100%;
+      margin: 0;
 
       .invisible {
         display: none;
@@ -92,14 +93,18 @@ const StyledEditor = styled.div`
       .mde-header-group {
         padding-right: 0;
       }
+      .mde-preview {
+        margin: 0;
+      }
       .mde-preview-content {
-        padding: 0.85rem 0.6rem;
+        padding: 0.5rem;
+        margin: 0;
         white-space: pre-wrap;
         * {
           white-space: pre-wrap;
           font-size: 1rem;
           border-bottom-width: 2px;
-          line-height: 0.9;
+          line-height: 1.2;
         }
         hr {
           border: none;
@@ -149,8 +154,8 @@ export const MarkdownEditor = React.forwardRef(({ name, tab = "write", style, re
 
   useEffect(() => {
     setValue(defaultValue);
-  }, [defaultValue])
-  
+  }, [defaultValue]);
+
   useEffect(() => {
     if (!readOnly) setSelectedTab("write");
   }, [readOnly]);

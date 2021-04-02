@@ -14,7 +14,9 @@ const loadPosts = async ({ host, community }) => {
   return fetchData(`${process.env.REACT_APP_API}/posts?${hostParam}community=${community}`);
 };
 
-const StyledPosts = styled.div``;
+const StyledPosts = styled.div`
+  padding-bottom: 5rem;
+`;
 
 export const ListPosts = ({ host, community }) => {
   const history = useHistory();
@@ -36,8 +38,8 @@ export const ListPosts = ({ host, community }) => {
                 {title}
               </h1>
               <div className="date-time">
-                <p className="time">{moment(created).utc(true).format("HH:mm")}</p>
-                <p className="date">{moment(created).utc(true).format("DD MMMM YYYY")}</p>
+                <p className="time">{moment(created).format("HH:mm")}</p>
+                <p className="date">{moment(created).format("DD MMMM YYYY")}</p>
               </div>
             </div>
             {content.map((block, i) => (

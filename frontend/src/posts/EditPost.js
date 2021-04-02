@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 
 import { Modal } from "../components/Modal";
-import { StyledForm, fetchData } from "../helpers";
+import { StyledForm, fetchData, getFormValues } from "../helpers";
 import { MarkdownEditor } from "../components/MarkdownEditor";
 import { Tooltip } from "../components/Tooltip";
 
@@ -13,8 +13,7 @@ export const EditPost = ({ show, hide, id, initialTitle, initialContent, refresh
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
 
-  const titleRef = useRef(null);
-  const contentRef = useRef(null);
+  const formRef = useRef(null);
 
   if (!show) return null;
 
@@ -24,28 +23,19 @@ export const EditPost = ({ show, hide, id, initialTitle, initialContent, refresh
 
     setLoading(true);
 
-    const title = titleRef.current.value;
-    const text = contentRef.current.props.value;
+    let { title, ...content } = getFormValues(formRef.current);
 
     if (title.length < 5) {
       currentErrors.title = "Title is too short";
+      setLoading(false);
     }
 
     if (title.length === 0) {
       currentErrors.title = "Missing title";
+      setLoading(false);
     }
 
-    if (text.length < 5) {
-      currentErrors.text = "Body is too short";
-    }
-
-    if (text.length === 0) {
-      currentErrors.text = "Missing body";
-    }
-
-    const content = [
-      { markdown: text }, // TODO
-    ];
+    content = Object.entries(content).map(([key, value]) => ({ [key.split("-")[1]]: value }));
 
     if (Object.keys(currentErrors).length === 0) {
       try {
@@ -55,7 +45,7 @@ export const EditPost = ({ show, hide, id, initialTitle, initialContent, refresh
         refresh();
         return hide();
       } catch (error) {
-        currentErrors.text = error.message;
+        currentErrors.title = error.message;
       }
     }
 
@@ -64,16 +54,20 @@ export const EditPost = ({ show, hide, id, initialTitle, initialContent, refresh
 
   return (
     <Modal title="Edit Post" showModal={show} hide={hide} childrenStyle={{ padding: "2rem" }} enterKeySubmits={false}>
-      <StyledForm style={{ width: "100%" }}>
+      <StyledForm style={{ width: "100%" }} ref={formRef}>
         <label>
           Title
-          <input ref={titleRef} defaultValue={initialTitle} />
+          <input name="title" defaultValue={initialTitle} />
           {errors.title && <Tooltip text={errors.title} />}
         </label>
-        <label>
-          <MarkdownEditor ref={contentRef} defaultValue={initialContent} />
-          {errors.text && <Tooltip text={errors.text} />}
-        </label>
+        {initialContent.map((content, i) => {
+          const contentType = Object.keys(content)[0];
+          return (
+            <label key={i}>
+              <MarkdownEditor name={`content-${contentType}-${i}`} defaultValue={content[contentType]} />
+            </label>
+          );
+        })}
         <button onClick={handleSubmit}>{loading ? "Loading..." : "Change"}</button>
       </StyledForm>
     </Modal>

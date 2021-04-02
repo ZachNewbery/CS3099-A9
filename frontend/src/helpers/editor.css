@@ -317,6 +317,10 @@
   border: 1px solid #c8ccd0;
 }
 
+.editor-container {
+  margin: 0 !important;
+}
+
 .editor-container * {
   box-sizing: border-box;
 }

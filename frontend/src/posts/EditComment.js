@@ -1,7 +1,8 @@
 import React, { useState, useRef } from "react";
 
 import { Modal } from "../components/Modal";
-import { StyledForm, fetchData } from "../helpers";
+import { StyledForm, fetchData, getFormValues } from "../helpers";
+import { MarkdownEditor } from "../components/MarkdownEditor";
 
 const editComment = async ({ id, content }) => {
   return fetchData(`${process.env.REACT_APP_API}/posts/${id}`, JSON.stringify({ content }), "PATCH");
@@ -10,7 +11,7 @@ const editComment = async ({ id, content }) => {
 export const EditComment = ({ show, hide, id, initialTitle, initialContent, refresh }) => {
   const [loading, setLoading] = useState(false);
 
-  const contentRef = useRef(null);
+  const formRef = useRef(null);
 
   if (!show) return null;
 
@@ -19,11 +20,10 @@ export const EditComment = ({ show, hide, id, initialTitle, initialContent, refr
 
     setLoading(true);
 
-    const text = contentRef.current.value;
-    const content = [
-      { text: text }, // TODO
-    ];
+    let content = getFormValues(formRef.current);
 
+    content = Object.entries(content).map(([key, value]) => ({ [key.split("-")[1]]: value }));
+    
     await editComment({ content, id });
 
     setLoading(false);
@@ -33,10 +33,15 @@ export const EditComment = ({ show, hide, id, initialTitle, initialContent, refr
 
   return (
     <Modal title="Edit Comment" showModal={show} hide={hide} childrenStyle={{ padding: "2rem" }}>
-      <StyledForm style={{ width: "100%" }}>
-        <label>
-          <input ref={contentRef} defaultValue={initialContent} />
-        </label>
+      <StyledForm style={{ width: "100%" }} ref={formRef}>
+        {initialContent.map((content, i) => {
+          const contentType = Object.keys(content)[0];
+          return (
+            <label key={i}>
+              <MarkdownEditor name={`content-${contentType}-${i}`} defaultValue={content[contentType]} />
+            </label>
+          );
+        })}
         <button onClick={handleSubmit}>{loading ? "Loading..." : "Change"}</button>
       </StyledForm>
     </Modal>

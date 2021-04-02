@@ -14,7 +14,10 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeft, faPencilAlt, faTrash } from "@fortawesome/free-solid-svg-icons";
 
 const loadSinglePost = async ({ id }) => {
-  return fetchData(`${process.env.REACT_APP_API}/posts/${id}`);
+  const post = await fetchData(`${process.env.REACT_APP_API}/posts/${id}`);
+  const user = await fetchData(`${process.env.REACT_APP_API}/user/${post.author.id}`);
+  post.user = user;
+  return post;
 };
 
 const deletePost = async ({ id }) => {
@@ -22,6 +25,7 @@ const deletePost = async ({ id }) => {
 };
 
 const StyledPostContainer = styled.div`
+  margin-bottom: 5rem;
   width: 100%;
   background: white;
   border: 1px solid ${colors.mediumLightGray};
@@ -80,8 +84,8 @@ const StyledPost = styled.div`
     & > .profile {
       display: flex;
       & > img {
-        height: 2.5rem;
         width: 2.5rem;
+        height: 2.5rem;
         border-radius: 1.5rem;
         margin-left: 1rem;
       }
@@ -156,9 +160,9 @@ export const SinglePost = ({ community, setCommunity }) => {
     }
   }, [data, community, setCommunity]);
 
-  const addComment = () => setCommentCount(c => c + 1);
-  const removeComment = () => setCommentCount (c => c - 1);
-  
+  const addComment = () => setCommentCount((c) => c + 1);
+  const removeComment = () => setCommentCount((c) => c - 1);
+
   if (isLoading) {
     return <Spinner />;
   }
@@ -172,7 +176,7 @@ export const SinglePost = ({ community, setCommunity }) => {
   );
 };
 
-export const Post = ({ id, title, content, created, author, refresh, commentCount }) => {
+export const Post = ({ id, title, content, created, modified, author, user: _user, refresh, commentCount }) => {
   const history = useHistory();
   const [showEdit, setShowEdit] = useState(false);
 
@@ -187,16 +191,18 @@ export const Post = ({ id, title, content, created, author, refresh, commentCoun
     await deletePost({ id }).then(history.goBack());
   };
 
+  const isEdited = moment(created).unix() !== moment(modified).unix();
+
   return (
     <StyledPost>
-      <EditPost id={id} hide={() => setShowEdit(false)} show={showEdit} initialTitle={title} initialContent={content?.[0]?.markdown} refresh={refresh} />
+      <EditPost id={id} hide={() => setShowEdit(false)} show={showEdit} initialTitle={title} initialContent={content} refresh={refresh} />
       <div className="header">
         <div className="back-icon" onClick={() => history.goBack()}>
           <FontAwesomeIcon icon={faArrowLeft} />
         </div>
         <div className="title">
           <h3>{title}</h3>
-          <p title={moment(created).utc(true).format("HH:mma - MMMM D, YYYY")}>{moment(created).utc(true).format("MMMM D, YYYY")}</p>
+          <p title={moment(created).format("HH:mma - MMMM D, YYYY")}>{`${moment(created).format("MMMM D, YYYY")} ${isEdited ? "(Edited)" : ""}`}</p>
         </div>
         <div className="profile">
           <div className="details">
@@ -206,7 +212,7 @@ export const Post = ({ id, title, content, created, author, refresh, commentCoun
           <img
             alt="profile"
             src={
-              author.avatar ||
+              _user.avatar ||
               `https://eu.ui-avatars.com/api/?rounded=true&bold=true&background=0061ff&color=ffffff&uppercase=true&format=svg&name=${author.id}`
             }
           />

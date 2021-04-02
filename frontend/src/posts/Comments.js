@@ -14,6 +14,8 @@ const loadChildPosts = async ({ children, addComment }) => {
 
   for (const child of children) {
     const post = await fetchData(`${process.env.REACT_APP_API}/posts/${child}`);
+    const user = await fetchData(`${process.env.REACT_APP_API}/user/${post.author.id}`);
+    post.user = user;
     if (!post.deleted) addComment();
     posts.push(post);
   }
@@ -65,6 +67,9 @@ const StyledComments = styled.div`
         border: 1px solid ${colors.mediumLightGray};
         border-radius: 0.6rem;
         padding: 0 1rem;
+        .mde-preview-content {
+          padding: 0;
+        }
       }
     }
     & > .footer {
@@ -177,7 +182,7 @@ export const Comments = ({ children, addComment, removeComment }) => {
             const isAdmin = author.id.toLowerCase() === user.username.toLowerCase() && author.host.toLowerCase() === user.host.toLowerCase();
 
             const handleEdit = () => {
-              setShowEdit({ showModal: true, content: comment.content?.[0]?.text, id: comment.id });
+              setShowEdit({ showModal: true, content: comment.content, id: comment.id });
             };
 
             const handleDelete = async () => {
@@ -186,13 +191,18 @@ export const Comments = ({ children, addComment, removeComment }) => {
                 .then(() => reload());
             };
 
+            const isEdited = moment(comment.created).unix() !== moment(comment.modified).unix();
+
             return (
               <div key={comment.id} className="comment">
                 <div className="main">
                   <div className="profile">
                     <img
                       alt="profile"
-                      src={`https://eu.ui-avatars.com/api/?rounded=true&bold=true&background=0061ff&color=ffffff&uppercase=true&format=svg&name=${comment.author.id}`}
+                      src={
+                        comment.user.avatar ||
+                        `https://eu.ui-avatars.com/api/?rounded=true&bold=true&background=0061ff&color=ffffff&uppercase=true&format=svg&name=${comment.author.id}`
+                      }
                     />
                   </div>
                   <div className="content">
@@ -202,7 +212,7 @@ export const Comments = ({ children, addComment, removeComment }) => {
                   </div>
                 </div>
                 <div className="footer">
-                  <p title={moment(comment.created).utc(true).format("HH:mma - Do MMMM, YYYY")}>{moment(comment.created).utc(true).fromNow()}</p>
+                  <p title={moment(comment.created).format("HH:mma - Do MMMM, YYYY")}>{`${moment(comment.created).fromNow()} ${isEdited ? "(Edited)" : ""}`}</p>
                   {isAdmin && (
                     <div className="actions">
                       <FontAwesomeIcon onClick={handleEdit} icon={faPencilAlt} />
