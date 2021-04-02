@@ -13,7 +13,21 @@ pub async fn hello(web::Path(name): web::Path<String>) -> Result<String> {
     )?
     .await?;
 
-    Ok(format!("Hello {} \nVerification: {:?}", name, test.body().await?))
+    let mut test2 = make_federated_request(
+        awc::Client::get,
+        "nebula0.herokuapp.com".to_string(),
+        "/fed/communities".to_string(),
+        "".to_string(),
+        Some("zn6".to_string()),
+    )?
+    .await?;
+
+    Ok(format!(
+        "Hello {} \nVerification: {:?} \nVerification 2: {:?}",
+        name,
+        test.body().await?,
+        test2.body().await?
+    ))
 }
 
 #[get("/key")]
