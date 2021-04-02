@@ -188,10 +188,15 @@ pub async fn verify_federated_request(request: HttpRequest) -> Result<bool, Rout
             .to_vec(),
     )
     .map_err(|_| RouteError::ActixInternal)?;
+    let mut received_message_buf: [u8; 100] = unsafe {
+        std::mem::MaybeUninit::uninit().assume_init()
+    };
+
     digest.input_str(&serde_json::to_string(&body)?);
     // encode output of hash
-    let bytes = hex::decode(digest.result_str())?;
-    let digest_header = &base64::encode(bytes);
+    digest.result(&mut received_message_buf);
+    // let bytes = hex::decode(digest.result_str())?;
+    let digest_header = base64::encode(received_message_buf);
 
     // Verify signature
     // get host from request
@@ -279,7 +284,7 @@ pub async fn verify_federated_request(request: HttpRequest) -> Result<bool, Rout
     verifier.verify(signature.as_bytes())?;
     println!("Verified signature.");
     // match digest header from request with above output
-    let exp_digest = ["sha-512=", digest_header].join("");
+    let exp_digest = ["sha-512=", &digest_header].join("");
     let given_digest = headers
         .get("Digest")
         .ok_or(RouteError::BadDigest)?
