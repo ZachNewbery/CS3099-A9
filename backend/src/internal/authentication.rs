@@ -232,6 +232,7 @@ pub async fn verify_federated_request(request: HttpRequest) -> Result<bool, Rout
     println!("Response: {:?}", key_req);
     let key_req = key_req.unwrap().body().await?;
     // using body of response, get public key
+    println!("Key Body: {:?}", key_req);
     let pkey = PKey::public_key_from_pem(&key_req)?;
     println!("Got public key: {:?}", pkey);
     // generate expected signature string
