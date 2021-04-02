@@ -188,7 +188,9 @@ pub async fn verify_federated_request(request: HttpRequest) -> Result<bool, Rout
             .to_vec(),
     )
     .map_err(|_| RouteError::ActixInternal)?;
-    digest.input_str(&serde_json::to_string(&body)?);
+    let body_json = serde_json::to_string(&body)?;
+    println!("Parsed Body: {}", body_json);
+    digest.input_str(&body_json);
     // encode output of hash
     let bytes = hex::decode(digest.result_str())?;
     let digest_header = &base64::encode(bytes);
