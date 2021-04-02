@@ -175,30 +175,25 @@ where
     Ok(new_req.send())
 }
 
-pub async fn verify_federated_request<T>(
+pub async fn verify_federated_request(
     request: HttpRequest,
     need_user_id: bool,
-    body: T,
-) -> Result<bool, RouteError>
-where
-    T: Serialize,
-{
+) -> Result<bool, RouteError> {
     // Verify digest header
     let mut digest = Sha512::new();
-    // hash body of request
-    digest.input_str(&serde_json::to_string(&body)?);
-    // encode output of hash
-    let bytes = hex::decode(digest.result_str())?;
-    let digest_header = &base64::encode(bytes);
 
-    // TODO: Hash this
-    let _h = String::from_utf8(
+    // hash body of request
+    let body = String::from_utf8(
         web::Bytes::extract(&request)
             .await
             .map_err(|_| RouteError::ActixInternal)?
             .to_vec(),
     )
     .map_err(|_| RouteError::ActixInternal)?;
+    digest.input_str(&serde_json::to_string(&body)?);
+    // encode output of hash
+    let bytes = hex::decode(digest.result_str())?;
+    let digest_header = &base64::encode(bytes);
 
     // Verify signature
     // get host from request
