@@ -4,7 +4,7 @@ use std::fs;
 
 #[get("/hello/{name}")]
 pub async fn hello(web::Path(name): web::Path<String>) -> Result<String> {
-    let test = make_federated_request(
+    let mut test = make_federated_request(
         awc::Client::get,
         "cs3099user-a1.host.cs.st-andrews.ac.uk".to_string(),
         "/fed/communities".to_string(),
@@ -13,7 +13,7 @@ pub async fn hello(web::Path(name): web::Path<String>) -> Result<String> {
     )?
     .await?;
 
-    Ok(format!("Hello {} \nVerification: {:?}", name, test))
+    Ok(format!("Hello {} \nVerification: {:?}", name, test.body().await?))
 }
 
 #[get("/key")]
