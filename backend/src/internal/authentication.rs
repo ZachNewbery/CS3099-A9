@@ -204,6 +204,7 @@ pub async fn verify_federated_request(request: HttpRequest) -> Result<bool, Rout
     );
     let key_path = format!("{}{}{}", "https://", client_host, "/fed/key");
     println!("Client-Host: {}", client_host);
+    println!("Key Path: {}", key_path);
     // construct and send GET request to host/fed/key
     let date = SystemTime::now().into();
     let key_req = awc::Client::new()
