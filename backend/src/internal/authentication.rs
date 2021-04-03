@@ -172,7 +172,7 @@ where
     };
 
     // send request
-    Ok(new_req.send_json(&body))
+    Ok(new_req.send_body(s_body))
 }
 
 pub async fn verify_federated_request(request: HttpRequest) -> Result<bool, RouteError> {
