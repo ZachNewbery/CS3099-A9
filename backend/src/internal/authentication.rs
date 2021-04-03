@@ -1,5 +1,5 @@
 use actix_web::http::header::Header as ActixHeader;
-use actix_web::{web, FromRequest, HttpRequest, HttpResponse};
+use actix_web::{web, HttpRequest, HttpResponse};
 use actix_web_httpauth::headers::authorization::{Authorization, Bearer};
 
 use chrono::Utc;
@@ -9,6 +9,7 @@ use openssl::hash::*;
 use openssl::pkey::*;
 use openssl::rsa::Padding;
 use openssl::sign::*;
+use futures::StreamExt;
 use sha2::*;
 use std::time::Duration;
 
@@ -174,17 +175,22 @@ where
     // send request
     Ok(new_req.send_body(s_body))
 }
-
-pub async fn verify_federated_request(request: HttpRequest) -> Result<bool, RouteError> {
+const MAX_SIZE: usize = 262_144;
+pub async fn verify_federated_request(request: HttpRequest, mut payload: web::Payload) -> Result<bool, RouteError> {
     // Verify digest header
     // hash body of request
-    let body = web::Bytes::extract(&request)
-        .await
-        .map_err(|_| RouteError::ActixInternal)?
-        .to_vec();
+    let mut body = web::BytesMut::new();
+    while let Some(chunk) = payload.next().await {
+        let chunk = chunk?;
+        // limit max size of in-memory payload
+        if (body.len() + chunk.len()) > MAX_SIZE {
+            return Err(RouteError::ActixInternal);
+        }
+        body.extend_from_slice(&chunk);
+    }
 
     let digest_header = &base64::encode(Sha512::digest(&body));
-    let test_s = String::from_utf8(body).map_err(|_| RouteError::ActixInternal)?;
+    let test_s = String::from_utf8(body.to_vec()).map_err(|_| RouteError::ActixInternal)?;
     println!("Recieved Body: {}", test_s);
     // Verify signature
     // get host from request

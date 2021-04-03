@@ -15,13 +15,13 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 #[get("")]
-pub(crate) async fn communities(pool: web::Data<DBPool>, req: HttpRequest) -> Result<HttpResponse> {
+pub(crate) async fn communities(pool: web::Data<DBPool>, req: HttpRequest, payload: web::Payload) -> Result<HttpResponse> {
     let _client_host = req
         .headers()
         .get("Client-Host")
         .ok_or(RouteError::MissingClientHost)?;
     // TODO: Parse the client host
-    verify_federated_request(req).await?;
+    verify_federated_request(req, payload).await?;
 
     let conn = get_conn_from_pool(pool.clone())?;
 
