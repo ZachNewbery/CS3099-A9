@@ -111,6 +111,7 @@ where
     let s_body = serde_json::to_string(&body)?;
     let digest_header = &base64::encode(Sha512::digest(s_body.as_bytes()));
     let date = SystemTime::now().into();
+    println!("{}", s_body);
 
     let full_path = format!("https://{}{}", host, endpoint);
 
@@ -183,7 +184,8 @@ pub async fn verify_federated_request(request: HttpRequest) -> Result<bool, Rout
         .to_vec();
 
     let digest_header = &base64::encode(Sha512::digest(&body));
-
+    let test_s = String::from_utf8(body).map_err(|_| RouteError::ActixInternal)?;
+    println!("Recieved Body: {}", test_s);
     // Verify signature
     // get host from request
     let headers = request.headers();
