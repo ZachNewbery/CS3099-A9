@@ -81,31 +81,32 @@ impl ResponseError for RouteError {
 
     fn error_response(&self) -> HttpResponse {
         let title_message = match self {
-            RouteError::MissingClientHost => "missing Client-Host".to_string(),
-            RouteError::MissingUserId => "missing User-ID".to_string(),
-            RouteError::MissingDate => "missing Date".to_string(),
-            RouteError::MissingSignature => "missing Signature".to_string(),
-            RouteError::BadDigest => "bad Digest".to_string(),
-            RouteError::BadSignHeader => {
-                "bad Signature header: is user-id required in headers= for this request?"
-                    .to_string()
-            }
+            RouteError::MissingClientHost => "Missing Client-Host".to_string(),
+            RouteError::MissingUserId => "Missing User-ID".to_string(),
+            RouteError::MissingDate => "Missing Date".to_string(),
+            RouteError::MissingSignature => "Missing Signature".to_string(),
+            RouteError::BadDigest => "Invalid Digest".to_string(),
+            RouteError::BadSignHeader => "Invalid Signature header".to_string(),
             RouteError::Diesel(e) => {
                 eprintln!("{}", e);
-                "internal database error".to_string()
+                "Internal database error".to_string()
             }
-            RouteError::NotFound => "not found".to_string(),
+            RouteError::NotFound => "Not Found".to_string(),
             RouteError::UuidParse(e) => {
                 eprintln!("{}", e);
-                "internal server error".to_string()
+                "Internal server error".to_string()
             }
-            RouteError::HeaderParse(_) => "bad headers".to_string(),
-            RouteError::Hex(_) => "could not decode hex".to_string(),
-            RouteError::JsonSerde(_) => "could not parse json".to_string(),
-            RouteError::OpenSsl(_) => "openssl error".to_string(),
-            RouteError::ActixInternal => "actix-web error".to_string(),
-            RouteError::Payload(_) => "actix-web error".to_string(),
-            RouteError::ExternalService => "could not query external service".to_string(),
+            RouteError::HeaderParse(_) => "Invalid Headers".to_string(),
+            RouteError::Hex(_) => "Hex could not be decoded.".to_string(),
+            RouteError::JsonSerde(_) => "JSON could not be parsed.".to_string(),
+            RouteError::OpenSsl(_) => {
+                "OpenSSL error: Invalid PEM Public Key received from /fed/key".to_string()
+            }
+            RouteError::ActixInternal => "Invalid body of request".to_string(),
+            RouteError::Payload(_) => {
+                "Could not obtain request body for validation (possibly from /fed/key)".to_string()
+            }
+            RouteError::ExternalService => "Could not connect to external host when requesting key".to_string(),
         };
 
         match self {
