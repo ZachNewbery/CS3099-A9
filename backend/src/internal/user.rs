@@ -175,10 +175,13 @@ struct UserProfile {
 
 #[get("/user/{name}")]
 pub(crate) async fn get_user(
+    request: HttpRequest,
     web::Path(name): web::Path<String>,
     pool: web::Data<DBPool>,
 ) -> actix_web::Result<HttpResponse> {
     use std::convert::TryInto;
+    let (_, _) = authenticate(pool.clone(), request)?;
+
     let conn = get_conn_from_pool(pool.clone())?;
     let user = web::block(move || get_user_detail_by_name(&conn, &name)).await?;
     let uname = user.clone().username;
