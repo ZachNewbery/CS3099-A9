@@ -1,4 +1,6 @@
-use actix_web::{get, http, HttpResponse, Result};
+use crate::internal::authentication::authenticate;
+use crate::DBPool;
+use actix_web::{get, http, web, HttpRequest, HttpResponse, Result};
 use serde::{Deserialize, Serialize};
 use std::fs;
 
@@ -15,7 +17,11 @@ pub enum LocatedCommunity {
 }
 
 #[get("/servers")]
-pub(crate) async fn discover() -> Result<HttpResponse> {
+pub(crate) async fn discover(
+    pool: web::Data<DBPool>,
+    request: HttpRequest,
+) -> Result<HttpResponse> {
+    let (_, _) = authenticate(pool.clone(), request)?;
     let file = fs::File::open("known_hosts.txt").expect("file should open read only");
     let json: serde_json::Value =
         serde_json::from_reader(file).expect("file should be proper JSON");
