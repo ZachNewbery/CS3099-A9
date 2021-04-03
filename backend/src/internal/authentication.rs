@@ -179,7 +179,7 @@ where
     if s_body == "" {
         Ok(new_req.send())
     } else {
-        Ok(new_req.send_json(&s_body))
+        Ok(new_req.send_json(&body))
     }
 }
 const MAX_SIZE: usize = 262_144;
