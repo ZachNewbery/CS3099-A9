@@ -22,11 +22,21 @@ pub async fn hello(web::Path(name): web::Path<String>) -> Result<String> {
     )?
     .await?;
 
+    let mut test3 = make_federated_request(
+        awc::Client::get,
+        "cs3099user-a9.host.cs.st-andrews.ac.uk".to_string(),
+        "/fed/communities".to_string(),
+        "{}".to_string(),
+        Some("zn6".to_string()),
+    )?
+    .await?;
+
     Ok(format!(
-        "Hello {} \nVerification: {:?} \nVerification 2: {:?}",
+        "Hello {} \nVerification: {:?} \nVerification 2: {:?} \nVerification Self: {:?}",
         name,
         test.body().await?,
-        test2.body().await?
+        test2.body().await?,
+        test3.body().await?
     ))
 }
 
