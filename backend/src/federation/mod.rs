@@ -1,9 +1,15 @@
 use crate::internal::authentication::make_federated_request;
+use crate::internal::get_known_hosts;
 use actix_web::{get, http, web, HttpResponse, Result};
 use std::fs;
 
 #[get("/hello/{name}")]
 pub async fn hello(web::Path(name): web::Path<String>) -> Result<String> {
+    let v_host = get_known_hosts();
+    for host in v_host.iter() {
+        println!("Got Host: {}", host);
+    }
+
     let mut test = make_federated_request(
         awc::Client::get,
         "cs3099user-a1.host.cs.st-andrews.ac.uk".to_string(),
