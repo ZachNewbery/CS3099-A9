@@ -24,7 +24,7 @@ use crate::database::get_conn_from_pool;
 use crate::database::models::DatabaseLocalUser;
 use crate::util::route_error::RouteError;
 use crate::DBPool;
-use awc::{ClientRequest, SendClientRequest};
+use awc::{ClientRequest, SendClientRequest, http};
 
 pub static JWT_SECRET_KEY: [u8; 16] = *include_bytes!("../../jwt_secret.key");
 
@@ -116,7 +116,8 @@ pub fn make_federated_request(
         .header("Host", host.clone())
         .header("Client-Host", "cs3099user-a9.host.cs.st-andrews.ac.uk")
         .header("Digest", ["sha-512=", &digest_header].join(""))
-        .set(actix_web::http::header::Date(date));
+        .set(actix_web::http::header::Date(date))
+        .header(http::header::CONTENT_TYPE, "application/json");
 
     let mut string = String::new();
     string.push_str(&format!(
@@ -166,7 +167,7 @@ pub fn make_federated_request(
     };
 
     // send request
-    Ok(new_req.send())
+    Ok(new_req.send_json(&body))
 }
 
 pub async fn verify_federated_request(request: HttpRequest) -> Result<bool, RouteError> {
