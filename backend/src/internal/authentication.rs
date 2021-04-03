@@ -4,12 +4,12 @@ use actix_web_httpauth::headers::authorization::{Authorization, Bearer};
 
 use chrono::Utc;
 // use crypto::{digest::Digest, sha2::Sha512};
+use futures::StreamExt;
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, TokenData, Validation};
 use openssl::hash::*;
 use openssl::pkey::*;
 use openssl::rsa::Padding;
 use openssl::sign::*;
-use futures::StreamExt;
 use sha2::*;
 use std::time::Duration;
 
@@ -25,7 +25,7 @@ use crate::database::get_conn_from_pool;
 use crate::database::models::DatabaseLocalUser;
 use crate::util::route_error::RouteError;
 use crate::DBPool;
-use awc::{ClientRequest, SendClientRequest, http};
+use awc::{http, ClientRequest, SendClientRequest};
 
 pub static JWT_SECRET_KEY: [u8; 16] = *include_bytes!("../../jwt_secret.key");
 
@@ -104,9 +104,9 @@ pub fn make_federated_request<T>(
     endpoint: String,
     body: T,
     uid: Option<String>,
-) -> Result<SendClientRequest, RouteError> 
+) -> Result<SendClientRequest, RouteError>
 where
-    T: Serialize
+    T: Serialize,
 {
     // hash body of HTTP request (need to work out how to do for post requests!)
     let s_body = serde_json::to_string(&body)?;
@@ -117,13 +117,16 @@ where
     let full_path = format!("https://{}{}", host, endpoint);
 
     // create request to be signed (for testing purposes!)
-    let req = rq_ctor(&awc::Client::new(), full_path)
+    let mut req = rq_ctor(&awc::Client::new(), full_path)
         .header("User-Agent", "Actix Web")
         .header("Host", host.clone())
         .header("Client-Host", "cs3099user-a9.host.cs.st-andrews.ac.uk")
         .header("Digest", ["sha-512=", &digest_header].join(""))
-        .set(actix_web::http::header::Date(date))
-        .header(http::header::CONTENT_TYPE, "application/json");
+        .set(actix_web::http::header::Date(date));
+
+    if s_body != "" {
+        req = req.header(http::header::CONTENT_TYPE, "application/json");
+    }
 
     let mut string = String::new();
     string.push_str(&format!(
@@ -173,10 +176,17 @@ where
     };
 
     // send request
-    Ok(new_req.send_body(s_body))
+    if s_body == "" {
+        Ok(new_req.send())
+    } else {
+        Ok(new_req.send_body(s_body))
+    }
 }
 const MAX_SIZE: usize = 262_144;
-pub async fn verify_federated_request(request: HttpRequest, mut payload: web::Payload) -> Result<bool, RouteError> {
+pub async fn verify_federated_request(
+    request: HttpRequest,
+    mut payload: web::Payload,
+) -> Result<bool, RouteError> {
     // Verify digest header
     // hash body of request
     let mut body = web::BytesMut::new();

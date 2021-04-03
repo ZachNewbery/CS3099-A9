@@ -15,7 +15,11 @@ use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 #[get("")]
-pub(crate) async fn communities(pool: web::Data<DBPool>, req: HttpRequest, payload: web::Payload) -> Result<HttpResponse> {
+pub(crate) async fn communities(
+    pool: web::Data<DBPool>,
+    req: HttpRequest,
+    payload: web::Payload,
+) -> Result<HttpResponse> {
     let _client_host = req
         .headers()
         .get("Client-Host")
