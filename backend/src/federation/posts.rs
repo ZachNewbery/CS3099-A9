@@ -4,6 +4,7 @@ use crate::database::actions::post::{
 };
 use crate::database::get_conn_from_pool;
 use crate::federation::schemas::{ContentType, NewPost, Post};
+use crate::internal::authentication::verify_federated_request;
 use crate::util::route_error::RouteError;
 use crate::util::{UserDetail, HOSTNAME};
 use crate::DBPool;
@@ -37,9 +38,9 @@ pub struct PostFilters {
 pub(crate) async fn post_matching_filters(
     pool: web::Data<DBPool>,
     req: HttpRequest,
+    payload: web::Payload,
     parameters: web::Query<PostFilters>,
 ) -> Result<HttpResponse> {
-    // TODO: Authentication for /fed/posts (filter) (GET)
     let _client_host = req
         .headers()
         .get("Client-Host")
@@ -49,6 +50,8 @@ pub(crate) async fn post_matching_filters(
         .headers()
         .get("User-ID")
         .ok_or(RouteError::MissingUserId)?;
+
+    verify_federated_request(req, payload).await?;
 
     let conn = get_conn_from_pool(pool.clone())?;
     let inc = parameters.include_sub_children_posts;
@@ -134,6 +137,7 @@ pub(crate) async fn post_matching_filters(
 pub(crate) async fn new_post_federated(
     _pool: web::Data<DBPool>,
     req: HttpRequest,
+    payload: web::Payload,
     _new_post: web::Json<NewPost>,
 ) -> Result<HttpResponse> {
     // TODO: Authentication for /fed/posts (POST)
@@ -141,6 +145,8 @@ pub(crate) async fn new_post_federated(
         .headers()
         .get("Client-Host")
         .ok_or(RouteError::MissingClientHost)?;
+
+    verify_federated_request(req, payload).await?;
 
     // TODO: Implement /fed/posts (POST)
     // let conn = pool
@@ -164,8 +170,8 @@ pub(crate) async fn get_post_by_id(
     web::Path(id): web::Path<Uuid>,
     pool: web::Data<DBPool>,
     req: HttpRequest,
+    payload: web::Payload,
 ) -> Result<HttpResponse> {
-    // TODO: Authentication for /fed/posts (GET)
     let _client_host = req
         .headers()
         .get("Client-Host")
@@ -179,6 +185,8 @@ pub(crate) async fn get_post_by_id(
         .ok_or(RouteError::MissingUserId)?
         .to_str()
         .map_err(RouteError::HeaderParse)?;
+
+    verify_federated_request(req, payload).await?;
 
     let conn = get_conn_from_pool(pool.clone())?;
 
@@ -211,8 +219,8 @@ pub(crate) async fn edit_post(
     web::Path(id): web::Path<Uuid>,
     edit_post: web::Json<EditPost>,
     req: HttpRequest,
+    payload: web::Payload,
 ) -> Result<HttpResponse> {
-    // TODO: Authentication for /fed/posts (PUT)
     let _client_host = req
         .headers()
         .get("Client-Host")
@@ -223,6 +231,7 @@ pub(crate) async fn edit_post(
         .get("User-ID")
         .ok_or(RouteError::MissingUserId)?;
 
+    verify_federated_request(req, payload).await?;
     // TODO: Check permissions
 
     let conn = get_conn_from_pool(pool)?;
@@ -274,8 +283,8 @@ pub(crate) async fn delete_post(
     pool: web::Data<DBPool>,
     web::Path(id): web::Path<Uuid>,
     req: HttpRequest,
+    payload: web::Payload,
 ) -> Result<HttpResponse> {
-    // TODO: Authentication for /fed/posts (DELETE)
     let _client_host = req
         .headers()
         .get("Client-Host")
@@ -285,6 +294,8 @@ pub(crate) async fn delete_post(
         .headers()
         .get("User-ID")
         .ok_or(RouteError::MissingUserId)?;
+
+    verify_federated_request(req, payload).await?;
 
     let conn = get_conn_from_pool(pool)?;
     web::block(move || {

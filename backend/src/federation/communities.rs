@@ -43,6 +43,7 @@ pub(crate) async fn communities(
 pub(crate) async fn community_by_id(
     pool: web::Data<DBPool>,
     req: HttpRequest,
+    payload: web::Payload,
     web::Path(id): web::Path<String>,
 ) -> Result<HttpResponse> {
     let _client_host = req
@@ -50,6 +51,7 @@ pub(crate) async fn community_by_id(
         .get("Client-Host")
         .ok_or(RouteError::MissingClientHost)?;
     // TODO: Parse the client host
+    verify_federated_request(req, payload).await?;
 
     let conn = get_conn_from_pool(pool.clone())?;
 
@@ -84,6 +86,7 @@ struct PostModified {
 pub(crate) async fn community_by_id_timestamps(
     pool: web::Data<DBPool>,
     req: HttpRequest,
+    payload: web::Payload,
     web::Path(id): web::Path<String>,
 ) -> Result<HttpResponse> {
     let _client_host = req
@@ -91,6 +94,7 @@ pub(crate) async fn community_by_id_timestamps(
         .get("Client-Host")
         .ok_or(RouteError::MissingClientHost)?;
     // TODO: Parse the client host
+    verify_federated_request(req, payload).await?;
 
     let conn = get_conn_from_pool(pool.clone())?;
 

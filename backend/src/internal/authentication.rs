@@ -32,13 +32,12 @@ pub static JWT_SECRET_KEY: [u8; 16] = *include_bytes!("../../jwt_secret.key");
 // Timeout of one week in seconds
 const TIMEOUT: i64 = 60 * 60 * 24 * 7;
 
+// Max request payload size of 256kBs
+const MAX_SIZE: usize = 262_144;
+
 pub fn generate_session() -> String {
     Uuid::new_v4().to_simple().to_string()
 }
-
-// pub fn validate_token() -> jsonwebtoken::errors::Result<TokenData<Token>> {
-//     unimplemented!()
-// }
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Token {
@@ -108,7 +107,7 @@ pub fn make_federated_request<T>(
 where
     T: Serialize,
 {
-    // hash body of HTTP request (need to work out how to do for post requests!)
+    // hash body of HTTP request
     let s_body = serde_json::to_string(&body)?;
     let digest_header = &base64::encode(Sha512::digest(s_body.as_bytes()));
     let date = SystemTime::now().into();
@@ -116,7 +115,7 @@ where
 
     let full_path = format!("https://{}{}", host, endpoint);
 
-    // create request to be signed (for testing purposes!)
+    // create request to be signed
     let mut req = rq_ctor(&awc::Client::new(), full_path)
         .header("User-Agent", "Actix Web")
         .header("Host", host.clone())
@@ -182,26 +181,26 @@ where
         Ok(new_req.send_json(&body))
     }
 }
-const MAX_SIZE: usize = 262_144;
+
 pub async fn verify_federated_request(
     request: HttpRequest,
     mut payload: web::Payload,
 ) -> Result<bool, RouteError> {
     // Verify digest header
+
     // hash body of request
     let mut body = web::BytesMut::new();
     while let Some(chunk) = payload.next().await {
         let chunk = chunk?;
-        // limit max size of in-memory payload
         if (body.len() + chunk.len()) > MAX_SIZE {
             return Err(RouteError::ActixInternal);
         }
         body.extend_from_slice(&chunk);
     }
-
     let digest_header = &base64::encode(Sha512::digest(&body));
     let test_s = String::from_utf8(body.to_vec()).map_err(|_| RouteError::ActixInternal)?;
     println!("Recieved Body: {}", test_s);
+
     // Verify signature
     // get host from request
     let headers = request.headers();

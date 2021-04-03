@@ -106,7 +106,9 @@ impl ResponseError for RouteError {
             RouteError::Payload(_) => {
                 "Could not obtain request body for validation (possibly from /fed/key)".to_string()
             }
-            RouteError::ExternalService => "Could not connect to external host when requesting key".to_string(),
+            RouteError::ExternalService => {
+                "Could not connect to external host when requesting key".to_string()
+            }
         };
 
         match self {

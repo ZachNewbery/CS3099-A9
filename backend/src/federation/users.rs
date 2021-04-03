@@ -4,6 +4,7 @@ use crate::database::actions::post::{get_children_posts_of, get_post};
 use crate::database::actions::user::get_local_users;
 use crate::database::get_conn_from_pool;
 use crate::federation::schemas::Post;
+use crate::internal::authentication::verify_federated_request;
 use crate::util::route_error::RouteError;
 use crate::DBPool;
 use actix_web::{get, post, web, HttpRequest, HttpResponse, Result};
@@ -24,7 +25,11 @@ pub struct SearchUsersParameters {
 pub(crate) async fn search_users(
     pool: web::Data<DBPool>,
     web::Query(query): web::Query<SearchUsersParameters>,
+    req: HttpRequest,
+    payload: web::Payload,
 ) -> Result<HttpResponse> {
+    verify_federated_request(req, payload).await?;
+
     let conn = get_conn_from_pool(pool.clone())?;
     let mut users = web::block(move || get_local_users(&conn)).await?;
 
@@ -56,15 +61,17 @@ pub(crate) async fn user_by_id(
     web::Path(id): web::Path<String>,
     pool: web::Data<DBPool>,
     request: HttpRequest,
+    payload: web::Payload,
 ) -> Result<HttpResponse> {
     use std::convert::TryInto;
-    // TODO: /fed/users/id (GET)
     let _client_host = request
         .headers()
         .get("Client-Host")
         .ok_or(RouteError::MissingClientHost)?
         .to_str()
         .map_err(RouteError::HeaderParse)?;
+
+    verify_federated_request(request, payload).await?;
 
     let conn = get_conn_from_pool(pool.clone())?;
     let username = id.clone();
@@ -103,8 +110,11 @@ pub(crate) async fn user_by_id(
 pub(crate) async fn send_user_message(
     _parameters: web::Query<MessageParameters>,
     web::Path(_id): web::Path<String>,
+    req: HttpRequest,
+    payload: web::Payload,
 ) -> Result<HttpResponse> {
     // TODO: /fed/users/id (POST)
+    verify_federated_request(req, payload).await?;
     // No return type
     Ok(HttpResponse::NotImplemented().finish())
 }
