@@ -16,6 +16,7 @@ pub async fn hello(web::Path(name): web::Path<String>) -> Result<String> {
         "/fed/communities".to_string(),
         "{}".to_string(),
         Some("zn6".to_string()),
+        Option::<()>::None,
     )?
     .await?;
 
@@ -25,6 +26,7 @@ pub async fn hello(web::Path(name): web::Path<String>) -> Result<String> {
         "/fed/communities".to_string(),
         "{}".to_string(),
         Some("zn6".to_string()),
+        Option::<()>::None,
     )?
     .await?;
 
@@ -34,6 +36,7 @@ pub async fn hello(web::Path(name): web::Path<String>) -> Result<String> {
         "/fed/communities".to_string(),
         "{}".to_string(),
         Some("zn6".to_string()),
+        Option::<()>::None,
     )?
     .await?;
 

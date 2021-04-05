@@ -3,7 +3,6 @@ use actix_web::{web, HttpRequest, HttpResponse};
 use actix_web_httpauth::headers::authorization::{Authorization, Bearer};
 
 use chrono::Utc;
-// use crypto::{digest::Digest, sha2::Sha512};
 use futures::StreamExt;
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, TokenData, Validation};
 use openssl::hash::*;
@@ -97,15 +96,17 @@ pub fn authenticate(
     Ok((token, local_user))
 }
 
-pub fn make_federated_request<T>(
+pub fn make_federated_request<T, U>(
     rq_ctor: fn(&awc::Client, url: String) -> ClientRequest,
     host: String,
     endpoint: String,
     body: T,
     uid: Option<String>,
+    query: Option<U>,
 ) -> Result<SendClientRequest, RouteError>
 where
     T: Serialize,
+    U: Serialize,
 {
     // hash body of HTTP request
     let s_body = serde_json::to_string(&body)?;
@@ -125,6 +126,10 @@ where
 
     if s_body != "" {
         req = req.header(http::header::CONTENT_TYPE, "application/json");
+    }
+
+    if let Some(q) = query {
+        req = req.query(&q)?;
     }
 
     let mut string = String::new();

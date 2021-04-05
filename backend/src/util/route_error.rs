@@ -45,6 +45,8 @@ pub enum RouteError {
     #[error(transparent)]
     JsonSerde(#[from] serde_json::Error),
     #[error(transparent)]
+    JsonSerdeUrl(#[from] serde_urlencoded::ser::Error),
+    #[error(transparent)]
     OpenSsl(#[from] openssl::error::ErrorStack),
 }
 
@@ -72,6 +74,7 @@ impl ResponseError for RouteError {
             RouteError::HeaderParse(_) => StatusCode::BAD_REQUEST,
             RouteError::Hex(_) => StatusCode::INTERNAL_SERVER_ERROR,
             RouteError::JsonSerde(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            RouteError::JsonSerdeUrl(_) => StatusCode::INTERNAL_SERVER_ERROR,
             RouteError::OpenSsl(_) => StatusCode::INTERNAL_SERVER_ERROR,
             RouteError::ActixInternal => StatusCode::INTERNAL_SERVER_ERROR,
             RouteError::Payload(_) => StatusCode::INTERNAL_SERVER_ERROR,
@@ -99,6 +102,7 @@ impl ResponseError for RouteError {
             RouteError::HeaderParse(_) => "Invalid Headers".to_string(),
             RouteError::Hex(_) => "Hex could not be decoded.".to_string(),
             RouteError::JsonSerde(_) => "JSON could not be parsed.".to_string(),
+            RouteError::JsonSerdeUrl(_) => "Could not parse URL query.".to_string(),
             RouteError::OpenSsl(_) => {
                 "OpenSSL error: Invalid PEM Public Key received from /fed/key".to_string()
             }
@@ -124,6 +128,7 @@ impl ResponseError for RouteError {
             RouteError::HeaderParse(_) => HttpResponse::BadRequest(),
             RouteError::Hex(_) => HttpResponse::InternalServerError(),
             RouteError::JsonSerde(_) => HttpResponse::InternalServerError(),
+            RouteError::JsonSerdeUrl(_) => HttpResponse::InternalServerError(),
             RouteError::OpenSsl(_) => HttpResponse::InternalServerError(),
             RouteError::ActixInternal => HttpResponse::InternalServerError(),
             RouteError::Payload(_) => HttpResponse::InternalServerError(),

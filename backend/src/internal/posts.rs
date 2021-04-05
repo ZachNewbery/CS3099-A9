@@ -48,17 +48,6 @@ pub(crate) async fn get_post(
 ) -> Result<HttpResponse> {
     let (_, _local_user) = authenticate(pool.clone(), request)?;
     // TODO: Add federated lookup
-    // let req = awc::Client::builder()
-    //     .disable_timeout()
-    //     .finish()
-    //     .get(format!(
-    //         "https://cs3099user-a7.host.cs.st-andrews.ac.uk/fed/posts/{}",
-    //         id
-    //     ))
-    //     .header("User-Agent", "Actix Web")
-    //     .header("Client-Host", "cs3099user-a9.host.cs.st-andrews.ac.uk")
-    //     .send()
-    //     .await?;
 
     let conn = get_conn_from_pool(pool.clone())?;
     let post = web::block(move || {
