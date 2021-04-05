@@ -109,10 +109,10 @@ where
     U: Serialize,
 {
     // hash body of HTTP request
-    let s_body = serde_json::to_string(&body)?;
-    let digest_header = &base64::encode(Sha512::digest(s_body.as_bytes()));
+    let body_string = serde_json::to_string(&body)?;
+    let digest_header = &base64::encode(Sha512::digest(body_string.as_bytes()));
     let date = SystemTime::now().into();
-    println!("{}", s_body);
+    println!("{}", body_string);
 
     let full_path = format!("https://{}{}", host, endpoint);
 
@@ -124,7 +124,7 @@ where
         .header("Digest", ["sha-512=", &digest_header].join(""))
         .set(actix_web::http::header::Date(date));
 
-    if s_body != "" {
+    if body_string != "" {
         req = req.header(http::header::CONTENT_TYPE, "application/json");
     }
 
@@ -132,23 +132,29 @@ where
         req = req.query(&q)?;
     }
 
-    let mut string = String::new();
-    string.push_str(&format!(
-        "(request-target): {} {}\n",
-        req.get_method().as_str().to_lowercase(),
-        endpoint
-    ));
-    string.push_str(&format!("host: {}\n", host));
-    string.push_str(&format!(
-        "client-host: {}\n",
-        "cs3099user-a9.host.cs.st-andrews.ac.uk"
-    ));
+    let string = {
+        let mut s = String::new();
 
-    if let Some(u) = &uid {
-        string.push_str(&format!("user-id: {}\n", &u));
-    }
-    string.push_str(&format!("date: {}\n", date));
-    string.push_str(&format!("digest: SHA-512={}", digest_header));
+        s.push_str(&format!(
+            "(request-target): {} {}\n",
+            req.get_method().as_str().to_lowercase(),
+            endpoint
+        ));
+
+        s.push_str(&format!("host: {}\n", host));
+        s.push_str(&format!(
+            "client-host: {}\n",
+            "cs3099user-a9.host.cs.st-andrews.ac.uk"
+        ));
+
+        if let Some(u) = &uid {
+            s.push_str(&format!("user-id: {}\n", &u));
+        }
+        s.push_str(&format!("date: {}\n", date));
+        s.push_str(&format!("digest: SHA-512={}", digest_header));
+
+        s
+    };
 
     // Obtain private key from file and sign string
     let pkey = PKey::private_key_from_pem(&fs::read("fed_auth.pem").expect("reading key"))
@@ -180,7 +186,7 @@ where
     };
 
     // send request
-    if s_body == "" {
+    if body_string == "" {
         Ok(new_req.send())
     } else {
         Ok(new_req.send_json(&body))
@@ -215,6 +221,7 @@ pub async fn verify_federated_request(
         .to_str()?;
     let key_path = format!("https://{}/fed/key", client_host);
     println!("Client-Host: {}", client_host);
+
     // construct and send GET request to host/fed/key
     let connector = awc::Connector::new()
         .timeout(Duration::from_secs(3))
@@ -238,29 +245,35 @@ pub async fn verify_federated_request(
     let pkey = PKey::public_key_from_pem(&key_req)?;
     println!("Decoded public key successfully: {:?}", pkey);
     // generate expected signature string
-    let mut string = String::new();
-    string.push_str(&format!(
-        "(request-target): {} {}\n",
-        request.method().as_str().to_lowercase(),
-        request.path()
-    ));
-    string.push_str(&format!(
-        "host: {}\n",
-        "cs3099user-a9.host.cs.st-andrews.ac.uk"
-    ));
-    string.push_str(&format!("client-host: {}\n", client_host));
-    if let Some(userid) = headers.get("User-ID") {
-        let uid = userid.to_str()?;
-        string.push_str(&format!("user-id: {}\n", &uid));
-    }
-    string.push_str(&format!(
-        "date: {}\n",
-        headers
-            .get("Date")
-            .ok_or(RouteError::MissingDate)?
-            .to_str()?
-    ));
-    string.push_str(&format!("digest: SHA-512={}", digest_header));
+    let string = {
+        let mut s = String::new();
+
+        s.push_str(&format!(
+            "(request-target): {} {}\n",
+            request.method().as_str().to_lowercase(),
+            request.path()
+        ));
+        s.push_str(&format!(
+            "host: {}\n",
+            "cs3099user-a9.host.cs.st-andrews.ac.uk"
+        ));
+        s.push_str(&format!("client-host: {}\n", client_host));
+        if let Some(userid) = headers.get("User-ID") {
+            let uid = userid.to_str()?;
+            s.push_str(&format!("user-id: {}\n", &uid));
+        }
+        s.push_str(&format!(
+            "date: {}\n",
+            headers
+                .get("Date")
+                .ok_or(RouteError::MissingDate)?
+                .to_str()?
+        ));
+        s.push_str(&format!("digest: SHA-512={}", digest_header));
+
+        s
+    };
+
     //obtain base64 signature from header Signature and match it
     let sign_header = headers
         .get("Signature")
@@ -279,12 +292,14 @@ pub async fn verify_federated_request(
     verifier.update(string.as_bytes())?;
     verifier.verify(signature.as_bytes())?;
     println!("Verified signature.");
+
     // match digest header from request with above output
     let exp_digest = ["sha-512=", digest_header].join("");
     let given_digest = headers
         .get("Digest")
         .ok_or(RouteError::BadDigest)?
         .to_str()?;
+
     if exp_digest != given_digest {
         println!("Could not match digest. Expected {}", exp_digest);
         println!("Given digest {}", given_digest);
