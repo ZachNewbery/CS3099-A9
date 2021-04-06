@@ -14,6 +14,7 @@ use crate::federation::posts::{
 };
 
 use crate::federation::users::{search_users, send_user_message, user_by_id};
+use crate::internal::discover;
 use crate::internal::posts::{create_post, get_post, list_posts, search_posts};
 use crate::internal::user::edit_profile;
 
@@ -87,6 +88,7 @@ async fn main() -> std::io::Result<()> {
                     .service(list_posts)
                     .service(search_posts)
                     .service(create_post)
+                    .service(discover)
                     .service(internal::posts::edit_post)
                     .service(internal::posts::delete_post)
                     .service(internal::communities::list_communities)
