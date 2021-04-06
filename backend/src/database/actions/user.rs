@@ -44,6 +44,7 @@ pub(crate) fn insert_new_federated_user(
 
     let db_new_fed_user: DatabaseNewFederatedUser = (inserted_user, new_user).into();
 
+    println!("{:?}", db_new_fed_user);
     diesel::insert_into(FederatedUsers)
         .values(db_new_fed_user)
         .execute(conn)?;
