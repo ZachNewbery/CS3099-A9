@@ -97,25 +97,41 @@ pub(crate) async fn create_community(
     specification: web::Json<CreateCommunity>,
 ) -> Result<HttpResponse> {
     let (_, local_user) = authenticate(pool.clone(), request)?;
-
-    let admins = vec![local_user];
-    let new_community = DatabaseNewCommunity {
-        name: specification.id.clone(),
-        description: specification.description.clone(),
-        title: specification.title.clone(),
-    };
-
     let conn = get_conn_from_pool(pool.clone())?;
-    web::block(move || {
-        conn.transaction(|| {
-            let community = put_community(&conn, new_community)?;
-            set_community_admins(&conn, &community, admins)?;
-            Ok::<(), diesel::result::Error>(())
-        })
-    })
-    .await?;
+    let id = specification.id.clone();
+    let id2 = id.clone();
 
-    Ok(HttpResponse::Ok().finish())
+    // check if community exists locally
+    let l_comm_check = web::block(move || get_community(&conn, &id)).await?;
+    if let Some(_) = l_comm_check {
+        Ok(HttpResponse::InternalServerError().finish())
+    } else {
+        // check if community exists remotely
+        let ex_comm_check = get_community_extern(id2, pool.clone()).await;
+        if ex_comm_check.is_ok() {
+            Ok(HttpResponse::InternalServerError().finish())
+        } else {
+            // insert community
+            let admins = vec![local_user];
+            let new_community = DatabaseNewCommunity {
+                name: specification.id.clone(),
+                description: specification.description.clone(),
+                title: specification.title.clone(),
+            };
+
+            let conn = get_conn_from_pool(pool.clone())?;
+            web::block(move || {
+                conn.transaction(|| {
+                    let community = put_community(&conn, new_community)?;
+                    set_community_admins(&conn, &community, admins)?;
+                    Ok::<(), diesel::result::Error>(())
+                })
+            })
+            .await?;
+
+            Ok(HttpResponse::Ok().finish())
+        }
+    }
 }
 
 #[get("/communities/{id}")]
