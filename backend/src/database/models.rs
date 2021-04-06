@@ -143,7 +143,8 @@ pub struct DatabaseNewUser {
 #[derive(Insertable, Debug, Clone)]
 #[table_name = "FederatedUsers"]
 pub struct DatabaseNewFederatedUser {
-    pub id: u64,
+    #[column_name = "userId"]
+    pub user_id: u64,
     pub host: String,
 }
 
@@ -189,7 +190,7 @@ impl From<(DatabaseUser, User)> for DatabaseNewFederatedUser {
     fn from(value: (DatabaseUser, User)) -> Self {
         let (user, new_user) = value;
         Self {
-            id: user.id,
+            user_id: user.id,
             host: new_user.host,
         }
     }
