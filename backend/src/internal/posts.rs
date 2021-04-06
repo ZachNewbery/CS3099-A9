@@ -4,12 +4,15 @@ use crate::database::actions::post::{
     modify_post_title, put_post, put_post_contents, remove_post, remove_post_contents, touch_post,
     PostInformation,
 };
+use crate::database::actions::user::{
+    get_name_from_local_user, get_user_detail_by_name, insert_new_federated_user,
+};
 use crate::database::get_conn_from_pool;
 use crate::database::models::{DatabaseLocalUser, DatabaseNewPost};
 use crate::federation::posts::EditPost;
 use crate::federation::schemas::{ContentType, User};
-use crate::internal::authentication::authenticate;
-use crate::internal::LocatedCommunity;
+use crate::internal::authentication::{authenticate, make_federated_request};
+use crate::internal::{get_known_hosts, LocatedCommunity};
 use crate::util::route_error::RouteError;
 use crate::DBPool;
 use actix_web::{delete, get, patch, post, web, HttpRequest, HttpResponse, Result};
@@ -36,6 +39,7 @@ pub(crate) struct LocatedPost {
     pub(crate) author: User,
     pub(crate) modified: DateTime<Utc>,
     pub(crate) created: DateTime<Utc>,
+    #[serde(default)]
     pub(crate) deleted: bool,
 }
 
@@ -46,9 +50,7 @@ pub(crate) async fn get_post(
     pool: web::Data<DBPool>,
     request: HttpRequest,
 ) -> Result<HttpResponse> {
-    let (_, _local_user) = authenticate(pool.clone(), request)?;
-    // TODO: Add federated lookup
-
+    let (_, local_user) = authenticate(pool.clone(), request)?;
     let conn = get_conn_from_pool(pool.clone())?;
     let post = web::block(move || {
         use crate::database::actions::post;
@@ -56,8 +58,13 @@ pub(crate) async fn get_post(
     })
     .await?;
 
+    let conn = get_conn_from_pool(pool.clone())?;
+
     let lp = match post {
-        None => get_post_extern(id, pool).await?,
+        None => {
+            let u = web::block(move || get_name_from_local_user(&conn, local_user)).await?;
+            get_post_extern(id, pool, u.username).await?
+        }
         Some(p) => get_post_local(pool, p).await?,
     };
 
@@ -101,10 +108,46 @@ pub(crate) async fn get_post_local(
 }
 
 pub(crate) async fn get_post_extern(
-    _uuid: Uuid,
-    _pool: web::Data<DBPool>,
+    uuid: Uuid,
+    pool: web::Data<DBPool>,
+    username: String,
 ) -> Result<LocatedPost, RouteError> {
-    Err(RouteError::NotFound)
+    let mut post: Option<LocatedPost> = None;
+    let mut q_string = "/fed/posts/".to_owned();
+    q_string.push_str(&uuid.to_string());
+    for host in get_known_hosts().iter() {
+        let mut query = make_federated_request(
+            awc::Client::get,
+            host.to_string(),
+            q_string.clone(),
+            "{}".to_string(),
+            Some(username.clone()),
+            Option::<()>::None,
+        )?
+        .await
+        .map_err(|_| RouteError::ActixInternal)?;
+
+        if query.status().is_success() {
+            let body = query.body().await?;
+
+            let s_post: String =
+                String::from_utf8(body.to_vec()).map_err(|_| RouteError::ActixInternal)?;
+
+            post = serde_json::from_str(&s_post)?;
+        }
+    }
+
+    if let Some(p) = post {
+        // add author to federated users for caching :)
+        let author = p.author.clone();
+        let conn = get_conn_from_pool(pool.clone()).map_err(|_| RouteError::ActixInternal)?;
+        if !get_user_detail_by_name(&conn, &author.id).is_ok() {
+            let _ = insert_new_federated_user(&conn, author);
+        }
+        Ok(p)
+    } else {
+        Err(RouteError::NotFound)
+    }
 }
 
 #[get("/posts")]

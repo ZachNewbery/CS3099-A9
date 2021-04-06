@@ -79,3 +79,12 @@ pub(crate) fn get_local_users(
         .select((Users::all_columns(), LocalUsers::all_columns()))
         .load::<(_, _)>(conn)
 }
+
+pub(crate) fn get_name_from_local_user(
+    conn: &MysqlConnection,
+    lu: DatabaseLocalUser,
+) -> Result<DatabaseUser, diesel::result::Error> {
+    use crate::database::schema::Users::dsl::*;
+
+    Users.filter(id.eq(lu.user_id)).first::<DatabaseUser>(conn)
+}
