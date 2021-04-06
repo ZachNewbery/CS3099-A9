@@ -5,6 +5,7 @@ use crate::database::schema::{
     Communities, CommunitiesUsers, FederatedUsers, LocalUsers, Markdown, Posts, Text, Users,
 };
 
+use crate::federation::schemas::User;
 use crate::internal::authentication::generate_session;
 use crate::internal::user::NewLocalUser;
 
@@ -154,6 +155,12 @@ impl From<NewLocalUser> for DatabaseNewUser {
     }
 }
 
+impl From<User> for DatabaseNewUser {
+    fn from(value: User) -> Self {
+        Self { username: value.id }
+    }
+}
+
 #[derive(Insertable, Debug, Clone)]
 #[table_name = "LocalUsers"]
 pub struct DatabaseNewLocalUser {
@@ -174,6 +181,16 @@ impl From<(DatabaseUser, NewLocalUser)> for DatabaseNewLocalUser {
             password: new_user.password,
             created_at: naive_date_time_now(),
             session: generate_session(),
+        }
+    }
+}
+
+impl From<(DatabaseUser, User)> for DatabaseNewFederatedUser {
+    fn from(value: (DatabaseUser, User)) -> Self {
+        let (user, new_user) = value;
+        Self {
+            id: user.id,
+            host: new_user.host,
         }
     }
 }

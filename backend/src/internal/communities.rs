@@ -2,8 +2,9 @@ use crate::database::actions::communities::{
     get_communities, get_community, get_community_admins, put_community, remove_community,
     set_community_admins, update_community_description, update_community_title,
 };
+use crate::database::actions::user::{get_user_detail_by_name, insert_new_federated_user};
 use crate::database::get_conn_from_pool;
-use crate::database::models::{DatabaseNewCommunity, DatabaseCommunity};
+use crate::database::models::{DatabaseCommunity, DatabaseNewCommunity};
 use crate::federation::schemas::{Community, User};
 use crate::internal::authentication::{authenticate, make_federated_request};
 use crate::internal::get_known_hosts;
@@ -127,16 +128,15 @@ pub(crate) async fn get_community_details(
 
     let conn = get_conn_from_pool(pool.clone())?;
     let id2 = id.clone();
-    let community = web::block(move || get_community(&conn, &id))
-        .await?;
-    
+    let community = web::block(move || get_community(&conn, &id)).await?;
+
     // find community, if it doesn't exist in our database, it must be federated (or non-existent?)
     let r_comm = match community {
-        None => get_community_extern(id2).await?,
-        Some(cmm) => get_community_local(cmm, pool).await?
+        None => get_community_extern(id2, pool).await?,
+        Some(cmm) => get_community_local(cmm, pool).await?,
     };
 
-    Ok(HttpResponse::Ok().json(r_comm)) 
+    Ok(HttpResponse::Ok().json(r_comm))
 }
 
 pub(crate) async fn get_community_local(
@@ -160,10 +160,11 @@ pub(crate) async fn get_community_local(
 }
 
 pub(crate) async fn get_community_extern(
-    id: String
+    id: String,
+    pool: web::Data<DBPool>,
 ) -> Result<Community, RouteError> {
     let mut q_string = "/fed/communities/".to_owned();
-    q_string.push_str(&id); 
+    q_string.push_str(&id);
 
     let mut community: Option<Community> = None;
     for host in get_known_hosts().iter() {
@@ -177,21 +178,27 @@ pub(crate) async fn get_community_extern(
         )?
         .await
         .map_err(|_| RouteError::ActixInternal)?;
-        
+
         if query.status().is_success() {
             let body = query.body().await?;
 
             let s_comm: String =
-            String::from_utf8(body.to_vec()).map_err(|_| RouteError::ActixInternal)?;
+                String::from_utf8(body.to_vec()).map_err(|_| RouteError::ActixInternal)?;
 
             community = serde_json::from_str(&s_comm)?;
         }
     }
 
     if let Some(comm) = community {
+        for admin in comm.clone().admins {
+            let conn = get_conn_from_pool(pool.clone()).map_err(|_| RouteError::ActixInternal)?;
+            if !get_user_detail_by_name(&conn, &admin.id).is_ok() {
+                let _ = insert_new_federated_user(&conn, admin);
+            }
+        }
         Ok(comm)
     } else {
-        Err(RouteError::NotFound)
+        Err(RouteError::ActixInternal)
     }
 }
 

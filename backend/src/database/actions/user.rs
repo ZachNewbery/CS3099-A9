@@ -1,5 +1,6 @@
 use crate::database::models::{DatabaseFederatedUser, DatabaseLocalUser, DatabaseUser};
 
+use crate::federation::schemas::User;
 use crate::util::UserDetail;
 use diesel::prelude::*;
 use diesel::MysqlConnection;
@@ -21,6 +22,33 @@ pub(crate) fn get_user_detail(
         (Some(l), _) => Ok(l.into()),
         (_, Some(f)) => Ok(f.into()),
     }
+}
+
+pub(crate) fn insert_new_federated_user(
+    conn: &MysqlConnection,
+    new_user: User,
+) -> Result<(), diesel::result::Error> {
+    use crate::database::models::{DatabaseNewFederatedUser, DatabaseNewUser};
+    use crate::database::schema::FederatedUsers::dsl::*;
+    use crate::database::schema::Users::dsl::*;
+
+    let db_new_user: DatabaseNewUser = new_user.clone().into();
+
+    diesel::insert_into(Users)
+        .values(db_new_user.clone())
+        .execute(conn)?;
+
+    let inserted_user: DatabaseUser = Users
+        .filter(username.eq(&db_new_user.username))
+        .first::<DatabaseUser>(conn)?;
+
+    let db_new_fed_user: DatabaseNewFederatedUser = (inserted_user, new_user).into();
+
+    diesel::insert_into(FederatedUsers)
+        .values(db_new_fed_user)
+        .execute(conn)?;
+
+    Ok(())
 }
 
 pub(crate) fn get_user_detail_by_name(
