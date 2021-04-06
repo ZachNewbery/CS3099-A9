@@ -27,7 +27,6 @@ pub(crate) async fn list_communities(
 ) -> Result<HttpResponse> {
     let (_, _) = authenticate(pool.clone(), request)?;
 
-    // TODO: Replace this when we have federated functionality
     if let Some(host) = &query.host {
         // query external host if needbe
         if host != HOSTNAME {
@@ -129,19 +128,21 @@ pub(crate) async fn get_community_details(
     let conn = get_conn_from_pool(pool.clone())?;
     let id2 = id.clone();
     let community = web::block(move || get_community(&conn, &id))
-        .await?; // it's either not local or it doesn't exist!
+        .await?;
     
-    match community {
-        None => Ok(get_community_extern(id2).await?),
-        Some(cmm) => Ok(get_community_local(cmm, pool).await?),
-    }
-    
+    // find community, if it doesn't exist in our database, it must be federated (or non-existent?)
+    let r_comm = match community {
+        None => get_community_extern(id2).await?,
+        Some(cmm) => get_community_local(cmm, pool).await?
+    };
+
+    Ok(HttpResponse::Ok().json(r_comm)) 
 }
 
 pub(crate) async fn get_community_local(
     community: DatabaseCommunity,
     pool: web::Data<DBPool>,
-) -> Result<HttpResponse> {
+) -> Result<Community> {
     let conn = get_conn_from_pool(pool.clone())?;
     let cmm = community.clone();
     let admins = web::block(move || get_community_admins(&conn, &cmm))
@@ -150,17 +151,17 @@ pub(crate) async fn get_community_local(
         .map(|ud| ud.into())
         .collect::<Vec<User>>();
 
-    Ok(HttpResponse::Ok().json(Community {
+    Ok(Community {
         id: community.name,
         title: community.title,
         description: community.description,
         admins,
-    }))
+    })
 }
 
 pub(crate) async fn get_community_extern(
     id: String
-) -> Result<HttpResponse> {
+) -> Result<Community, RouteError> {
     let mut q_string = "/fed/communities/".to_owned();
     q_string.push_str(&id); 
 
@@ -188,9 +189,9 @@ pub(crate) async fn get_community_extern(
     }
 
     if let Some(comm) = community {
-        Ok(HttpResponse::Ok().json(comm))
+        Ok(comm)
     } else {
-        Ok(HttpResponse::NotFound().finish())
+        Err(RouteError::NotFound)
     }
 }
 
