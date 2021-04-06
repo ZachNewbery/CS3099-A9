@@ -127,9 +127,10 @@ pub(crate) async fn get_community_details(
     let (_, _) = authenticate(pool.clone(), request)?;
 
     let conn = get_conn_from_pool(pool.clone())?;
+    let id2 = id.clone();
     let community = web::block(move || get_community(&conn, &id))
         .await?
-        .ok_or(RouteError::NotFound)?;
+        .ok_or(get_community_extern(id2).await?)?; // it's either not local or it doesn't exist!
 
     let conn = get_conn_from_pool(pool.clone())?;
     let cmm = community.clone();
@@ -145,6 +146,42 @@ pub(crate) async fn get_community_details(
         description: community.description,
         admins,
     }))
+}
+
+pub(crate) async fn get_community_extern(
+    id: String
+) -> Result<HttpResponse> {
+    let mut q_string = "/fed/communities/".to_owned();
+    q_string.push_str(&id); 
+
+    let mut community: Option<Community> = None;
+    for host in get_known_hosts().iter() {
+        let mut query = make_federated_request(
+            awc::Client::get,
+            host.to_string(),
+            q_string.clone(),
+            "{}".to_string(),
+            None,
+            Option::<()>::None,
+        )?
+        .await
+        .map_err(|_| RouteError::ActixInternal)?;
+        
+        if query.status().is_success() {
+            let body = query.body().await?;
+
+            let s_comm: String =
+            String::from_utf8(body.to_vec()).map_err(|_| RouteError::ActixInternal)?;
+
+            community = serde_json::from_str(&s_comm)?;
+        }
+    }
+
+    if let Some(comm) = community {
+        Ok(HttpResponse::Ok().json(comm))
+    } else {
+        Ok(HttpResponse::NotFound().finish())
+    }
 }
 
 #[delete("/communities/{id}")]
