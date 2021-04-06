@@ -3,7 +3,7 @@ use crate::database::actions::communities::{
     set_community_admins, update_community_description, update_community_title,
 };
 use crate::database::get_conn_from_pool;
-use crate::database::models::DatabaseNewCommunity;
+use crate::database::models::{DatabaseNewCommunity, DatabaseCommunity};
 use crate::federation::schemas::{Community, User};
 use crate::internal::authentication::{authenticate, make_federated_request};
 use crate::internal::get_known_hosts;
@@ -129,9 +129,19 @@ pub(crate) async fn get_community_details(
     let conn = get_conn_from_pool(pool.clone())?;
     let id2 = id.clone();
     let community = web::block(move || get_community(&conn, &id))
-        .await?
-        .ok_or(get_community_extern(id2).await?)?; // it's either not local or it doesn't exist!
+        .await?; // it's either not local or it doesn't exist!
+    
+    match community {
+        None => Ok(get_community_extern(id2).await?),
+        Some(cmm) => Ok(get_community_local(cmm, pool).await?),
+    }
+    
+}
 
+pub(crate) async fn get_community_local(
+    community: DatabaseCommunity,
+    pool: web::Data<DBPool>,
+) -> Result<HttpResponse> {
     let conn = get_conn_from_pool(pool.clone())?;
     let cmm = community.clone();
     let admins = web::block(move || get_community_admins(&conn, &cmm))
