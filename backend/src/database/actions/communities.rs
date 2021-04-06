@@ -64,17 +64,6 @@ pub(crate) fn get_community(
         .optional()
 }
 
-pub(crate) fn get_community_via_id(
-    conn: &MysqlConnection,
-    id_s: &str,
-) -> Result<Option<DatabaseCommunity>, diesel::result::Error> {
-    use crate::database::schema::Communities::dsl::*;
-    Communities
-        .filter(id.eq(id_s.parse::<u64>().unwrap()))
-        .first::<DatabaseCommunity>(conn)
-        .optional()
-}
-
 pub(crate) fn put_community(
     conn: &MysqlConnection,
     new_community: DatabaseNewCommunity,

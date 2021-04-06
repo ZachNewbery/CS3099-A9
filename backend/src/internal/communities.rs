@@ -40,7 +40,7 @@ pub(crate) async fn list_communities(
     let communities = web::block(move || get_communities(&conn)).await?;
     let mut v_comms = communities
         .into_iter()
-        .map(|c| c.title)
+        .map(|c| c.name)
         .collect::<Vec<String>>();
 
     if let Some(_) = &query.host {
