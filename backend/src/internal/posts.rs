@@ -54,13 +54,26 @@ pub(crate) async fn get_post(
         use crate::database::actions::post;
         post::get_post(&conn, &id)
     })
-    .await?
-    .ok_or_else(|| HttpResponse::NotFound().finish())?;
+    .await?;
 
-    let conn = get_conn_from_pool(pool.clone())?;
+    let lp = match post {
+        None => get_post_extern(id, pool).await?,
+        Some(p) => get_post_local(pool, p).await?,
+    };
+
+    // Return type: a monstrosity, honestly.
+    Ok(HttpResponse::Ok().json(lp))
+}
+
+pub(crate) async fn get_post_local(
+    pool: web::Data<DBPool>,
+    post: PostInformation,
+) -> Result<LocatedPost, RouteError> {
+    let conn = get_conn_from_pool(pool.clone()).map_err(|_| RouteError::ActixInternal)?;
     let parent = post.post.clone();
     let children = web::block(move || get_children_posts_of(&conn, &parent))
-        .await?
+        .await
+        .map_err(|_| RouteError::ActixInternal)?
         .unwrap_or_default();
 
     let lp = LocatedPost {
@@ -84,8 +97,14 @@ pub(crate) async fn get_post(
         deleted: post.post.deleted,
     };
 
-    // Return type: a monstrosity, honestly.
-    Ok(HttpResponse::Ok().json(lp))
+    Ok(lp)
+}
+
+pub(crate) async fn get_post_extern(
+    _uuid: Uuid,
+    _pool: web::Data<DBPool>,
+) -> Result<LocatedPost, RouteError> {
+    Err(RouteError::NotFound)
 }
 
 #[get("/posts")]
@@ -298,7 +317,7 @@ pub(crate) async fn edit_post(
         post::get_post(&conn, &id)
     })
     .await?
-    .ok_or(RouteError::NotFound)?;
+    .ok_or(RouteError::NotFound)?; // change here to send to federated host?
 
     // Check permissions
     if !local_user_has_modify_post_permission(pool.clone(), _local_user, &post).await? {

@@ -1,9 +1,7 @@
 use actix_web::{get, web, HttpResponse};
 use actix_web::{HttpRequest, Result};
 
-use crate::database::actions::communities::{
-    get_communities, get_community_admins, get_community
-};
+use crate::database::actions::communities::{get_communities, get_community, get_community_admins};
 use crate::database::actions::post::get_top_level_posts_of_community;
 use crate::database::get_conn_from_pool;
 
