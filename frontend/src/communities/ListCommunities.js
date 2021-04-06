@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import styled from "styled-components";
 import { useAsync } from "react-async";
 import { useHistory } from "react-router-dom";
@@ -7,6 +7,8 @@ import { CreateCommunity } from "./CreateCommunity";
 import { fetchData, Spinner, Error, colors, fonts } from "../helpers";
 import { CTAButton } from "../components/CTAButton";
 import { ScrollContainer } from "../components/ScrollContainer";
+
+import { InstanceContext } from "../App";
 
 const StyledCommunities = styled.div`
   display: flex;
@@ -51,14 +53,16 @@ const fetchCommunities = async ({ host }) => {
   return await fetchData(`${process.env.REACT_APP_API}/communities${hostParam}`);
 };
 
-export const ListCommunities = ({ host, community, setCommunity, refresh }) => {
+export const ListCommunities = ({ community, setCommunity, refresh }) => {
   const [showCreate, setShowCreate] = useState(false);
+  const { instance } = useContext(InstanceContext);
+  
   const history = useHistory();
 
   const handleShowCreate = () => setShowCreate(true);
   const handleHideCreate = () => setShowCreate(false);
 
-  const { data: communities, isLoading, error } = useAsync(fetchCommunities, { host });
+  const { data: communities, isLoading, error } = useAsync(fetchCommunities, { host: instance });
 
   useEffect(() => {
     if (communities && !community) {

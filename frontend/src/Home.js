@@ -31,8 +31,8 @@ export const Home = ({ search, host }) => {
   const reload = (communityId = null) => {
     console.log({ community, communityId });
     setCommunity(communityId);
-    setI(i => i + 1);
-  }
+    setI((i) => i + 1);
+  };
 
   return (
     <StyledContainer>

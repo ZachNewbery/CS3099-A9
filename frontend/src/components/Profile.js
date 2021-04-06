@@ -25,7 +25,7 @@ const StyledModalContainer = styled.div`
   right: 0;
   bottom: 0;
   position: fixed;
-  background: transparent
+  background: transparent;
   z-index: 98;
 `;
 

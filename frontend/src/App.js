@@ -9,13 +9,18 @@ import { ErrorHandledRoute } from "./components/ErrorHandledRoute";
 
 import { Home } from "./Home";
 
+const INTERNAL_INSTANCE = "cs3099user-a9.host.cs.st-andrews.ac.uk";
+
+export const InstanceContext = React.createContext(INTERNAL_INSTANCE);
+
 export const AppRoutes = () => {
-  const [filters, setFilters] = useState({ search: null, host: null })
-  
+  const [instance, setInstance] = useState(INTERNAL_INSTANCE);
+  const [filters, setFilters] = useState({ search: null, host: null });
+
   if (!isAuthenticated()) return <Redirect to="/auth/login" />;
 
   return (
-    <>
+    <InstanceContext.Provider value={{ instance, setInstance, INTERNAL_INSTANCE }}>
       <Header>
         <Search {...filters} setFilters={setFilters} />
       </Header>
@@ -23,12 +28,12 @@ export const AppRoutes = () => {
         <StyledAppRoutes>
           <Switch>
             <ErrorHandledRoute path="/">
-              <Home {...filters} />
+              <Home {...filters} key={instance} />
             </ErrorHandledRoute>
           </Switch>
         </StyledAppRoutes>
       </main>
-    </>
+    </InstanceContext.Provider>
   );
 };
 
