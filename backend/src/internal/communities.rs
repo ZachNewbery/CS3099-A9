@@ -31,6 +31,7 @@ pub(crate) async fn list_communities(
     if let Some(host) = &query.host {
         // query external host if needbe
         if host != HOSTNAME {
+            println!("Query send with host: {}", host);
             let host_comms = get_host_communities(host.to_string()).await?;
             return Ok(HttpResponse::Ok().json(host_comms));
         }
