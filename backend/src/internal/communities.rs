@@ -5,8 +5,8 @@ use crate::database::actions::communities::{
 use crate::database::get_conn_from_pool;
 use crate::database::models::DatabaseNewCommunity;
 use crate::federation::schemas::{Community, User};
-use crate::internal::get_known_hosts;
 use crate::internal::authentication::{authenticate, make_federated_request};
+use crate::internal::get_known_hosts;
 use crate::util::route_error::RouteError;
 use crate::util::HOSTNAME;
 use crate::DBPool;
