@@ -112,7 +112,6 @@ where
     let body_string = serde_json::to_string(&body)?;
     let digest_header = &base64::encode(Sha512::digest(body_string.as_bytes()));
     let date = SystemTime::now().into();
-    println!("{}", body_string);
 
     let full_path = format!("https://{}{}", host, endpoint);
 
