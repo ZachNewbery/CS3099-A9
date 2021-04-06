@@ -38,7 +38,7 @@ pub(crate) async fn list_communities(
 
     let conn = get_conn_from_pool(pool.clone())?;
     let communities = web::block(move || get_communities(&conn)).await?;
-    let v_comms = communities
+    let mut v_comms = communities
         .into_iter()
         .map(|c| c.title)
         .collect::<Vec<String>>();
@@ -48,10 +48,10 @@ pub(crate) async fn list_communities(
         Ok(HttpResponse::Ok().json(v_comms))
     } else {
         // else collate all communities from all known hosts
-        // for host in get_known_hosts().iter() {
-        //     let mut host_comms = get_host_communities(host.to_string()).await?;
-        //     v_comms.append(&mut host_comms);
-        // }
+        for host in get_known_hosts().iter() {
+            let mut host_comms = get_host_communities(host.to_string()).await?;
+            v_comms.append(&mut host_comms);
+        }
 
         Ok(HttpResponse::Ok().json(v_comms))
     }
@@ -69,7 +69,7 @@ pub(crate) async fn get_host_communities(host: String) -> Result<Vec<String>, Ro
     .await
     .map_err(|_| RouteError::ActixInternal)?;
 
-    if query.status().is_client_error() {
+    if !query.status().is_success() {
         Ok(Vec::new())
     } else {
         let body = query.body().await?;
