@@ -213,84 +213,89 @@ pub async fn verify_federated_request(
         .get("Client-Host")
         .ok_or(RouteError::MissingClientHost)?
         .to_str()?;
-    let key_path = format!("https://{}/fed/key", client_host);
-    println!("Client-Host: {}", client_host);
-    // construct and send GET request to host/fed/key
-    let connector = awc::Connector::new()
-        .timeout(Duration::from_secs(3))
-        .finish();
-
-    let client = awc::Client::builder()
-        .connector(connector)
-        .timeout(Duration::from_secs(5))
-        .finish();
-
-    let key_req = client
-        .get(key_path)
-        .header("User-Agent", "Actix Web")
-        .header("Host", client_host.clone())
-        .header("Client-Host", "cs3099user-a9.host.cs.st-andrews.ac.uk")
-        .send()
-        .await;
-
-    let key_req = key_req.unwrap().body().await?;
-    // using body of response, get public key
-    let pkey = PKey::public_key_from_pem(&key_req)?;
-    println!("Decoded public key successfully: {:?}", pkey);
-    // generate expected signature string
-    let mut string = String::new();
-    string.push_str(&format!(
-        "(request-target): {} {}\n",
-        request.method().as_str().to_lowercase(),
-        request.path()
-    ));
-    string.push_str(&format!(
-        "host: {}\n",
-        "cs3099user-a9.host.cs.st-andrews.ac.uk"
-    ));
-    string.push_str(&format!("client-host: {}\n", client_host));
-    if let Some(userid) = headers.get("User-ID") {
-        let uid = userid.to_str()?;
-        string.push_str(&format!("user-id: {}\n", &uid));
-    }
-    string.push_str(&format!(
-        "date: {}\n",
-        headers
-            .get("Date")
-            .ok_or(RouteError::MissingDate)?
-            .to_str()?
-    ));
-    string.push_str(&format!("digest: SHA-512={}", digest_header));
-    //obtain base64 signature from header Signature and match it
-    let sign_header = headers
-        .get("Signature")
-        .ok_or(RouteError::MissingSignature)?
-        .to_str()?;
-
-    let mut split = sign_header.split(",signature=").collect::<Vec<_>>();
-
-    let _ = split.pop().ok_or(RouteError::BadSignHeader)?;
-
-    let signature = split.pop().ok_or(RouteError::BadSignHeader)?;
-
-    // use openssl::Verifier with PCKS#1 to verify signature with expected string
-    let mut verifier = Verifier::new(MessageDigest::sha256(), &pkey)?;
-    verifier.set_rsa_padding(Padding::PKCS1)?;
-    verifier.update(string.as_bytes())?;
-    verifier.verify(signature.as_bytes())?;
-    println!("Verified signature.");
-    // match digest header from request with above output
-    let exp_digest = ["sha-512=", digest_header].join("");
-    let given_digest = headers
-        .get("Digest")
-        .ok_or(RouteError::BadDigest)?
-        .to_str()?;
-    if exp_digest != given_digest {
-        println!("Could not match digest. Expected {}", exp_digest);
-        println!("Given digest {}", given_digest);
-        Err(RouteError::BadDigest)
+    
+    if client_host == "localhost" {
+        Err(RouteError::BadClientHost)
     } else {
-        println!("Digest Verification successful!");
-        Ok(true)
+        let key_path = format!("https://{}/fed/key", client_host);
+        println!("Client-Host: {}", client_host);
+        // construct and send GET request to host/fed/key
+        let connector = awc::Connector::new()
+            .timeout(Duration::from_secs(3))
+            .finish();
+
+        let client = awc::Client::builder()
+            .connector(connector)
+            .timeout(Duration::from_secs(5))
+            .finish();
+
+        let key_req = client
+            .get(key_path)
+            .header("User-Agent", "Actix Web")
+            .header("Host", client_host.clone())
+            .header("Client-Host", "cs3099user-a9.host.cs.st-andrews.ac.uk")
+            .send()
+            .await;
+
+        let key_req = key_req.unwrap().body().await?;
+        // using body of response, get public key
+        let pkey = PKey::public_key_from_pem(&key_req)?;
+        println!("Decoded public key successfully: {:?}", pkey);
+        // generate expected signature string
+        let mut string = String::new();
+        string.push_str(&format!(
+            "(request-target): {} {}\n",
+            request.method().as_str().to_lowercase(),
+            request.path()
+        ));
+        string.push_str(&format!(
+            "host: {}\n",
+            "cs3099user-a9.host.cs.st-andrews.ac.uk"
+        ));
+        string.push_str(&format!("client-host: {}\n", client_host));
+        if let Some(userid) = headers.get("User-ID") {
+            let uid = userid.to_str()?;
+            string.push_str(&format!("user-id: {}\n", &uid));
+        }
+        string.push_str(&format!(
+            "date: {}\n",
+            headers
+                .get("Date")
+                .ok_or(RouteError::MissingDate)?
+                .to_str()?
+        ));
+        string.push_str(&format!("digest: SHA-512={}", digest_header));
+        //obtain base64 signature from header Signature and match it
+        let sign_header = headers
+            .get("Signature")
+            .ok_or(RouteError::MissingSignature)?
+            .to_str()?;
+
+        let mut split = sign_header.split(",signature=").collect::<Vec<_>>();
+
+        let _ = split.pop().ok_or(RouteError::BadSignHeader)?;
+
+        let signature = split.pop().ok_or(RouteError::BadSignHeader)?;
+
+        // use openssl::Verifier with PCKS#1 to verify signature with expected string
+        let mut verifier = Verifier::new(MessageDigest::sha256(), &pkey)?;
+        verifier.set_rsa_padding(Padding::PKCS1)?;
+        verifier.update(string.as_bytes())?;
+        verifier.verify(signature.as_bytes())?;
+        println!("Verified signature.");
+        // match digest header from request with above output
+        let exp_digest = ["sha-512=", digest_header].join("");
+        let given_digest = headers
+            .get("Digest")
+            .ok_or(RouteError::BadDigest)?
+            .to_str()?;
+        if exp_digest != given_digest {
+            println!("Could not match digest. Expected {}", exp_digest);
+            println!("Given digest {}", given_digest);
+            Err(RouteError::BadDigest)
+        } else {
+            println!("Digest Verification successful!");
+            Ok(true)
+        }
     }
 }

@@ -16,6 +16,8 @@ pub enum RouteError {
     // TODO: Refactor this to use string
     #[error("missing Client-Host")]
     MissingClientHost,
+    #[error("bad Client-Host")]
+    BadClientHost,
     #[error("missing User-ID")]
     MissingUserId,
     #[error("missing Date")]
@@ -66,6 +68,7 @@ impl ResponseError for RouteError {
             RouteError::MissingUserId => StatusCode::BAD_REQUEST,
             RouteError::MissingDate => StatusCode::BAD_REQUEST,
             RouteError::MissingSignature => StatusCode::BAD_REQUEST,
+            RouteError::BadClientHost => StatusCode::BAD_REQUEST,
             RouteError::BadDigest => StatusCode::BAD_REQUEST,
             RouteError::BadSignHeader => StatusCode::BAD_REQUEST,
             RouteError::Diesel(_) => StatusCode::INTERNAL_SERVER_ERROR,
@@ -88,6 +91,7 @@ impl ResponseError for RouteError {
             RouteError::MissingUserId => "Missing User-ID".to_string(),
             RouteError::MissingDate => "Missing Date".to_string(),
             RouteError::MissingSignature => "Missing Signature".to_string(),
+            RouteError::BadClientHost => "Bad Client-Host header".to_string(),
             RouteError::BadDigest => "Invalid Digest".to_string(),
             RouteError::BadSignHeader => "Invalid Signature header".to_string(),
             RouteError::Diesel(e) => {
@@ -120,6 +124,7 @@ impl ResponseError for RouteError {
             RouteError::MissingUserId => HttpResponse::BadRequest(),
             RouteError::MissingDate => HttpResponse::BadRequest(),
             RouteError::MissingSignature => HttpResponse::BadRequest(),
+            RouteError::BadClientHost => HttpResponse::BadRequest(),
             RouteError::BadDigest => HttpResponse::BadRequest(),
             RouteError::BadSignHeader => HttpResponse::BadRequest(),
             RouteError::Diesel(_) => HttpResponse::InternalServerError(),

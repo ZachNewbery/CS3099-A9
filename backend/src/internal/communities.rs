@@ -5,7 +5,7 @@ use crate::database::actions::communities::{
 use crate::database::get_conn_from_pool;
 use crate::database::models::DatabaseNewCommunity;
 use crate::federation::schemas::{Community, User};
-use crate::internal::authentication::authenticate;
+use crate::internal::authentication::{authenticate, make_federated_request};
 use crate::util::route_error::RouteError;
 use crate::DBPool;
 use actix_web::{delete, get, patch, post, web, HttpRequest, HttpResponse, Result};
@@ -40,6 +40,20 @@ pub(crate) async fn list_communities(
             .collect::<Vec<String>>(),
     ))
 }
+
+// pub(crate) async fn get_host_communities(host: String) -> Result<Vec<String>, RouteError> {
+//     let mut test = make_federated_request(
+//         awc::Client::get,
+//         "cs3099user-a1.host.cs.st-andrews.ac.uk".to_string(),
+//         "/fed/communities".to_string(),
+//         "{}".to_string(),
+//         Some("zn6".to_string()),
+//         Option::<()>::None,
+//     )?
+//     .await;
+
+//     return test;
+// }
 
 #[derive(Serialize, Deserialize)]
 pub struct CreateCommunity {
