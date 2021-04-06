@@ -5,8 +5,10 @@ use crate::database::actions::communities::{
 use crate::database::get_conn_from_pool;
 use crate::database::models::DatabaseNewCommunity;
 use crate::federation::schemas::{Community, User};
+use crate::internal::get_known_hosts;
 use crate::internal::authentication::{authenticate, make_federated_request};
 use crate::util::route_error::RouteError;
+use crate::util::HOSTNAME;
 use crate::DBPool;
 use actix_web::{delete, get, patch, post, web, HttpRequest, HttpResponse, Result};
 use diesel::Connection;
@@ -26,34 +28,60 @@ pub(crate) async fn list_communities(
     let (_, _) = authenticate(pool.clone(), request)?;
 
     // TODO: Replace this when we have federated functionality
-    if query.host.is_some() {
-        return Ok(HttpResponse::NotImplemented().finish());
+    if let Some(host) = &query.host {
+        // query external host if needbe
+        if host != HOSTNAME {
+            let host_comms = get_host_communities(host.to_string()).await?;
+            return Ok(HttpResponse::Ok().json(host_comms));
+        }
     }
 
     let conn = get_conn_from_pool(pool.clone())?;
     let communities = web::block(move || get_communities(&conn)).await?;
+    let mut v_comms = communities
+        .into_iter()
+        .map(|c| c.title)
+        .collect::<Vec<String>>();
 
-    Ok(HttpResponse::Ok().json(
-        communities
-            .into_iter()
-            .map(|c| c.title)
-            .collect::<Vec<String>>(),
-    ))
+    if let Some(_) = &query.host {
+        // query host has to be our own host.
+        Ok(HttpResponse::Ok().json(v_comms))
+    } else {
+        // else collate all communities from all known hosts
+        for host in get_known_hosts().iter() {
+            let mut host_comms = get_host_communities(host.to_string()).await?;
+            v_comms.append(&mut host_comms);
+        }
+
+        Ok(HttpResponse::Ok().json(v_comms))
+    }
 }
 
-// pub(crate) async fn get_host_communities(host: String) -> Result<Vec<String>, RouteError> {
-//     let mut test = make_federated_request(
-//         awc::Client::get,
-//         "cs3099user-a1.host.cs.st-andrews.ac.uk".to_string(),
-//         "/fed/communities".to_string(),
-//         "{}".to_string(),
-//         Some("zn6".to_string()),
-//         Option::<()>::None,
-//     )?
-//     .await;
+pub(crate) async fn get_host_communities(host: String) -> Result<Vec<String>, RouteError> {
+    let mut query = make_federated_request(
+        awc::Client::get,
+        host,
+        "/fed/communities".to_string(),
+        "{}".to_string(),
+        None,
+        Option::<()>::None,
+    )?
+    .await
+    .map_err(|_| RouteError::ActixInternal)?;
 
-//     return test;
-// }
+    if query.status().is_client_error() {
+        Ok(Vec::new())
+    } else {
+        let body = query.body().await?;
+
+        let s_hosts: String =
+            String::from_utf8(body.to_vec()).map_err(|_| RouteError::ActixInternal)?;
+
+        let hosts: Vec<String> = serde_json::from_str(&s_hosts)?;
+
+        Ok(hosts)
+    }
+}
 
 #[derive(Serialize, Deserialize)]
 pub struct CreateCommunity {

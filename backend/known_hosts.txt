@@ -1,4 +1,3 @@
 [
-    "nebula0.herokuapp.com",
-    "cs3099user-a1.host.cs.st-andrews.ac.uk"
+    "nebula0.herokuapp.com"
 ]

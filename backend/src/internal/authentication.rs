@@ -219,7 +219,7 @@ pub async fn verify_federated_request(
         .get("Client-Host")
         .ok_or(RouteError::MissingClientHost)?
         .to_str()?;
-    
+
     if client_host == "localhost" {
         Err(RouteError::BadClientHost)
     } else {
