@@ -183,7 +183,7 @@ where
             .header("Signature", str_header),
         None => req.header("Signature", str_header),
     };
-
+    println!("{:?}", new_req);
     // send request
     if body_string == "" {
         Ok(new_req.send())
