@@ -1,119 +1,57 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import styled from "styled-components";
+import moment from "moment";
+import { useHistory } from "react-router-dom";
+
+import { StyledBlock, StyledContent, renderContent } from "./PostContent";
 import { useAsync } from "react-async";
-import { fetchData } from "../helpers";
-import { useDebouncedCallback } from "use-debounce";
+import { fetchData, Spinner, Error } from "../helpers";
+
 import { Post } from "./SinglePost";
 
-const loadCommunities = async () => {
-  return fetchData(`${process.env.REACT_APP_API_URL}/communities`);
+const loadPosts = async ({ host, community }) => {
+  const hostParam = host ? `host=${host}&` : "";
+  return fetchData(`${process.env.REACT_APP_API}/posts?${hostParam}community=${community}`);
 };
 
-const StyledContainer = styled.div`
-  margin: auto;
-  width: 500px;
-  padding: 1.5em 0;
-  display: flex;
-  flex-flow: column nowrap;
-  align-items: center;
+const StyledPosts = styled.div`
+  padding-bottom: 5rem;
 `;
 
-const StyledSearchbar = styled.input`
-  border: 1px solid lightgray;
-  border-radius: 0.3rem;
-  box-sizing: border-box;
-  width: 100%;
-  outline: none;
-  margin: 1em 0;
-  padding: 0.75em;
-  color: inherit;
-  font: inherit;
-  font-size: 1em;
-`;
+export const ListPosts = ({ host, community }) => {
+  const history = useHistory();
 
-const StyledCommunityPicker = styled.select`
-  border: 1px solid lightgray;
-  border-radius: 0.3em;
-  padding: 0.5em;
-  margin: 0.5em 0;
-  width: 100%;
-`;
+  const { data: posts, isLoading, error } = useAsync(loadPosts, { host, community });
 
-const ALL_COMMUNITY = {
-  title: "All Communities",
-  id: "-1",
-  userIds: []
-}
+  if (isLoading) return <Spinner />;
+  if (error) return <Error message={error} />;
 
-export const ListPosts = () => {
-  const [search, setSearch] = useState("");
-  const [posts, setPosts] = useState(null);
-  const [community, setCommunity] = useState(null);
-
-  const { data: communities } = useAsync(loadCommunities);
-
-  useEffect(() => {
-    const loadPosts = async ({ search, community }) => {
-      const communityParam =
-        community !== ALL_COMMUNITY.id ? `&communityId=${community}` : "";
-      const _data = await fetchData(
-        `${process.env.REACT_APP_API_URL}/posts?title_like=${search}${communityParam}`
-      );
-      setPosts(_data);
-    };
-    if (community) loadPosts({ search, community });
-  }, [search, community]);
-
-  useEffect(() => {
-    if (communities) {
-      setCommunity(communities[0].id);
-    }
-  }, [communities]);
-
-  const debouncedSearch = useDebouncedCallback((s) => {
-    setSearch(s);
-  }, 500);
-
-  const renderReponse = () => {
-    if (!posts) {
-      return <h1>Loading</h1>;
-    }
-    if (!posts.length) {
-      return <p>There are no posts that match this search</p>;
-    }
-    return posts.map((post) => <Post key={post.id} {...post} />);
-  };
-
-  const handleSelectCommunity = (e) => {
-    const id = e.target.selectedOptions[0].value;
-    setCommunity(id);
-  };
-
-  const currentCommunity = communities && (communities?.find((c) => c.id === community) || ALL_COMMUNITY);
+  const filteredPosts = posts.filter((post) => !post.deleted);
 
   return (
-    <StyledContainer>
-      <StyledCommunityPicker onChange={handleSelectCommunity}>
-        {communities && (
-          <>
-            {communities.map(({ id, title }) => (
-              <option key={id} value={id}>
-                {title}
-              </option>
-            ))}
-            <option value={ALL_COMMUNITY.id}>{ALL_COMMUNITY.title}</option>
-          </>
-        )}
-      </StyledCommunityPicker>
-      <StyledSearchbar
-        placeholder={
-          currentCommunity
-            ? `Search posts in ${currentCommunity.title}`
-            : "Loading communities"
-        }
-        onChange={(e) => debouncedSearch.callback(e.target.value)}
-      />
-      {renderReponse()}
-    </StyledContainer>
+    <StyledPosts>
+      {filteredPosts.length > 0 ? (
+        filteredPosts
+          .sort((a, b) => moment(b.created).unix() - moment(a.created).unix())
+          .map(({ id, title, content, user, created, children }) => (
+            <StyledContent key={id} onClick={() => history.push(`/post/${id}`)}>
+              <div className="header">
+                <h1 className="title" title={title}>
+                  {title}
+                </h1>
+                <div className="date-time">
+                  <p className="time">{moment(created).format("HH:mm")}</p>
+                  <p className="date">{moment(created).format("DD MMMM YYYY")}</p>
+                </div>
+              </div>
+              {content.map((block, i) => (
+                <StyledBlock key={i}>{renderContent(block)}</StyledBlock>
+              ))}
+            </StyledContent>
+          ))
+      ) : (
+        <p style={{ textAlign: "center" }}>No posts in this community yet</p>
+      )}
+    </StyledPosts>
   );
 };
