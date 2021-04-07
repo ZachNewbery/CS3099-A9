@@ -306,7 +306,7 @@ pub(crate) async fn list_extern_posts(
         let fed_posts: Vec<Post> =
             serde_json::from_str(&s_posts).map_err(|_| RouteError::ActixInternal)?;
         let host_string = host.clone();
-        let posts = fed_posts
+        let f_posts = fed_posts
             .into_iter()
             .map(|p| {
                 let conn =
@@ -331,6 +331,10 @@ pub(crate) async fn list_extern_posts(
                 })
             })
             .collect::<Result<Vec<LocatedPost>, RouteError>>()?;
+        let posts = f_posts
+            .into_iter()
+            .filter(|p| p.parent_post.is_none())
+            .collect();
 
         Ok(posts)
     }
