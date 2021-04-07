@@ -368,7 +368,7 @@ pub(crate) async fn search_posts(
             p.content.iter().any(|c| {
                 let content = match c {
                     ContentType::Text { text } => text,
-                    ContentType::Markdown { markdown: text } => text,
+                    ContentType::Markdown { text } => text,
                 };
                 content.contains(&query.search)
             })

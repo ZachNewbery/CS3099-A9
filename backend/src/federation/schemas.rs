@@ -17,7 +17,7 @@ pub(crate) struct User {
 #[serde(rename_all = "camelCase")]
 pub enum ContentType {
     Text { text: String },
-    Markdown { markdown: String },
+    Markdown { text: String },
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
