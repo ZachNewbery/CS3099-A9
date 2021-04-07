@@ -10,10 +10,12 @@ use crate::database::actions::user::{
 use crate::database::get_conn_from_pool;
 use crate::database::models::{DatabaseLocalUser, DatabaseNewPost};
 use crate::federation::posts::EditPost;
-use crate::federation::schemas::{ContentType, User};
+use crate::federation::schemas::{Community, ContentType, User};
 use crate::internal::authentication::{authenticate, make_federated_request};
+use crate::internal::communities::get_community_extern;
 use crate::internal::{get_known_hosts, LocatedCommunity};
 use crate::util::route_error::RouteError;
+use crate::util::HOSTNAME;
 use crate::DBPool;
 use actix_web::{delete, get, patch, post, web, HttpRequest, HttpResponse, Result};
 use chrono::{DateTime, Utc};
@@ -157,21 +159,32 @@ pub(crate) async fn list_posts(
     pool: web::Data<DBPool>,
     request: HttpRequest,
 ) -> Result<HttpResponse> {
-    let (_, _local_user) = authenticate(pool.clone(), request)?;
-    // Specialised code path for a community being specified
-    // control flow
-    // parse host =>
-        // HOSTNAME => list local posts with community if exists
-        // other string => query external host with hostname
-        // none => pass to next function to work with community
-    // parse community
-        // Some(c) => check if remote community
-                // local can pass to list_local_posts with community
-                // remote use returned hostname
-        // none => concat ALL posts
+    let (_, local_user) = authenticate(pool.clone(), request)?;
+    let conn = get_conn_from_pool(pool.clone())?;
+    let user = web::block(move || get_name_from_local_user(&conn, local_user)).await?;
+    let posts = match &query.host.as_deref() {
+        // checking query for specified hostname.
+        Some(HOSTNAME) => list_local_posts(query.community.clone(), pool.clone()).await?,
+        Some(host) => list_extern_posts(host.to_string(), query.community.clone(), user.username).await?,
+        None => match &query.community {
+            // checking query for specified community, and determining if community is local or remote.
+            Some(comm) => match get_community_extern(comm.to_string(), pool.clone()).await {
+                Ok((c, h)) => list_extern_posts(h, Some(c.id), user.username).await?,
+                Err(_) => list_local_posts(Some(comm.to_string()), pool.clone()).await?,
+            },
+            // if no query parameters specified, return all posts from all known hosts.
+            None => {
+                let mut all_posts = list_local_posts(None, pool.clone()).await?;
+                for host in get_known_hosts().iter() {
+                    let u_copy = user.clone();
+                    let mut e_posts = list_extern_posts(host.to_string(), None, u_copy.username).await?;
+                    all_posts.append(&mut e_posts);
+                }
 
-    // this is only local stuff!
-    let posts = list_local_posts(query.community.clone(), pool).await?;
+                all_posts
+            }
+        },
+    };
 
     Ok(HttpResponse::Ok().json(posts))
 }
@@ -231,6 +244,43 @@ pub(crate) async fn list_local_posts(
         .collect::<Result<Vec<LocatedPost>, RouteError>>()?;
 
     Ok(posts)
+}
+
+pub(crate) async fn list_extern_posts(
+    host: String,
+    community: Option<String>,
+    username: String,
+) -> Result<Vec<LocatedPost>, RouteError> {
+    let mut query: Option<String> = None;
+    if let Some(comm) = community {
+        let mut q_string = "community=".to_string();
+        q_string.push_str(&comm);
+        query = Some(q_string);
+    }
+
+    let mut req = make_federated_request(
+        awc::Client::get,
+        host,
+        "/fed/posts".to_string(),
+        "{}".to_string(),
+        Some(username),
+        query,
+    )?
+    .await
+    .map_err(|_| RouteError::ActixInternal)?;
+
+    if !req.status().is_success() {
+        Ok(Vec::new())
+    } else {
+        let body = req.body().await?;
+
+        let s_posts: String =
+            String::from_utf8(body.to_vec()).map_err(|_| RouteError::ActixInternal)?;
+
+        let posts: Vec<LocatedPost> = serde_json::from_str(&s_posts)?;
+        
+        Ok(posts)
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone)]
