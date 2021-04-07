@@ -10,7 +10,7 @@ use crate::database::actions::user::{
 use crate::database::get_conn_from_pool;
 use crate::database::models::{DatabaseLocalUser, DatabaseNewPost};
 use crate::federation::posts::EditPost;
-use crate::federation::schemas::{ContentType, User, Post};
+use crate::federation::schemas::{ContentType, Post, User};
 use crate::internal::authentication::{authenticate, make_federated_request};
 use crate::internal::communities::get_community_extern;
 use crate::internal::{get_known_hosts, LocatedCommunity};
@@ -167,7 +167,13 @@ pub(crate) async fn list_posts(
         // checking query for specified hostname.
         Some(HOSTNAME) => list_local_posts(query.community.clone(), pool.clone()).await?,
         Some(host) => {
-            list_extern_posts(host.to_string(), query.community.clone(), user.username, pool.clone()).await?
+            list_extern_posts(
+                host.to_string(),
+                query.community.clone(),
+                user.username,
+                pool.clone(),
+            )
+            .await?
         }
         None => match &query.community {
             // checking query for specified community, and determining if community is local or remote.
@@ -181,7 +187,8 @@ pub(crate) async fn list_posts(
                 for host in get_known_hosts().iter() {
                     let u_copy = user.clone();
                     let mut e_posts =
-                        list_extern_posts(host.to_string(), None, u_copy.username, pool.clone()).await?;
+                        list_extern_posts(host.to_string(), None, u_copy.username, pool.clone())
+                            .await?;
                     all_posts.append(&mut e_posts);
                 }
 
@@ -281,12 +288,14 @@ pub(crate) async fn list_extern_posts(
         let s_posts: String =
             String::from_utf8(body.to_vec()).map_err(|_| RouteError::ActixInternal)?;
 
-        let fed_posts: Vec<Post> = serde_json::from_str(&s_posts).map_err(|_| {RouteError::ActixInternal})?;
+        let fed_posts: Vec<Post> =
+            serde_json::from_str(&s_posts).map_err(|_| RouteError::ActixInternal)?;
         let host_string = host.clone();
         let posts = fed_posts
             .into_iter()
             .map(|p| {
-                let conn = get_conn_from_pool(pool.clone()).map_err(|_| RouteError::ActixInternal)?;
+                let conn =
+                    get_conn_from_pool(pool.clone()).map_err(|_| RouteError::ActixInternal)?;
                 if !get_user_detail_by_name(&conn, &p.author.id).is_ok() {
                     let _ = insert_new_federated_user(&conn, p.author.clone());
                 }
