@@ -45,7 +45,7 @@ export const EditPost = ({ show, hide, id, initialTitle, initialContent, refresh
       }
     }
 
-    content = content.map(([key, value]) => ({ [key.split("-")[1]]: value }));
+    content = content.map(([key, value]) => ({ [key.split("-")[1]]: { text: value } }));
 
     if (Object.keys(currentErrors).length === 0) {
       try {
@@ -76,7 +76,7 @@ export const EditPost = ({ show, hide, id, initialTitle, initialContent, refresh
           const key = `content-${contentType}-${i}`;
           return (
             <label key={i}>
-              <MarkdownEditor name={key} defaultValue={content[contentType]} />
+              <MarkdownEditor name={key} defaultValue={content[contentType].text} />
               {errors[key] && <Tooltip text={errors[key]} style={{ top: "3rem" }} />}
             </label>
           );

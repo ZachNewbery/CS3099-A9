@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import styled from "styled-components";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
@@ -14,10 +14,8 @@ const StyledSearch = styled.div`
   overflow: hidden;
   padding: 0 1rem;
   box-shadow: ${colors.blueInsetShadow};
-
   transition: all 0.3s;
-  &:focus,
-  &:focus-within {
+  &.open {
     height: 23rem;
     box-shadow: ${colors.blueInsetShadow}, 0 10px 25px -10px rgb(9 98 189 / 64%), 0 40px 70px -15px rgb(32 89 234 / 79%);
   }
@@ -62,6 +60,7 @@ const StyledSearch = styled.div`
 
 export const Search = () => {
   const [search, setSearch] = useState(null);
+  const [isOpen, setIsOpen] = useState(false);
   const { instance, setInstance } = useContext(InstanceContext);
 
   const handleChange = (e) => {
@@ -69,16 +68,33 @@ export const Search = () => {
     setSearch(text);
   };
 
+  useEffect(() => {
+    setIsOpen(false);
+  }, [instance])
+
   return (
-    <StyledSearch>
-      <div className="search-area">
-        <FontAwesomeIcon icon={faSearch} />
-        <input className="search-control" onChange={handleChange} placeholder="Search" />
-        <p title={instance}>{instance}</p>
-      </div>
-      <div className="instance-area">
-        <ListInstances instance={instance} setInstance={setInstance} />
-      </div>
-    </StyledSearch>
+    <>
+      <StyledSearch className={isOpen ? "open" : ""} onClick={() => setIsOpen(true)}>
+        <div className="search-area">
+          <FontAwesomeIcon icon={faSearch} />
+          <input className="search-control" onChange={handleChange} placeholder="Search" />
+          <p title={instance || "All hosts"}>{instance || "All hosts"}</p>
+        </div>
+        <div className="instance-area">
+          <ListInstances instance={instance} setInstance={setInstance} />
+        </div>
+      </StyledSearch>
+      {isOpen && <StyledBackground onClick={() => setIsOpen(false)} />}
+    </>
   );
 };
+
+const StyledBackground = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: transparent;
+  z-index: -1;
+`;

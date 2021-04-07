@@ -148,10 +148,14 @@ const StyledEditor = styled.div`
   }
 `;
 
-export const MarkdownEditor = React.forwardRef(({ name, tab = "write", style, readOnly, defaultValue, hideButtons = false, subtle }, ref) => {
+export const MarkdownEditor = React.forwardRef(({ name, tab = "write", style, readOnly, defaultValue, hideButtons = false, subtle, onChange }, ref) => {
   const [value, setValue] = useState(defaultValue);
   const [selectedTab, setSelectedTab] = useState(readOnly ? "preview" : tab);
 
+  useEffect(() => {
+    if (onChange) onChange(value);
+  }, [value])
+  
   useEffect(() => {
     setValue(defaultValue);
   }, [defaultValue]);

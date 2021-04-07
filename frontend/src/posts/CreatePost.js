@@ -51,20 +51,13 @@ const StyledContainer = styled.div`
 
 export const CreatePost = ({ community, host, refresh }) => {
   const formRef = useRef(null);
-  const [titleValue, setTitleValue] = useState(null);
-  const [bodyValue, setBodyValue] = useState(null);
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
   const [errors, setErrors] = useState({});
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     let currentErrors = {};
-
-    let { title, body } = formRef.current;
-
-    title = title.value;
-    body = body?.value || "";
-
-    setBodyValue(body);
 
     if (title.length < 5) {
       currentErrors.title = "Title is too short";
@@ -84,9 +77,9 @@ export const CreatePost = ({ community, host, refresh }) => {
 
     if (Object.keys(currentErrors).length === 0) {
       try {
-        await createPost({ title, community, content: { markdown: body } });
-        formRef.current.title.value = "";
-        setBodyValue("");
+        await createPost({ title, community, content: { markdown: { text: body } } });
+        setTitle("");
+        setBody("");
         setErrors({});
         return refresh();
       } catch (error) {
@@ -101,12 +94,12 @@ export const CreatePost = ({ community, host, refresh }) => {
     <StyledContainer>
       <StyledForm ref={formRef} onChange={() => setErrors({})}>
         <label>
-          <input type="text" name="title" placeholder="Title" onChange={(e) => setTitleValue(e.target.value)} />
+          <input type="text" name="title" placeholder="Title" value={title} onChange={(e) => setTitle(e.target.value)} />
           {errors.title && <Tooltip text={errors.title} />}
         </label>
-        {titleValue && (
+        {title && (
           <label>
-            <MarkdownEditor name="body" defaultValue={bodyValue} />
+            <MarkdownEditor name="body" defaultValue={body} onChange={(e) => setBody(e)}/>
             {errors.body && <Tooltip text={errors.body} />}
           </label>
         )}

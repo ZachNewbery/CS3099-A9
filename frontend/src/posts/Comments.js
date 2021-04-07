@@ -35,7 +35,9 @@ const createComment = async ({ postId, communityId, content }) => {
     parent: postId,
     content: [
       {
-        text: content,
+        markdown: {
+          text: content,
+        },
       },
     ],
     community: {

@@ -94,6 +94,6 @@ export const StyledContent = styled.div`
 
 export const renderContent = (content = {}) => {
   return (
-    <MarkdownEditor readOnly={true} name="content" defaultValue={content.text || content.markdown} />
+    <MarkdownEditor readOnly={true} name="content" defaultValue={content.text?.text || content.markdown?.text} />
   );
 };
