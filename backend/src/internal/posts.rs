@@ -161,14 +161,14 @@ pub(crate) async fn list_posts(
     // Specialised code path for a community being specified
     // control flow
     // parse host =>
-    // HOSTNAME => list local posts with community
-    // other string => query external host with hostname
-    // none => pass to next function to work with community
+        // HOSTNAME => list local posts with community if exists
+        // other string => query external host with hostname
+        // none => pass to next function to work with community
     // parse community
-    // Some(c) => check if local or remote community
-    // local can pass to list_local_posts
-    // remote need to find hostname!!!!!
-    // none => concat ALL posts
+        // Some(c) => check if remote community
+                // local can pass to list_local_posts with community
+                // remote use returned hostname
+        // none => concat ALL posts
 
     // this is only local stuff!
     let posts = list_local_posts(query.community.clone(), pool).await?;
