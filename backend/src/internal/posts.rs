@@ -253,7 +253,7 @@ pub(crate) async fn list_extern_posts(
 ) -> Result<Vec<LocatedPost>, RouteError> {
     let mut query: Option<String> = None;
     if let Some(comm) = community {
-        let mut q_string = "community=".to_string();
+        let mut q_string = "?community=".to_string();
         q_string.push_str(&comm);
         query = Some(q_string);
     }
