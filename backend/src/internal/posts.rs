@@ -115,7 +115,8 @@ pub(crate) async fn get_post_extern(
     pool: web::Data<DBPool>,
     username: String,
 ) -> Result<LocatedPost, RouteError> {
-    let mut post: Option<LocatedPost> = None;
+    let mut post: Option<Post> = None;
+    let mut l_host: Option<String> = None;
     let mut q_string = "/fed/posts/".to_owned();
     q_string.push_str(&uuid.to_string());
     for host in get_known_hosts().iter() {
@@ -132,7 +133,7 @@ pub(crate) async fn get_post_extern(
 
         if query.status().is_success() {
             let body = query.body().await?;
-
+            l_host = Some(host.to_string());
             let s_post: String =
                 String::from_utf8(body.to_vec()).map_err(|_| RouteError::ActixInternal)?;
 
@@ -148,7 +149,21 @@ pub(crate) async fn get_post_extern(
         if get_user_detail_by_name(&conn, &author.id).is_err() {
             let _ = insert_new_federated_user(&conn, author);
         }
-        Ok(p)
+        Ok(LocatedPost {
+            id: p.id,
+            community: LocatedCommunity::Federated {
+                id: p.community,
+                host: l_host.clone().unwrap(),
+            },
+            parent_post: p.parent_post,
+            children: p.children,
+            title: p.title,
+            content: p.content,
+            author: p.author,
+            modified: p.modified,
+            created: p.created,
+            deleted: false,
+        })
     } else {
         Err(RouteError::NotFound)
     }
