@@ -130,6 +130,7 @@ where
     if let Some(q) = query {
         req = req.query(&q)?;
     }
+    println!("{:?}", req.get_uri());
 
     let string = {
         let mut s = String::new();
