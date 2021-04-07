@@ -157,10 +157,31 @@ pub(crate) async fn list_posts(
     request: HttpRequest,
 ) -> Result<HttpResponse> {
     let (_, _local_user) = authenticate(pool.clone(), request)?;
-    let conn = get_conn_from_pool(pool.clone())?;
     // Specialised code path for a community being specified
+    // control flow
+    // parse host =>
+    // HOSTNAME => list local posts with community
+    // other string => query external host with hostname
+    // none => pass to next function to work with community
+    // parse community
+    // Some(c) => check if local or remote community
+    // local can pass to list_local_posts
+    // remote need to find hostname!!!!!
+    // none => concat ALL posts
+
+    // this is only local stuff!
+    let posts = list_local_posts(query.community.clone(), pool).await?;
+
+    Ok(HttpResponse::Ok().json(posts))
+}
+
+pub(crate) async fn list_local_posts(
+    community: Option<String>,
+    pool: web::Data<DBPool>,
+) -> Result<Vec<LocatedPost>, RouteError> {
+    let conn = get_conn_from_pool(pool.clone()).map_err(|_| RouteError::ActixInternal)?;
     let posts = web::block(move || {
-        let posts = match &query.community {
+        let posts = match &community {
             None => get_all_top_level_posts(&conn),
             Some(c) => {
                 let community = get_community(&conn, c)?.ok_or(diesel::NotFound)?;
@@ -182,7 +203,8 @@ pub(crate) async fn list_posts(
             })
             .collect::<Result<Vec<(PostInformation, Vec<PostInformation>)>, RouteError>>()
     })
-    .await?;
+    .await
+    .map_err(|_| RouteError::ActixInternal)?;
 
     let posts = posts
         .into_iter()
@@ -207,7 +229,7 @@ pub(crate) async fn list_posts(
         })
         .collect::<Result<Vec<LocatedPost>, RouteError>>()?;
 
-    Ok(HttpResponse::Ok().json(posts))
+    Ok(posts)
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -427,7 +449,7 @@ pub(crate) async fn delete_post(
         post::get_post(&conn, &id)
     })
     .await?
-    .ok_or(RouteError::NotFound)?;
+    .ok_or(RouteError::NotFound)?; // change here for federation
 
     // Check permissions
     if !local_user_has_modify_post_permission(pool.clone(), _local_user, &post).await? {

@@ -149,7 +149,7 @@ pub(crate) async fn get_community_details(
 
     // find community, if it doesn't exist in our database, it must be federated (or non-existent?)
     let r_comm = match community {
-        None => get_community_extern(id2, pool).await?,
+        None => get_community_extern(id2, pool).await?.0,
         Some(cmm) => get_community_local(cmm, pool).await?,
     };
 
@@ -179,11 +179,12 @@ pub(crate) async fn get_community_local(
 pub(crate) async fn get_community_extern(
     id: String,
     pool: web::Data<DBPool>,
-) -> Result<Community, RouteError> {
+) -> Result<(Community, String), RouteError> {
     let mut q_string = "/fed/communities/".to_owned();
     q_string.push_str(&id);
 
     let mut community: Option<Community> = None;
+    let mut located_host: Option<String> = None;
     for host in get_known_hosts().iter() {
         let mut query = make_federated_request(
             awc::Client::get,
@@ -197,12 +198,14 @@ pub(crate) async fn get_community_extern(
         .map_err(|_| RouteError::ActixInternal)?;
 
         if query.status().is_success() {
+            located_host = Some(host.to_string());
             let body = query.body().await?;
 
             let s_comm: String =
                 String::from_utf8(body.to_vec()).map_err(|_| RouteError::ActixInternal)?;
 
             community = serde_json::from_str(&s_comm)?;
+            break;
         }
     }
 
@@ -213,7 +216,12 @@ pub(crate) async fn get_community_extern(
                 let _ = insert_new_federated_user(&conn, admin);
             }
         }
-        Ok(comm)
+
+        if let Some(l_host) = located_host {
+            Ok((comm, l_host))
+        } else {
+            Err(RouteError::ActixInternal)
+        }
     } else {
         Err(RouteError::ActixInternal)
     }
