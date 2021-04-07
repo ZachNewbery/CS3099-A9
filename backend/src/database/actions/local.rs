@@ -1,35 +1,8 @@
 use diesel::prelude::*;
 use diesel::MysqlConnection;
 
-use crate::database::models::{DatabaseLocalUser, DatabasePost};
-use crate::internal::{LocalNewPost, NewUser};
-
-// FIXME: This is here for MVP purposes
-pub(crate) fn create_local_post(
-    conn: &MysqlConnection,
-    new_post: LocalNewPost,
-    local_user: DatabaseLocalUser,
-) -> Result<(), diesel::result::Error> {
-    use crate::database::models::DatabaseNewPost;
-    use crate::database::schema::Posts::dsl::*;
-    use chrono::{NaiveDateTime, Utc};
-
-    let db_new_post = DatabaseNewPost {
-        uuid: ::uuid::Uuid::new_v4().to_string(),
-        title: new_post.title,
-        body: new_post.body,
-        author: local_user.user_id,
-        content_type: 0,
-        created: NaiveDateTime::from_timestamp(Utc::now().timestamp(), 0),
-        modified: NaiveDateTime::from_timestamp(Utc::now().timestamp(), 0),
-    };
-
-    diesel::insert_into(Posts)
-        .values(db_new_post)
-        .execute(conn)?;
-
-    Ok(())
-}
+use crate::database::models::{DatabaseLocalUser, DatabaseUser};
+use crate::internal::user::{EditProfile, NewLocalUser};
 
 pub(crate) fn update_session(
     conn: &MysqlConnection,
@@ -51,73 +24,125 @@ pub(crate) fn validate_session(
 ) -> Result<Option<DatabaseLocalUser>, diesel::result::Error> {
     use crate::database::schema::LocalUsers::dsl::*;
 
-    Ok(LocalUsers
+    LocalUsers
         .filter(id.eq(id_ck))
         .filter(session.eq(session_ck))
         .first::<DatabaseLocalUser>(conn)
-        .optional()?)
+        .optional()
 }
 
-pub(crate) fn get_local_user(
+pub(crate) fn get_local_user_by_username_email(
     conn: &MysqlConnection,
-    username_ck: &str,
-    email_ck: &str,
+    username_: &str,
+    email_: &str,
 ) -> Result<Option<DatabaseLocalUser>, diesel::result::Error> {
     use crate::database::schema::LocalUsers::dsl::*;
     use crate::database::schema::Users::dsl::*;
 
-    Ok(Users
+    Users
         .inner_join(LocalUsers)
-        .filter(username.eq(username_ck))
-        .filter(email.eq(email_ck))
+        .filter(username.eq(username_).or(email.eq(email_)))
         .select(LocalUsers::all_columns())
         .first::<DatabaseLocalUser>(conn)
-        .optional()?)
+        .optional()
 }
 
-// FIXME: I cannot emphasize just how insecure this is. MUST fix before pushing to production
-pub(crate) fn login_local_user(
+pub(crate) fn get_local_user_by_credentials(
     conn: &MysqlConnection,
     email_ck: &str,
     password_ck: &str,
-) -> Result<Option<DatabaseLocalUser>, diesel::result::Error> {
+) -> Result<Option<(DatabaseUser, DatabaseLocalUser)>, diesel::result::Error> {
     use crate::database::schema::LocalUsers::dsl::*;
+    use crate::database::schema::Users::dsl::*;
 
-    Ok(LocalUsers
+    LocalUsers
         .filter(email.eq(email_ck))
         .filter(password.eq(password_ck))
-        .first::<DatabaseLocalUser>(conn)
-        .optional()?)
+        .inner_join(Users)
+        .select((Users::all_columns(), LocalUsers::all_columns()))
+        .first::<(_, _)>(conn)
+        .optional()
+}
+
+pub(crate) fn get_local_user_by_user_id(
+    conn: &MysqlConnection,
+    username_: &str,
+) -> Result<Option<(DatabaseUser, DatabaseLocalUser)>, diesel::result::Error> {
+    use crate::database::schema::LocalUsers::dsl::*;
+    use crate::database::schema::Users::dsl::*;
+
+    Users
+        .filter(username.eq(username_))
+        .inner_join(LocalUsers)
+        .select((Users::all_columns(), LocalUsers::all_columns()))
+        .first::<(_, _)>(conn)
+        .optional()
 }
 
 pub(crate) fn insert_new_local_user(
     conn: &MysqlConnection,
-    new_user: NewUser,
+    new_user: NewLocalUser,
 ) -> Result<(), diesel::result::Error> {
-    conn.transaction::<(), diesel::result::Error, _>(|| {
-        use crate::database::models::{DatabaseNewLocalUser, DatabaseNewUser, DatabaseUser};
-        use crate::database::schema::LocalUsers::dsl::*;
-        use crate::database::schema::Users::dsl::*;
+    use crate::database::models::{DatabaseNewLocalUser, DatabaseNewUser};
+    use crate::database::schema::LocalUsers::dsl::*;
+    use crate::database::schema::Users::dsl::*;
 
-        let db_new_user: DatabaseNewUser = new_user.clone().into();
+    let db_new_user: DatabaseNewUser = new_user.clone().into();
 
-        diesel::insert_into(Users)
-            .values(db_new_user.clone())
-            .execute(conn)?;
+    diesel::insert_into(Users)
+        .values(db_new_user.clone())
+        .execute(conn)?;
 
-        // Unfortunately MySQL does not support RETURN statements.
-        // We will have to make a second query to fetch the new user id.
-        // TODO: Look into extracting function
-        let inserted_user: DatabaseUser = Users
-            .filter(username.eq(&db_new_user.username))
-            .first::<DatabaseUser>(conn)?;
+    // Unfortunately MySQL does not support RETURN statements.
+    // We will have to make a second query to fetch the new user id.
+    let inserted_user: DatabaseUser = Users
+        .filter(username.eq(&db_new_user.username))
+        .first::<DatabaseUser>(conn)?;
 
-        let db_new_local_user: DatabaseNewLocalUser = (inserted_user, new_user).into();
+    let db_new_local_user: DatabaseNewLocalUser = (inserted_user, new_user).into();
 
-        diesel::insert_into(LocalUsers)
-            .values(db_new_local_user)
-            .execute(conn)?;
+    diesel::insert_into(LocalUsers)
+        .values(db_new_local_user)
+        .execute(conn)?;
 
-        Ok(())
-    })
+    Ok(())
+}
+
+pub(crate) fn update_local_user(
+    conn: &MysqlConnection,
+    user: DatabaseLocalUser,
+    update_to: &EditProfile,
+) -> Result<DatabaseLocalUser, diesel::result::Error> {
+    use crate::database::schema::LocalUsers::dsl::*;
+
+    let user_id = user.id;
+
+    match &update_to.password {
+        None => {}
+        Some(t) => {
+            diesel::update(&user)
+                .set(password.eq(t.clone()))
+                .execute(conn)?;
+        }
+    }
+
+    match &update_to.bio {
+        None => {}
+        Some(t) => {
+            diesel::update(&user).set(bio.eq(t.clone())).execute(conn)?;
+        }
+    }
+
+    match &update_to.avatar {
+        None => {}
+        Some(t) => {
+            diesel::update(&user)
+                .set(avatar.eq(t.clone()))
+                .execute(conn)?;
+        }
+    }
+
+    LocalUsers
+        .filter(id.eq(user_id))
+        .first::<DatabaseLocalUser>(conn)
 }
