@@ -277,14 +277,10 @@ pub(crate) async fn list_extern_posts(
         Ok(Vec::new())
     } else {
         let body = req.body().await?;
-        println! {"{:?}", body};
         let s_posts: String =
             String::from_utf8(body.to_vec()).map_err(|_| RouteError::ActixInternal)?;
 
-        let fed_posts: Vec<Post> = serde_json::from_str(&s_posts).map_err(|e| {
-            println!("{}", e);
-            RouteError::ActixInternal
-        })?;
+        let fed_posts: Vec<Post> = serde_json::from_str(&s_posts).map_err(|_| {RouteError::ActixInternal})?;
         let host_string = host.clone();
         let posts = fed_posts
             .into_iter()
