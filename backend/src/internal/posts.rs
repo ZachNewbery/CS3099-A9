@@ -1,4 +1,5 @@
 use crate::database::actions::communities::{get_community, get_community_admins};
+use crate::database::actions::post;
 use crate::database::actions::post::{
     get_all_top_level_posts, get_children_posts_of, get_top_level_posts_of_community,
     modify_post_title, put_post, put_post_contents, remove_post, remove_post_contents, touch_post,
@@ -17,13 +18,12 @@ use crate::util::route_error::RouteError;
 use crate::util::HOSTNAME;
 use crate::DBPool;
 use actix_web::{delete, get, patch, post, web, HttpRequest, HttpResponse, Result};
+use awc::SendClientRequest;
 use chrono::{DateTime, Utc};
 use diesel::{Connection, MysqlConnection};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use uuid::Uuid;
-use crate::database::actions::post;
-use awc::{SendClientRequest};
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct GetPost {
@@ -60,9 +60,7 @@ pub(crate) async fn get_post(
     let post = match query.host.as_str() {
         // Check local
         HOSTNAME => {
-            let post = web::block(move || {
-                post::get_post(&conn, &id)
-            })
+            let post = web::block(move || post::get_post(&conn, &id))
                 .await?
                 .ok_or(RouteError::NotFound)?;
 
@@ -136,7 +134,7 @@ pub(crate) async fn external_get_post(
     uuid: &Uuid,
     pool: web::Data<DBPool>,
     username: &str,
-    host: &str
+    host: &str,
 ) -> Result<LocatedPost, RouteError> {
     let mut query = get_post_request(&uuid, host, username)?
         .await
@@ -144,11 +142,12 @@ pub(crate) async fn external_get_post(
 
     if !query.status().is_success() {
         return Err(RouteError::ExternalService);
-    }
-    else {
+    } else {
         let post: Post = {
             let body = query.body().await?;
-            serde_json::from_str(&String::from_utf8(body.to_vec()).map_err(|_| RouteError::ActixInternal)?)?
+            serde_json::from_str(
+                &String::from_utf8(body.to_vec()).map_err(|_| RouteError::ActixInternal)?,
+            )?
         };
 
         let conn = get_conn_from_pool(pool.clone()).map_err(|_| RouteError::ActixInternal)?;
@@ -157,56 +156,63 @@ pub(crate) async fn external_get_post(
             cache_federated_author(&conn, &author)?;
             Ok::<(), RouteError>(())
         })
-            .await?;
+        .await?;
 
         Ok(LocatedPost {
             id: post.id,
             community: LocatedCommunity::Federated {
                 id: post.community,
-                host: host.to_string()
+                host: host.to_string(),
             },
             parent_post: post.parent_post,
             children: post.children,
             title: post.title,
             content: post.content,
-            author,
+            author: post.author,
             modified: post.modified,
             created: post.created,
-            deleted: false
+            deleted: false,
         })
     }
 }
 
+// Writes a federated author to cache.
 pub(crate) fn cache_federated_author(
     conn: &MysqlConnection,
-    author: &User
+    author: &User,
 ) -> Result<(), diesel::result::Error> {
     match get_user_detail_by_name(conn, &author.id) {
         Ok(_) => Ok(()),
         Err(diesel::NotFound) => insert_new_federated_user(conn, author),
-        Err(e) => Err(e)
+        Err(e) => Err(e),
     }
 }
 
 // TODO: Use this somewhere
+// Gets a post from all known hosts.
 pub(crate) async fn external_forall_get_post(
     uuid: &Uuid,
     pool: web::Data<DBPool>,
     username: &str,
 ) -> Result<LocatedPost, RouteError> {
+
     let mut post: Option<Post> = None;
     let mut found_host: Option<String> = None;
     for host in get_known_hosts().iter() {
+        // Ask host
         let mut query = get_post_request(&uuid, host, username)?
-        .await
-        .map_err(|h| RouteError::ActixInternal)?;
+            .await
+            .map_err(|_| RouteError::ActixInternal)?;
 
         if query.status().is_success() {
+            // Set the found host's string
             found_host = Some(host.to_string());
 
             post = {
                 let body = query.body().await?;
-                serde_json::from_str(&String::from_utf8(body.to_vec()).map_err(|_| RouteError::ActixInternal)?)?
+                serde_json::from_str(
+                    &String::from_utf8(body.to_vec()).map_err(|_| RouteError::ActixInternal)?,
+                )?
             };
 
             break;
@@ -217,12 +223,11 @@ pub(crate) async fn external_forall_get_post(
         let conn = get_conn_from_pool(pool.clone()).map_err(|_| RouteError::ActixInternal)?;
         let author = p.author.clone();
 
-        // add author to federated users for caching :)
         web::block(move || {
             cache_federated_author(&conn, &author)?;
             Ok::<(), RouteError>(())
         })
-            .await?;
+        .await?;
 
         println!("Post Children: {:?}", p.children);
         Ok(LocatedPost {

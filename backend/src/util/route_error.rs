@@ -1,9 +1,9 @@
+use actix_web::error::BlockingError;
 use actix_web::http::header::ToStrError;
 use actix_web::http::StatusCode;
 use actix_web::{HttpResponse, ResponseError};
 use diesel::result::Error;
 use serde::{Deserialize, Serialize};
-use actix_web::error::BlockingError;
 
 #[derive(Serialize, Deserialize)]
 pub struct BadResponse {
@@ -52,7 +52,7 @@ pub enum RouteError {
     #[error(transparent)]
     OpenSsl(#[from] openssl::error::ErrorStack),
     #[error("timed out")]
-    Cancelled
+    Cancelled,
 }
 
 impl From<diesel::result::Error> for RouteError {
@@ -121,7 +121,7 @@ impl ResponseError for RouteError {
             RouteError::ExternalService => {
                 "Could not connect to external host when requesting key".to_string()
             }
-            RouteError::Cancelled => "Task timed out".to_string()
+            RouteError::Cancelled => "Task timed out".to_string(),
         };
 
         match self {
@@ -156,7 +156,7 @@ impl From<BlockingError<RouteError>> for RouteError {
     fn from(val: BlockingError<RouteError>) -> Self {
         match val {
             BlockingError::Error(e) => e,
-            BlockingError::Canceled => RouteError::Cancelled
+            BlockingError::Canceled => RouteError::Cancelled,
         }
     }
 }
