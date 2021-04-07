@@ -21,7 +21,7 @@ pub(crate) async fn discover(
     pool: web::Data<DBPool>,
     request: HttpRequest,
 ) -> Result<HttpResponse> {
-    let (_, _) = authenticate(pool.clone(), request)?;
+    let (_, _) = authenticate(pool, request)?;
     let file = fs::File::open("known_hosts.txt").expect("file should open read only");
     let json: serde_json::Value =
         serde_json::from_reader(file).expect("file should be proper JSON");
@@ -37,10 +37,7 @@ pub(crate) fn get_known_hosts() -> Vec<String> {
         serde_json::from_reader(hosts).expect("could not parse known_hosts file");
     let vect = json.as_array().unwrap();
 
-    let s_vec: Vec<String> = vect
-        .iter()
+    vect.iter()
         .map(|s| s.as_str().unwrap().to_string())
-        .collect();
-
-    return s_vec;
+        .collect()
 }

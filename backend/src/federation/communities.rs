@@ -34,7 +34,7 @@ pub(crate) async fn communities(
     Ok(HttpResponse::Ok().json(
         communities
             .into_iter()
-            .map(|c| c.name.to_string())
+            .map(|c| c.name)
             .collect::<Vec<String>>(),
     ))
 }
