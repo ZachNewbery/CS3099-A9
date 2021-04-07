@@ -259,8 +259,6 @@ pub(crate) async fn list_extern_posts(
     if let Some(comm) = community {
         let mut q_map = HashMap::new();
         q_map.insert("community".to_string(), comm.to_string());
-        // let mut q_string = "?community=".to_string();
-        // q_string.push_str(&comm);
         query = Some(q_map);
     }
 
@@ -279,6 +277,7 @@ pub(crate) async fn list_extern_posts(
         Ok(Vec::new())
     } else {
         let body = req.body().await?;
+        println!("{:?}", body);
 
         let s_posts: String =
             String::from_utf8(body.to_vec()).map_err(|_| RouteError::ActixInternal)?;
