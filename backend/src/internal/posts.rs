@@ -195,7 +195,6 @@ pub(crate) async fn external_forall_get_post(
     pool: web::Data<DBPool>,
     username: &str,
 ) -> Result<LocatedPost, RouteError> {
-
     let mut post: Option<Post> = None;
     let mut found_host: Option<String> = None;
     for host in get_known_hosts().iter() {
@@ -257,22 +256,25 @@ pub(crate) async fn list_posts(
     request: HttpRequest,
 ) -> Result<HttpResponse> {
     let (_, local_user) = authenticate(pool.clone(), request)?;
+
     let conn = get_conn_from_pool(pool.clone())?;
     let user = web::block(move || get_name_from_local_user(&conn, local_user)).await?;
+
     let posts = match query.host.as_str() {
         // Our name
         HOSTNAME => list_local_posts(query.community.clone(), pool.clone()).await?,
 
         // Ask another host
-        host => {
-            list_extern_posts(
-                host.to_string(),
-                query.community.clone(),
-                user.username,
-                pool.clone(),
-            )
-            .await?
-        }
+        host => external_list_posts(
+            host,
+            query.community.as_deref(),
+            &user.username,
+            pool.clone(),
+        )
+        .await?
+        .into_iter()
+        .filter(|p| p.parent_post.is_none())
+        .collect(),
     };
 
     Ok(HttpResponse::Ok().json(posts))
@@ -335,41 +337,41 @@ pub(crate) async fn list_local_posts(
 }
 
 // TODO: Check types
-pub(crate) async fn list_extern_posts(
-    host: String,
-    community: Option<String>,
-    username: String,
+// Returns a list of all posts
+pub(crate) async fn external_list_posts(
+    host: &str,
+    community: Option<&str>,
+    requester_name: &str,
     pool: web::Data<DBPool>,
 ) -> Result<Vec<LocatedPost>, RouteError> {
-    let mut query: Option<HashMap<String, String>> = None;
+    // If there is a community then include it in the query
+    let mut query: HashMap<String, String> = HashMap::new();
     if let Some(comm) = community {
-        let mut q_map = HashMap::new();
-        q_map.insert("community".to_string(), comm);
-        query = Some(q_map);
+        query.insert("community".to_string(), comm.to_string());
     }
+
+    // Turn empty queries into None
+    let opt_query = if query.is_empty() { None } else { Some(query) };
 
     let mut req = make_federated_request(
         awc::Client::get,
-        host.clone(),
+        host.to_string(),
         "/fed/posts".to_string(),
         "{}".to_string(),
-        Some(username),
-        query,
+        Some(requester_name.to_string()),
+        opt_query,
     )?
     .await
     .map_err(|_| RouteError::ActixInternal)?;
 
-    if !req.status().is_success() {
-        Ok(Vec::new())
-    } else {
-        let body = req.body().await?;
-        let s_posts: String =
-            String::from_utf8(body.to_vec()).map_err(|_| RouteError::ActixInternal)?;
+    if req.status().is_success() {
+        let fed_posts: Vec<Post> = {
+            let s_posts: String = String::from_utf8(req.body().await?.to_vec())
+                .map_err(|_| RouteError::ActixInternal)?;
+            serde_json::from_str(&s_posts).map_err(|_| RouteError::ActixInternal)?
+        };
 
-        let fed_posts: Vec<Post> =
-            serde_json::from_str(&s_posts).map_err(|_| RouteError::ActixInternal)?;
-        let host_string = host.clone();
-        let f_posts = fed_posts
+        fed_posts
             .into_iter()
             .map(|p| {
                 let conn =
@@ -381,7 +383,7 @@ pub(crate) async fn list_extern_posts(
                     id: p.id,
                     community: LocatedCommunity::Federated {
                         id: p.community,
-                        host: host_string.clone(),
+                        host: host.to_string(),
                     },
                     parent_post: p.parent_post,
                     children: p.children,
@@ -393,13 +395,9 @@ pub(crate) async fn list_extern_posts(
                     deleted: false,
                 })
             })
-            .collect::<Result<Vec<LocatedPost>, RouteError>>()?;
-        let posts = f_posts
-            .into_iter()
-            .filter(|p| p.parent_post.is_none())
-            .collect();
-
-        Ok(posts)
+            .collect::<Result<Vec<LocatedPost>, RouteError>>()
+    } else {
+        Ok(vec![])
     }
 }
 
