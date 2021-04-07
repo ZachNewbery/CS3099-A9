@@ -10,7 +10,7 @@ use crate::database::actions::user::{
 use crate::database::get_conn_from_pool;
 use crate::database::models::{DatabaseLocalUser, DatabaseNewPost};
 use crate::federation::posts::EditPost;
-use crate::federation::schemas::{ContentType, User};
+use crate::federation::schemas::{ContentType, User, Post};
 use crate::internal::authentication::{authenticate, make_federated_request};
 use crate::internal::communities::get_community_extern;
 use crate::internal::{get_known_hosts, LocatedCommunity};
@@ -44,20 +44,6 @@ pub(crate) struct LocatedPost {
     pub(crate) created: DateTime<Utc>,
     #[serde(default)]
     pub(crate) deleted: bool,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct FederatedPost {
-    pub(crate) id: Uuid,
-    pub(crate) community: String,
-    pub(crate) parent_post: Option<Uuid>,
-    pub(crate) children: Vec<Uuid>,
-    pub(crate) title: String,
-    pub(crate) content: Vec<ContentType>,
-    pub(crate) author: User,
-    pub(crate) modified: DateTime<Utc>,
-    pub(crate) created: DateTime<Utc>,
 }
 
 #[get("/posts/{id}")]
@@ -295,7 +281,7 @@ pub(crate) async fn list_extern_posts(
         let s_posts: String =
             String::from_utf8(body.to_vec()).map_err(|_| RouteError::ActixInternal)?;
 
-        let fed_posts: Vec<FederatedPost> = serde_json::from_str(&s_posts).map_err(|e| {
+        let fed_posts: Vec<Post> = serde_json::from_str(&s_posts).map_err(|e| {
             println!("{}", e);
             RouteError::ActixInternal
         })?;
