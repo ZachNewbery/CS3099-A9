@@ -134,6 +134,7 @@ pub(crate) async fn get_post_extern(
                 String::from_utf8(body.to_vec()).map_err(|_| RouteError::ActixInternal)?;
 
             post = serde_json::from_str(&s_post)?;
+            break;
         }
     }
 
