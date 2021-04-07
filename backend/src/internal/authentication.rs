@@ -123,7 +123,7 @@ where
         .header("Digest", ["sha-512=", &digest_header].join(""))
         .set(actix_web::http::header::Date(date));
 
-    if body_string != "" {
+    if !body_string.is_empty() {
         req = req.header(http::header::CONTENT_TYPE, "application/json");
     }
 
@@ -185,7 +185,7 @@ where
     };
 
     // send request
-    if body_string == "" {
+    if !body_string.is_empty() {
         Ok(new_req.send())
     } else {
         Ok(new_req.send_json(&body))
@@ -237,7 +237,7 @@ pub async fn verify_federated_request(
         let key_req = client
             .get(key_path)
             .header("User-Agent", "Actix Web")
-            .header("Host", client_host.clone())
+            .header("Host", client_host.to_string())
             .header("Client-Host", "cs3099user-a9.host.cs.st-andrews.ac.uk")
             .send()
             .await;

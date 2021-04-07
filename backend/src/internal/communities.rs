@@ -43,17 +43,20 @@ pub(crate) async fn list_communities(
         .map(|c| c.name)
         .collect::<Vec<String>>();
 
-    if let Some(_) = &query.host {
-        // query host has to be our own host.
-        Ok(HttpResponse::Ok().json(v_comms))
-    } else {
-        // else collate all communities from all known hosts
-        for host in get_known_hosts().iter() {
-            let mut host_comms = get_host_communities(host.to_string()).await?;
-            v_comms.append(&mut host_comms);
+    match &query.host {
+        Some(_) => {
+            // query host has to be our own host.
+            Ok(HttpResponse::Ok().json(v_comms))
         }
+        None => {
+            // else collate all communities from all known hosts
+            for host in get_known_hosts().iter() {
+                let mut host_comms = get_host_communities(host.to_string()).await?;
+                v_comms.append(&mut host_comms);
+            }
 
-        Ok(HttpResponse::Ok().json(v_comms))
+            Ok(HttpResponse::Ok().json(v_comms))
+        }
     }
 }
 
@@ -103,7 +106,7 @@ pub(crate) async fn create_community(
 
     // check if community exists locally
     let l_comm_check = web::block(move || get_community(&conn, &id)).await?;
-    if let Some(_) = l_comm_check {
+    if l_comm_check.is_some() {
         Ok(HttpResponse::InternalServerError().finish())
     } else {
         // check if community exists remotely
@@ -211,7 +214,7 @@ pub(crate) async fn get_community_extern(
     if let Some(comm) = community {
         for admin in comm.clone().admins {
             let conn = get_conn_from_pool(pool.clone()).map_err(|_| RouteError::ActixInternal)?;
-            if !get_user_detail_by_name(&conn, &admin.id).is_ok() {
+            if get_user_detail_by_name(&conn, &admin.id).is_err() {
                 let _ = insert_new_federated_user(&conn, admin);
             }
         }

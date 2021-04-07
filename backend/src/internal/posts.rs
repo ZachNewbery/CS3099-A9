@@ -145,7 +145,7 @@ pub(crate) async fn get_post_extern(
         // add author to federated users for caching :)
         let author = p.author.clone();
         let conn = get_conn_from_pool(pool.clone()).map_err(|_| RouteError::ActixInternal)?;
-        if !get_user_detail_by_name(&conn, &author.id).is_ok() {
+        if get_user_detail_by_name(&conn, &author.id).is_err() {
             let _ = insert_new_federated_user(&conn, author);
         }
         Ok(p)
@@ -266,7 +266,7 @@ pub(crate) async fn list_extern_posts(
     let mut query: Option<HashMap<String, String>> = None;
     if let Some(comm) = community {
         let mut q_map = HashMap::new();
-        q_map.insert("community".to_string(), comm.to_string());
+        q_map.insert("community".to_string(), comm);
         query = Some(q_map);
     }
 
@@ -296,7 +296,7 @@ pub(crate) async fn list_extern_posts(
             .map(|p| {
                 let conn =
                     get_conn_from_pool(pool.clone()).map_err(|_| RouteError::ActixInternal)?;
-                if !get_user_detail_by_name(&conn, &p.author.id).is_ok() {
+                if get_user_detail_by_name(&conn, &p.author.id).is_err() {
                     let _ = insert_new_federated_user(&conn, p.author.clone());
                 }
                 Ok(LocatedPost {
