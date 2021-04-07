@@ -136,7 +136,7 @@ pub(crate) async fn get_post_extern(
             l_host = Some(host.to_string());
             let s_post: String =
                 String::from_utf8(body.to_vec()).map_err(|_| RouteError::ActixInternal)?;
-
+            println!("String Post: {:?}", s_post);
             post = serde_json::from_str(&s_post)?;
             break;
         }
@@ -149,6 +149,7 @@ pub(crate) async fn get_post_extern(
         if get_user_detail_by_name(&conn, &author.id).is_err() {
             let _ = insert_new_federated_user(&conn, author);
         }
+        println!("Post Children: {:?}", p.children);
         Ok(LocatedPost {
             id: p.id,
             community: LocatedCommunity::Federated {
