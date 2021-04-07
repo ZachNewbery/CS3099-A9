@@ -1,12 +1,13 @@
-use chrono::{NaiveDateTime, Utc};
+use chrono::NaiveDateTime;
 
 use crate::database::naive_date_time_now;
 use crate::database::schema::{
     Communities, CommunitiesUsers, FederatedUsers, LocalUsers, Markdown, Posts, Text, Users,
 };
-use crate::federation::schemas::NewPost;
+
+use crate::federation::schemas::User;
 use crate::internal::authentication::generate_session;
-use crate::internal::NewUser;
+use crate::internal::user::NewLocalUser;
 
 #[derive(Queryable, Identifiable, Debug, Clone)]
 #[table_name = "Users"]
@@ -27,6 +28,8 @@ pub struct DatabaseLocalUser {
     #[column_name = "createdAt"]
     pub created_at: NaiveDateTime,
     pub session: String,
+    pub bio: Option<String>,
+    pub avatar: Option<String>,
 }
 
 #[derive(Queryable, Identifiable, Associations, Debug, Clone)]
@@ -44,7 +47,15 @@ pub struct DatabaseFederatedUser {
 pub struct DatabaseCommunity {
     pub id: u64,
     pub name: String,
-    pub desc: String,
+    pub description: String,
+    pub title: String,
+}
+
+#[derive(Insertable, Debug, Clone)]
+#[table_name = "Communities"]
+pub struct DatabaseNewCommunity {
+    pub name: String,
+    pub description: String,
     pub title: String,
 }
 
@@ -53,6 +64,15 @@ pub struct DatabaseCommunity {
 #[belongs_to(DatabaseCommunity, foreign_key = "communityId")]
 pub struct DatabaseCommunitiesUser {
     pub id: u64,
+    #[column_name = "communityId"]
+    pub community_id: u64,
+    #[column_name = "userId"]
+    pub user_id: u64,
+}
+
+#[derive(Insertable, Debug, Clone)]
+#[table_name = "CommunitiesUsers"]
+pub struct DatabaseNewCommunitiesUser {
     #[column_name = "communityId"]
     pub community_id: u64,
     #[column_name = "userId"]
@@ -76,6 +96,7 @@ pub struct DatabasePost {
     pub parent_id: Option<u64>,
     #[column_name = "communityId"]
     pub community_id: u64,
+    pub deleted: bool,
 }
 
 #[derive(Queryable, Identifiable, Associations, Debug, Clone)]
@@ -122,15 +143,22 @@ pub struct DatabaseNewUser {
 #[derive(Insertable, Debug, Clone)]
 #[table_name = "FederatedUsers"]
 pub struct DatabaseNewFederatedUser {
-    pub id: u64,
+    #[column_name = "userId"]
+    pub user_id: u64,
     pub host: String,
 }
 
-impl From<NewUser> for DatabaseNewUser {
-    fn from(value: NewUser) -> Self {
+impl From<NewLocalUser> for DatabaseNewUser {
+    fn from(value: NewLocalUser) -> Self {
         Self {
             username: value.username,
         }
+    }
+}
+
+impl From<User> for DatabaseNewUser {
+    fn from(value: User) -> Self {
+        Self { username: value.id }
     }
 }
 
@@ -145,8 +173,8 @@ pub struct DatabaseNewLocalUser {
     pub session: String,
 }
 
-impl From<(DatabaseUser, NewUser)> for DatabaseNewLocalUser {
-    fn from(value: (DatabaseUser, NewUser)) -> Self {
+impl From<(DatabaseUser, NewLocalUser)> for DatabaseNewLocalUser {
+    fn from(value: (DatabaseUser, NewLocalUser)) -> Self {
         let (user, new_user) = value;
         Self {
             userId: user.id,
@@ -154,6 +182,16 @@ impl From<(DatabaseUser, NewUser)> for DatabaseNewLocalUser {
             password: new_user.password,
             created_at: naive_date_time_now(),
             session: generate_session(),
+        }
+    }
+}
+
+impl From<(DatabaseUser, User)> for DatabaseNewFederatedUser {
+    fn from(value: (DatabaseUser, User)) -> Self {
+        let (user, new_user) = value;
+        Self {
+            user_id: user.id,
+            host: new_user.host,
         }
     }
 }

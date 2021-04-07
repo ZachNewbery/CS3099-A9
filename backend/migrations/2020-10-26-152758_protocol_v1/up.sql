@@ -8,10 +8,12 @@ CREATE TABLE IF NOT EXISTS LocalUsers (
     id SERIAL PRIMARY KEY,
     userId BIGINT UNSIGNED NOT NULL UNIQUE,
     email VARCHAR(254) NOT NULL UNIQUE,
-    password TEXT NOT NULL DEFAULT 'hunter2',   -- TODO: Make this secure
+    password TEXT NOT NULL,   -- TODO: Make this secure
     createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     session VARCHAR(36) NOT NULL DEFAULT '',    -- JWT
-    CONSTRAINT FK_LocalUsers_userId FOREIGN KEY (userId) REFERENCES Users(id)
+    CONSTRAINT FK_LocalUsers_userId FOREIGN KEY (userId) REFERENCES Users(id),
+    bio TEXT,
+    avatar TEXT
 );
 
 CREATE TABLE IF NOT EXISTS FederatedUsers (
@@ -23,7 +25,7 @@ CREATE TABLE IF NOT EXISTS FederatedUsers (
 
 CREATE TABLE IF NOT EXISTS Communities (
     id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL,
+    name VARCHAR(254) NOT NULL UNIQUE,
     description TEXT NOT NULL,
     title TEXT NOT NULL
 );
@@ -39,7 +41,7 @@ CREATE TABLE IF NOT EXISTS CommunitiesUsers (
 
 CREATE TABLE IF NOT EXISTS Posts (
     id SERIAL PRIMARY KEY,
-    uuid TEXT NOT NULL,
+    uuid VARCHAR(36) NOT NULL UNIQUE,
     title TEXT NOT NULL,
     authorId BIGINT UNSIGNED NOT NULL,
     CONSTRAINT FK_Posts_authorId FOREIGN KEY (authorId) REFERENCES Users(id),
@@ -48,7 +50,8 @@ CREATE TABLE IF NOT EXISTS Posts (
     parentId BIGINT UNSIGNED,
     CONSTRAINT FK_Posts_parentId FOREIGN KEY (parentId) REFERENCES Posts(id),
     communityId BIGINT UNSIGNED NOT NULL,
-    CONSTRAINT FK_Posts_communityId FOREIGN KEY (communityId) REFERENCES Communities(id)
+    CONSTRAINT FK_Posts_communityId FOREIGN KEY (communityId) REFERENCES Communities(id),
+    deleted BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 CREATE TABLE IF NOT EXISTS Text (
