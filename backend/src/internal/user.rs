@@ -166,7 +166,7 @@ pub(crate) async fn edit_profile(
 }
 
 #[derive(Serialize, Deserialize)]
-struct UserProfile {
+pub(crate) struct UserProfile {
     pub username: String,
     pub avatar: Option<String>,
     pub bio: Option<String>,
@@ -224,4 +224,10 @@ pub(crate) async fn get_user(
     };
 
     Ok(HttpResponse::Ok().json(profile))
+}
+
+pub(crate) async fn get_extern_user(
+    user: UserDetail
+) -> Result<UserProfile, RouteError> {
+    Err(RouteError::NotFound)
 }
