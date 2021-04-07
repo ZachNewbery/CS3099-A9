@@ -215,7 +215,7 @@ pub(crate) async fn get_community_extern(
         for admin in comm.clone().admins {
             let conn = get_conn_from_pool(pool.clone()).map_err(|_| RouteError::ActixInternal)?;
             if get_user_detail_by_name(&conn, &admin.id).is_err() {
-                let _ = insert_new_federated_user(&conn, admin);
+                let _ = insert_new_federated_user(&conn, &admin);
             }
         }
 
