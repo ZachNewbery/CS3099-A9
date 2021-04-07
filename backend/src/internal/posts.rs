@@ -167,12 +167,12 @@ pub(crate) async fn list_posts(
         // checking query for specified hostname.
         Some(HOSTNAME) => list_local_posts(query.community.clone(), pool.clone()).await?,
         Some(host) => {
-            list_extern_posts(host.to_string(), query.community.clone(), user.username).await?
+            list_extern_posts(host.to_string(), query.community.clone(), user.username, pool.clone()).await?
         }
         None => match &query.community {
             // checking query for specified community, and determining if community is local or remote.
             Some(comm) => match get_community_extern(comm.to_string(), pool.clone()).await {
-                Ok((c, h)) => list_extern_posts(h, Some(c.id), user.username).await?,
+                Ok((c, h)) => list_extern_posts(h, Some(c.id), user.username, pool.clone()).await?,
                 Err(_) => list_local_posts(Some(comm.to_string()), pool.clone()).await?,
             },
             // if no query parameters specified, return all posts from all known hosts.
@@ -181,7 +181,7 @@ pub(crate) async fn list_posts(
                 for host in get_known_hosts().iter() {
                     let u_copy = user.clone();
                     let mut e_posts =
-                        list_extern_posts(host.to_string(), None, u_copy.username).await?;
+                        list_extern_posts(host.to_string(), None, u_copy.username, pool.clone()).await?;
                     all_posts.append(&mut e_posts);
                 }
 
@@ -254,6 +254,7 @@ pub(crate) async fn list_extern_posts(
     host: String,
     community: Option<String>,
     username: String,
+    pool: web::Data<DBPool>,
 ) -> Result<Vec<LocatedPost>, RouteError> {
     let mut query: Option<HashMap<String, String>> = None;
     if let Some(comm) = community {
@@ -285,6 +286,10 @@ pub(crate) async fn list_extern_posts(
         let posts = fed_posts
             .into_iter()
             .map(|p| {
+                let conn = get_conn_from_pool(pool.clone()).map_err(|_| RouteError::ActixInternal)?;
+                if !get_user_detail_by_name(&conn, &p.author.id).is_ok() {
+                    let _ = insert_new_federated_user(&conn, p.author.clone());
+                }
                 Ok(LocatedPost {
                     id: p.id,
                     community: LocatedCommunity::Federated {
