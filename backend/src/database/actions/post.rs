@@ -174,9 +174,7 @@ pub(crate) fn get_content_of_post(
             &mut DatabaseMarkdown::belonging_to(post)
                 .load::<DatabaseMarkdown>(conn)?
                 .into_iter()
-                .map(|m| ContentType::Markdown {
-                    text: m.content,
-                })
+                .map(|m| ContentType::Markdown { text: m.content })
                 .collect(),
         )
     }

@@ -20,6 +20,14 @@ pub enum ContentType {
     Markdown { text: String },
 }
 
+impl Default for ContentType {
+    fn default() -> Self {
+        ContentType::Text {
+            text: "ContentType not supported".to_string(),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct Community {
