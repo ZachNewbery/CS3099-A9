@@ -60,6 +60,9 @@ export const ListInstances = () => {
         scrollcolor="rgba(255, 255, 255, 0.5)"
         scrollhover="rgba(255, 255, 255, 0.7)"
       >
+        <StyledInstance active={instance === ""} onClick={() => setInstance("")}>
+          <h3>All hosts</h3>
+        </StyledInstance>
         <StyledInstance active={instance === INTERNAL_INSTANCE} onClick={() => setInstance(INTERNAL_INSTANCE)}>
           <h3>{INTERNAL_INSTANCE}</h3>
         </StyledInstance>

@@ -66,7 +66,7 @@ export const Profile = ({ user }) => {
           <img
             alt="profile"
             src={
-              user.avatar || `https://eu.ui-avatars.com/api/?rounded=true&bold=true&background=0061ff&color=ffffff&uppercase=true&format=svg&name=${user.id}`
+              user.avatar || `https://eu.ui-avatars.com/api/?rounded=true&bold=true&background=0061ff&color=ffffff&uppercase=true&format=svg&name=${user.username}`
             }
           />
         </StyledProfilePicture>

@@ -110,7 +110,7 @@ export const SingleCommunity = ({ id, host, refresh }) => {
             </>
           )}
         </div>
-        <h1 title={id}>{id}</h1>
+        <h1 title={id}>{data.title}</h1>
         <div className="content">
           <p title={data.description}>{data.description}</p>
         </div>

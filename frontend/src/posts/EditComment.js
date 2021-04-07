@@ -22,7 +22,7 @@ export const EditComment = ({ show, hide, id, initialTitle, initialContent, refr
 
     let content = getFormValues(formRef.current);
 
-    content = Object.entries(content).map(([key, value]) => ({ [key.split("-")[1]]: value }));
+    content = Object.entries(content).map(([key, value]) => ({ [key.split("-")[1]]: { text: value } }));
     
     await editComment({ content, id });
 
@@ -38,7 +38,7 @@ export const EditComment = ({ show, hide, id, initialTitle, initialContent, refr
           const contentType = Object.keys(content)[0];
           return (
             <label key={i}>
-              <MarkdownEditor name={`content-${contentType}-${i}`} defaultValue={content[contentType]} />
+              <MarkdownEditor name={`content-${contentType}-${i}`} defaultValue={content[contentType].text} />
             </label>
           );
         })}
