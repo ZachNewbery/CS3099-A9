@@ -21,6 +21,7 @@ use actix_web::{delete, get, patch, post, web, HttpRequest, HttpResponse, Result
 use chrono::{DateTime, Utc};
 use diesel::Connection;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -165,7 +166,9 @@ pub(crate) async fn list_posts(
     let posts = match &query.host.as_deref() {
         // checking query for specified hostname.
         Some(HOSTNAME) => list_local_posts(query.community.clone(), pool.clone()).await?,
-        Some(host) => list_extern_posts(host.to_string(), query.community.clone(), user.username).await?,
+        Some(host) => {
+            list_extern_posts(host.to_string(), query.community.clone(), user.username).await?
+        }
         None => match &query.community {
             // checking query for specified community, and determining if community is local or remote.
             Some(comm) => match get_community_extern(comm.to_string(), pool.clone()).await {
@@ -177,7 +180,8 @@ pub(crate) async fn list_posts(
                 let mut all_posts = list_local_posts(None, pool.clone()).await?;
                 for host in get_known_hosts().iter() {
                     let u_copy = user.clone();
-                    let mut e_posts = list_extern_posts(host.to_string(), None, u_copy.username).await?;
+                    let mut e_posts =
+                        list_extern_posts(host.to_string(), None, u_copy.username).await?;
                     all_posts.append(&mut e_posts);
                 }
 
@@ -251,11 +255,13 @@ pub(crate) async fn list_extern_posts(
     community: Option<String>,
     username: String,
 ) -> Result<Vec<LocatedPost>, RouteError> {
-    let mut query: Option<String> = None;
+    let mut query: Option<HashMap<String, String>> = None;
     if let Some(comm) = community {
-        let mut q_string = "?community=".to_string();
-        q_string.push_str(&comm);
-        query = Some(q_string);
+        let mut q_map = HashMap::new();
+        q_map.insert("community".to_string(), comm.to_string());
+        // let mut q_string = "?community=".to_string();
+        // q_string.push_str(&comm);
+        query = Some(q_map);
     }
 
     let mut req = make_federated_request(
@@ -278,7 +284,7 @@ pub(crate) async fn list_extern_posts(
             String::from_utf8(body.to_vec()).map_err(|_| RouteError::ActixInternal)?;
 
         let posts: Vec<LocatedPost> = serde_json::from_str(&s_posts)?;
-        
+
         Ok(posts)
     }
 }
