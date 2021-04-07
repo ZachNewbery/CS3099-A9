@@ -185,7 +185,7 @@ where
     };
 
     // send request
-    if !body_string.is_empty() {
+    if body_string.is_empty() {
         Ok(new_req.send())
     } else {
         Ok(new_req.send_json(&body))
