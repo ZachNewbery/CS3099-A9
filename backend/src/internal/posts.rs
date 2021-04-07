@@ -291,7 +291,7 @@ pub(crate) async fn list_extern_posts(
         Ok(Vec::new())
     } else {
         let body = req.body().await?;
-
+        println! {"{:?}", body};
         let s_posts: String =
             String::from_utf8(body.to_vec()).map_err(|_| RouteError::ActixInternal)?;
 
@@ -303,7 +303,6 @@ pub(crate) async fn list_extern_posts(
         let posts = fed_posts
             .into_iter()
             .map(|p| {
-                println! {"{:?}", p};
                 Ok(LocatedPost {
                     id: p.id,
                     community: LocatedCommunity::Federated {
