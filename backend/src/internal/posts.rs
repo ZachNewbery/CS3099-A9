@@ -46,6 +46,20 @@ pub(crate) struct LocatedPost {
     pub(crate) deleted: bool,
 }
 
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct FederatedPost {
+    pub(crate) id: Uuid,
+    pub(crate) community: String,
+    pub(crate) parent_post: Option<Uuid>,
+    pub(crate) children: Vec<Uuid>,
+    pub(crate) title: String,
+    pub(crate) content: Vec<ContentType>,
+    pub(crate) author: User,
+    pub(crate) modified: DateTime<Utc>,
+    pub(crate) created: DateTime<Utc>,
+}
+
 #[get("/posts/{id}")]
 pub(crate) async fn get_post(
     web::Path(id): web::Path<Uuid>,
@@ -264,7 +278,7 @@ pub(crate) async fn list_extern_posts(
 
     let mut req = make_federated_request(
         awc::Client::get,
-        host,
+        host.clone(),
         "/fed/posts".to_string(),
         "{}".to_string(),
         Some(username),
@@ -277,12 +291,33 @@ pub(crate) async fn list_extern_posts(
         Ok(Vec::new())
     } else {
         let body = req.body().await?;
-        println!("{:?}", body);
 
         let s_posts: String =
             String::from_utf8(body.to_vec()).map_err(|_| RouteError::ActixInternal)?;
 
-        let posts: Vec<LocatedPost> = serde_json::from_str(&s_posts)?;
+        let fed_posts: Vec<FederatedPost> = serde_json::from_str(&s_posts)?;
+        let host_string = host.clone();
+        let posts = fed_posts
+            .into_iter()
+            .map(|p| {
+                println! {"{:?}", p};
+                Ok(LocatedPost {
+                    id: p.id,
+                    community: LocatedCommunity::Federated {
+                        id: p.community,
+                        host: host_string.clone(),
+                    },
+                    parent_post: p.parent_post,
+                    children: p.children,
+                    title: p.title,
+                    content: p.content,
+                    author: p.author,
+                    modified: p.modified,
+                    created: p.created,
+                    deleted: false,
+                })
+            })
+            .collect::<Result<Vec<LocatedPost>, RouteError>>()?;
 
         Ok(posts)
     }
