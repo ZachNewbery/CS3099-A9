@@ -411,7 +411,7 @@ pub(crate) async fn create_post(
     post: web::Json<CreatePost>,
     request: HttpRequest,
 ) -> Result<HttpResponse> {
-    let (_, _local_user) = authenticate(pool.clone(), request)?;
+    let (_, local_user) = authenticate(pool.clone(), request)?;
 
     let conn = get_conn_from_pool(pool.clone())?;
     let parent = match post.parent {
@@ -436,7 +436,7 @@ pub(crate) async fn create_post(
             let new_post = DatabaseNewPost {
                 uuid: Uuid::new_v4().to_string(),
                 title: post.title.clone(),
-                author_id: _local_user.id,
+                author_id: local_user.user_id,
                 created: Utc::now().naive_utc(),
                 modified: Utc::now().naive_utc(),
                 parent_id: parent.map(|p| p.post.id),
