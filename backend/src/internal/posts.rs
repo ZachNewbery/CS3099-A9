@@ -8,7 +8,7 @@ use crate::database::actions::user::{
     get_name_from_local_user, get_user_detail_by_name, insert_new_federated_user,
 };
 use crate::database::get_conn_from_pool;
-use crate::database::models::{DatabaseLocalUser, DatabaseNewPost, DatabaseUser};
+use crate::database::models::{DatabaseLocalUser, DatabaseNewPost};
 use crate::federation::posts::EditPost;
 use crate::federation::schemas::{ContentType, Post, User};
 use crate::internal::authentication::{authenticate, make_federated_request};
@@ -480,9 +480,6 @@ pub(crate) async fn create_post(
                 content: post.content.clone(),
             };
 
-            // let ser_body = serde_json::to_string(&body)?;
-
-
             let req = make_federated_request(
                 awc::Client::post,
                 host.clone(),
@@ -499,7 +496,6 @@ pub(crate) async fn create_post(
             } else {
                 Ok(HttpResponse::InternalServerError().finish())
             }
-            
         },
     }
 }
