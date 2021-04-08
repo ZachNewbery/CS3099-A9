@@ -10,7 +10,7 @@ use crate::database::actions::user::{
 use crate::database::get_conn_from_pool;
 use crate::database::models::{DatabaseLocalUser, DatabaseNewPost};
 use crate::federation::posts::EditPost;
-use crate::federation::schemas::{ContentType, InnerContent, Post, User};
+use crate::federation::schemas::{InnerContent, Post, User};
 use crate::internal::authentication::{authenticate, make_federated_request};
 use crate::internal::communities::get_community_extern;
 use crate::internal::{get_known_hosts, LocatedCommunity};
@@ -430,7 +430,7 @@ pub struct CreatePost {
     pub community: LocatedCommunity,
     pub parent: Option<Uuid>,
     pub title: String,
-    pub content: Vec<ContentType>,
+    pub content: Vec<HashMap<String, InnerContent>>,
 }
 
 #[post("/posts/create")]
@@ -474,7 +474,7 @@ pub(crate) async fn create_post(
             let conn = get_conn_from_pool(pool.clone())?;
             web::block(move || {
                 let db_post = put_post(&conn, &new_post)?;
-                put_post_contents(&conn, &db_post, &post.content[..])
+                put_post_contents(&conn, &db_post, &post.content)
             })
             .await?;
             Ok(HttpResponse::Ok().finish())

@@ -2,7 +2,7 @@ use crate::database::actions::user::get_user_detail;
 use crate::database::models::{
     DatabaseCommunity, DatabaseMarkdown, DatabaseNewPost, DatabasePost, DatabaseText, DatabaseUser,
 };
-use crate::federation::schemas::{ContentType, InnerContent};
+use crate::federation::schemas::InnerContent;
 use std::collections::HashMap;
 
 use diesel::prelude::*;
@@ -253,23 +253,21 @@ pub(crate) fn put_post(
 pub(crate) fn put_post_contents(
     conn: &MysqlConnection,
     post: &DatabasePost,
-    contents: &[ContentType],
+    contents: &Vec<HashMap<String, InnerContent>>,
 ) -> Result<(), diesel::result::Error> {
-    for content in contents {
-        match content {
-            ContentType::Text { text } => {
-                use crate::database::schema::Text::dsl::*;
-                diesel::insert_into(Text)
-                    .values((content.eq(text), postId.eq(post.id)))
-                    .execute(conn)?;
-            }
-            ContentType::Markdown { text } => {
-                use crate::database::schema::Markdown::dsl::*;
-                diesel::insert_into(Markdown)
-                    .values((content.eq(text), postId.eq(post.id)))
-                    .execute(conn)?;
-            }
-            ContentType::Unsupported => (),
+    for content_map in contents {
+        if content_map.contains_key("text") {
+            let text = &content_map.get("text").unwrap().text;
+            use crate::database::schema::Text::dsl::*;
+            diesel::insert_into(Text)
+                .values((content.eq(text), postId.eq(post.id)))
+                .execute(conn)?;
+        } else if content_map.contains_key("markdown") {
+            let text = &content_map.get("text").unwrap().text;
+            use crate::database::schema::Markdown::dsl::*;
+            diesel::insert_into(Markdown)
+                .values((content.eq(text), postId.eq(post.id)))
+                .execute(conn)?;
         }
     }
     Ok(())
