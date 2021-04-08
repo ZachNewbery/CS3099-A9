@@ -31,7 +31,7 @@ pub struct PostFilters {
     parent_post: Option<Uuid>,
     #[serde(default = "true_func")]
     include_sub_children_posts: bool,
-    content_type: Option<ContentType>,
+    content_type: Option<String>,
 }
 
 #[get("")]
@@ -120,7 +120,7 @@ pub(crate) async fn post_matching_filters(
     if let Some(ct) = &parameters.content_type {
         posts = posts
             .into_iter()
-            .filter(|(p, _)| p.content.iter().any(|c| c == ct))
+            .filter(|(p, _)| p.content.iter().any(|c| c.contains_key(ct)))
             .collect();
     }
 

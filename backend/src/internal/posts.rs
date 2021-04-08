@@ -10,7 +10,7 @@ use crate::database::actions::user::{
 use crate::database::get_conn_from_pool;
 use crate::database::models::{DatabaseLocalUser, DatabaseNewPost};
 use crate::federation::posts::EditPost;
-use crate::federation::schemas::{ContentType, Post, User};
+use crate::federation::schemas::{ContentType, Post, User, InnerContent};
 use crate::internal::authentication::{authenticate, make_federated_request};
 use crate::internal::communities::get_community_extern;
 use crate::internal::{get_known_hosts, LocatedCommunity};
@@ -38,7 +38,7 @@ pub(crate) struct LocatedPost {
     pub(crate) parent_post: Option<Uuid>,
     pub(crate) children: Vec<Uuid>,
     pub(crate) title: String,
-    pub(crate) content: Vec<ContentType>,
+    pub(crate) content: Vec<HashMap<String, InnerContent>>,
     pub(crate) author: User,
     pub(crate) modified: DateTime<Utc>,
     pub(crate) created: DateTime<Utc>,
@@ -327,10 +327,7 @@ pub(crate) async fn list_extern_posts(
                     parent_post: p.parent_post,
                     children: p.children,
                     title: p.title,
-                    content: p.content.into_iter().map(|c| match c {
-                        ContentType::Unsupported => ContentType::Text {text: "Error message".to_string()},
-                        _ => c,
-                    }).collect(),
+                    content: p.content,
                     author: p.author,
                     modified: p.modified,
                     created: p.created,
@@ -392,12 +389,17 @@ pub(crate) async fn search_posts(
         .into_iter()
         .filter(|(p, _)| {
             p.content.iter().any(|c| {
-                let content = match c {
-                    ContentType::Text { text } => text,
-                    ContentType::Markdown { text } => text,
-                    ContentType::Unsupported => "",
+                let default = InnerContent {
+                    text: "".to_string()
                 };
-                content.contains(&query.search)
+                let content = if c.contains_key("text") {
+                    c.get("text")
+                } else if c.contains_key("markdown") {
+                    c.get("markdown")
+                } else {
+                    Some(&default)
+                };
+                content.unwrap().text.contains(&query.search)
             })
         })
         .map(|(p, c)| {

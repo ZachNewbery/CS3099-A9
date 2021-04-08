@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 // use serde::Deserializer;
 // use serde::de::{SeqAccess, Visitor};
 use std::convert::TryFrom;
+use std::collections::HashMap;
 // use std::marker::PhantomData;
 // use std::fmt::Formatter;
 use uuid::Uuid;
@@ -28,6 +29,17 @@ pub enum ContentType {
     },
     #[serde(other)]
     Unsupported
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct InnerContent {
+    #[serde(default = "default_string")]
+    pub text: String,
+}
+
+fn default_string() -> String {
+    "unsupported content type".to_string()
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -113,7 +125,7 @@ pub(crate) struct Post {
     pub(crate) children: Vec<Uuid>,
     pub(crate) title: String,
     // #[serde(deserialize_with="deserialize_vec_content_type")]
-    pub(crate) content: Vec<ContentType>,
+    pub(crate) content: Vec<HashMap<String, InnerContent>>,
     pub(crate) author: User,
     #[serde(with = "ts_milliseconds")]
     pub(crate) modified: DateTime<Utc>,
