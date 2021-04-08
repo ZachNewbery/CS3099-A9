@@ -169,10 +169,11 @@ pub(crate) async fn edit_profile(
 }
 
 #[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub(crate) struct UserProfile {
-    pub username: String,
-    pub avatar: Option<String>,
-    pub bio: Option<String>
+    pub id: String,
+    pub about: Option<String>,
+    pub avatar_url: Option<String>,
 }
 
 #[get("/user/{name}")]
@@ -212,9 +213,9 @@ pub(crate) async fn get_user(
 
     let profile = match user_details {
         UserDetail::Local(l) => UserProfile {
-            username: uname,
-            avatar: l.avatar,
-            bio: l.bio
+            id: uname,
+            about: l.bio,
+            avatar_url: l.avatar,
         },
         UserDetail::Federated(f) => get_extern_user(f, uname).await?,
     };
