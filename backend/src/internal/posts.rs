@@ -324,7 +324,10 @@ pub(crate) async fn list_extern_posts(
                     parent_post: p.parent_post,
                     children: p.children,
                     title: p.title,
-                    content: p.content,
+                    content: p.content.into_iter().map(|c| match c {
+                        ContentType::Unsupported => ContentType::Text {text: "Error message".to_string()},
+                        _ => c,
+                    }).collect(),
                     author: p.author,
                     modified: p.modified,
                     created: p.created,
@@ -389,6 +392,7 @@ pub(crate) async fn search_posts(
                 let content = match c {
                     ContentType::Text { text } => text,
                     ContentType::Markdown { text } => text,
+                    ContentType::Unsupported => "",
                 };
                 content.contains(&query.search)
             })
