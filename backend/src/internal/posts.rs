@@ -8,7 +8,7 @@ use crate::database::actions::user::{
     get_name_from_local_user, get_user_detail_by_name, insert_new_federated_user,
 };
 use crate::database::get_conn_from_pool;
-use crate::database::models::{DatabaseLocalUser, DatabaseNewPost};
+use crate::database::models::{DatabaseLocalUser, DatabaseNewPost, DatabaseUser};
 use crate::federation::posts::EditPost;
 use crate::federation::schemas::{ContentType, Post, User};
 use crate::internal::authentication::{authenticate, make_federated_request};
@@ -432,21 +432,19 @@ pub(crate) async fn create_post(
     request: HttpRequest,
 ) -> Result<HttpResponse> {
     let (_, local_user) = authenticate(pool.clone(), request)?;
-
-    let conn = get_conn_from_pool(pool.clone())?;
-    let parent = match post.parent {
-        None => None,
-        Some(u) => {
-            web::block(move || {
-                use crate::database::actions::post;
-                post::get_post(&conn, &u)
-            })
-            .await?
-        }
-    };
-
     match &post.community {
         LocatedCommunity::Local { id } => {
+            let conn = get_conn_from_pool(pool.clone())?;
+            let parent = match post.parent {
+                None => None,
+                Some(u) => {
+                    web::block(move || {
+                        use crate::database::actions::post;
+                        post::get_post(&conn, &u)
+                    })
+                    .await?
+                }
+            };
             let conn = get_conn_from_pool(pool.clone())?;
             let id = id.clone();
             let community = web::block(move || get_community(&conn, &id))
@@ -471,7 +469,38 @@ pub(crate) async fn create_post(
             .await?;
             Ok(HttpResponse::Ok().finish())
         }
-        LocatedCommunity::Federated { .. } => Ok(HttpResponse::NotImplemented().finish()),
+        LocatedCommunity::Federated { id, host } => {
+            let conn = get_conn_from_pool(pool.clone())?;
+            let user = web::block(move || get_name_from_local_user(&conn, local_user)).await?;
+
+            let body = CreatePost {
+                community: post.community.clone(),
+                parent: post.parent.clone(),
+                title: post.title.clone(),
+                content: post.content.clone(),
+            };
+
+            // let ser_body = serde_json::to_string(&body)?;
+
+
+            let req = make_federated_request(
+                awc::Client::post,
+                host.clone(),
+                "/fed/posts".to_string(),
+                body,
+                Some(user.username),
+                Option::<()>::None,
+            )?
+            .await
+            .map_err(|_| RouteError::ActixInternal)?;
+            
+            if req.status().is_success() {
+                Ok(HttpResponse::Ok().finish())
+            } else {
+                Ok(HttpResponse::InternalServerError().finish())
+            }
+            
+        },
     }
 }
 
