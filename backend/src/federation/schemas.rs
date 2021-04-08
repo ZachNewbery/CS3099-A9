@@ -5,8 +5,8 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 // use serde::Deserializer;
 // use serde::de::{SeqAccess, Visitor};
-use std::convert::TryFrom;
 use std::collections::HashMap;
+use std::convert::TryFrom;
 // use std::marker::PhantomData;
 // use std::fmt::Formatter;
 use uuid::Uuid;
@@ -28,7 +28,7 @@ pub enum ContentType {
         text: String,
     },
     #[serde(other)]
-    Unsupported
+    Unsupported,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]

@@ -10,7 +10,7 @@ use crate::database::actions::user::{
 use crate::database::get_conn_from_pool;
 use crate::database::models::{DatabaseLocalUser, DatabaseNewPost};
 use crate::federation::posts::EditPost;
-use crate::federation::schemas::{ContentType, Post, User, InnerContent};
+use crate::federation::schemas::{ContentType, InnerContent, Post, User};
 use crate::internal::authentication::{authenticate, make_federated_request};
 use crate::internal::communities::get_community_extern;
 use crate::internal::{get_known_hosts, LocatedCommunity};
@@ -304,11 +304,10 @@ pub(crate) async fn list_extern_posts(
         let s_posts: String =
             String::from_utf8(body.to_vec()).map_err(|_| RouteError::ActixInternal)?;
         dbg!(s_posts.clone());
-        let fed_posts: Vec<Post> =
-            serde_json::from_str(&s_posts).map_err(|e| {
-                dbg!(e);
-                RouteError::ActixInternal
-            })?;
+        let fed_posts: Vec<Post> = serde_json::from_str(&s_posts).map_err(|e| {
+            dbg!(e);
+            RouteError::ActixInternal
+        })?;
         let host_string = host.clone();
         let f_posts = fed_posts
             .into_iter()
@@ -390,7 +389,7 @@ pub(crate) async fn search_posts(
         .filter(|(p, _)| {
             p.content.iter().any(|c| {
                 let default = InnerContent {
-                    text: "".to_string()
+                    text: "".to_string(),
                 };
                 let content = if c.contains_key("text") {
                     c.get("text")

@@ -160,22 +160,28 @@ pub(crate) fn get_content_of_post(
 
     // Text
     {
-        let t = DatabaseText::belonging_to(post).first::<DatabaseText>(conn)?;
-        let mut map = HashMap::new();
-        map.insert("text".to_string(), InnerContent {
-            text: t.content
-        });
-        post_content.push(map)
+        let t = DatabaseText::belonging_to(post).first::<DatabaseText>(conn);
+        match t {
+            Ok(con) => {
+                let mut map = HashMap::new();
+                map.insert("text".to_string(), InnerContent { text: con.content });
+                post_content.push(map)
+            }
+            Err(_) => (),
+        }
     }
 
     // Markdown
     {
-        let m = DatabaseMarkdown::belonging_to(post).first::<DatabaseMarkdown>(conn)?;
-        let mut map = HashMap::new();
-        map.insert("markdown".to_string(), InnerContent {
-            text: m.content
-        });
-        post_content.push(map)
+        let m = DatabaseMarkdown::belonging_to(post).first::<DatabaseMarkdown>(conn);
+        match m {
+            Ok(con) => {
+                let mut map = HashMap::new();
+                map.insert("markdown".to_string(), InnerContent { text: con.content });
+                post_content.push(map)
+            }
+            Err(_) => (),
+        }
     }
 
     Ok(post_content)
@@ -263,7 +269,7 @@ pub(crate) fn put_post_contents(
                     .values((content.eq(text), postId.eq(post.id)))
                     .execute(conn)?;
             }
-            ContentType::Unsupported => ()
+            ContentType::Unsupported => (),
         }
     }
     Ok(())
