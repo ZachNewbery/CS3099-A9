@@ -154,7 +154,7 @@ pub(crate) async fn external_get_post(
         let conn = get_conn_from_pool(pool.clone()).map_err(|_| RouteError::ActixInternal)?;
         let author = post.author.clone();
         web::block(move || {
-            cache_federated_author(&conn, &author)?;
+            cache_federated_user(&conn, &author)?;
             Ok::<(), RouteError>(())
         })
         .await?;
@@ -178,13 +178,13 @@ pub(crate) async fn external_get_post(
 }
 
 // Writes a federated author to cache.
-pub(crate) fn cache_federated_author(
+pub(crate) fn cache_federated_user(
     conn: &MysqlConnection,
-    author: &User,
+    federated_user: &User,
 ) -> Result<(), diesel::result::Error> {
-    match get_user_detail_by_name(conn, &author.id) {
+    match get_user_detail_by_name(conn, &federated_user.id) {
         Ok(_) => Ok(()),
-        Err(diesel::NotFound) => insert_new_federated_user(conn, author),
+        Err(diesel::NotFound) => insert_new_federated_user(conn, federated_user),
         Err(e) => Err(e),
     }
 }
@@ -224,7 +224,7 @@ pub(crate) async fn external_forall_get_post(
         let author = p.author.clone();
 
         web::block(move || {
-            cache_federated_author(&conn, &author)?;
+            cache_federated_user(&conn, &author)?;
             Ok::<(), RouteError>(())
         })
         .await?;
@@ -422,7 +422,7 @@ async fn external_list_posts_inner(
             posts
                 .into_iter()
                 .map(|p| {
-                    cache_federated_author(&conn, &p.author)?;
+                    cache_federated_user(&conn, &p.author)?;
                     Ok(LocatedPost {
                         id: p.id,
                         community: LocatedCommunity::Federated {
