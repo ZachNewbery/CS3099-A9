@@ -263,7 +263,7 @@ pub(crate) fn put_post_contents(
                 .values((content.eq(text), postId.eq(post.id)))
                 .execute(conn)?;
         } else if content_map.contains_key("markdown") {
-            let text = &content_map.get("text").unwrap().text;
+            let text = &content_map.get("markdown").unwrap().text;
             use crate::database::schema::Markdown::dsl::*;
             diesel::insert_into(Markdown)
                 .values((content.eq(text), postId.eq(post.id)))
