@@ -135,7 +135,10 @@ pub(crate) async fn get_post_extern(
             let body = query.body().await?;
             l_host = Some(host.to_string());
             let s_post: String =
-                String::from_utf8(body.to_vec()).map_err(|_| RouteError::ActixInternal)?;
+                String::from_utf8(body.to_vec()).map_err(|e| {
+                    dbg!(e);
+                    RouteError::ActixInternal
+                })?;
             println!("String Post: {:?}", s_post);
             post = serde_json::from_str(&s_post)?;
             break;
