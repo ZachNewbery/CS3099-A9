@@ -140,7 +140,10 @@ pub(crate) async fn get_post_extern(
                     RouteError::ActixInternal
                 })?;
             println!("String Post: {:?}", s_post);
-            post = serde_json::from_str(&s_post)?;
+            post = serde_json::from_str(&s_post).map_err(|e| {
+                dbg!(e);
+                RouteError::ActixInternal
+            })?;
             break;
         }
     }
