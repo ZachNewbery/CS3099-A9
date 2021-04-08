@@ -30,6 +30,9 @@ pub enum ContentType {
     Unsupported
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+struct Unsupported;
+
 // fn deserialize_vec_content_type<'de, D>(deserializer: D) -> Result<Vec<ContentType>, D::Error>
 //     where
 //         D: Deserializer<'de>,
