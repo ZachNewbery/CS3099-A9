@@ -123,7 +123,7 @@ pub(crate) struct Post {
     pub(crate) community: String,
     pub(crate) parent_post: Option<Uuid>,
     pub(crate) children: Vec<Uuid>,
-    pub(crate) title: String,
+    pub(crate) title: Option<String>,
     // #[serde(deserialize_with="deserialize_vec_content_type")]
     pub(crate) content: Vec<HashMap<String, InnerContent>>,
     pub(crate) author: User,
@@ -149,7 +149,7 @@ impl TryFrom<(PostInformation, Option<Vec<PostInformation>>)> for Post {
                 .into_iter()
                 .map(|p| Ok(p.post.uuid.parse()?))
                 .collect::<Result<Vec<_>, RouteError>>()?,
-            title: post.post.title,
+            title: Some(post.post.title),
             content: post.content,
             author: (post.user, post.user_details).into(),
             modified: DateTime::<Utc>::from_utc(post.post.modified, Utc),
