@@ -264,7 +264,6 @@ pub(crate) fn put_post_contents(
                     .values((content.eq(text), postId.eq(post.id)))
                     .execute(conn)?;
             }
-            ContentType::Other => ()
         }
     }
     Ok(())

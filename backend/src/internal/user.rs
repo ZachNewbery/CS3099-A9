@@ -5,8 +5,11 @@ use crate::database::actions::local::{
 use crate::database::actions::post::{get_children_posts_of, get_post, get_posts_by_user};
 use crate::database::actions::user::{get_user_detail, get_user_detail_by_name};
 use crate::database::get_conn_from_pool;
+use crate::database::models::DatabaseFederatedUser;
 use crate::federation::schemas::Post;
-use crate::internal::authentication::{authenticate, generate_session, Token};
+use crate::internal::authentication::{
+    authenticate, generate_session, make_federated_request, Token,
+};
 use crate::util::route_error::RouteError;
 use crate::util::{UserDetail, HOSTNAME};
 use crate::{database, DBPool};
@@ -215,19 +218,40 @@ pub(crate) async fn get_user(
             bio: l.bio,
             posts,
         },
-        UserDetail::Federated(_) => UserProfile {
-            username: uname,
-            avatar: None,
-            bio: None,
-            posts,
-        },
+        UserDetail::Federated(f) => get_extern_user(f, uname).await?,
     };
 
     Ok(HttpResponse::Ok().json(profile))
 }
 
 pub(crate) async fn get_extern_user(
-    user: UserDetail
+    user: DatabaseFederatedUser,
+    name: String,
 ) -> Result<UserProfile, RouteError> {
-    Err(RouteError::NotFound)
+    let mut q_string = "/fed/users/".to_owned();
+    q_string.push_str(&name);
+
+    let mut query = make_federated_request(
+        awc::Client::get,
+        user.host.to_string(),
+        q_string.clone(),
+        "{}".to_string(),
+        None,
+        Option::<()>::None,
+    )?
+    .await
+    .map_err(|_| RouteError::ActixInternal)?;
+
+    if !query.status().is_success() {
+        Err(RouteError::NotFound)
+    } else {
+        let body = query.body().await?;
+
+        let s_user: String =
+            String::from_utf8(body.to_vec()).map_err(|_| RouteError::ActixInternal)?;
+
+        let user_profile: UserProfile = serde_json::from_str(&s_user)?;
+
+        Ok(user_profile)
+    }
 }

@@ -16,10 +16,12 @@ pub(crate) struct User {
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub enum ContentType {
-    Text { text: String },
-    Markdown { text: String },
-    #[serde(other)]
-    Other
+    Text {
+        text: String,
+    },
+    Markdown {
+        text: String,
+    },
 }
 
 impl Default for ContentType {
