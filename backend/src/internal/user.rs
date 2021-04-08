@@ -172,8 +172,7 @@ pub(crate) async fn edit_profile(
 pub(crate) struct UserProfile {
     pub username: String,
     pub avatar: Option<String>,
-    pub bio: Option<String>,
-    pub posts: Vec<Post>,
+    pub bio: Option<String>
 }
 
 #[get("/user/{name}")]
@@ -194,7 +193,7 @@ pub(crate) async fn get_user(
     let user_details = web::block(move || get_user_detail(&conn, &user_copy)).await?;
 
     let conn = get_conn_from_pool(pool)?;
-    let posts = web::block(move || {
+    let _posts = web::block(move || {
         let posts = get_posts_by_user(&conn, &user)?
             .unwrap_or_default()
             .into_iter()
@@ -215,8 +214,7 @@ pub(crate) async fn get_user(
         UserDetail::Local(l) => UserProfile {
             username: uname,
             avatar: l.avatar,
-            bio: l.bio,
-            posts,
+            bio: l.bio
         },
         UserDetail::Federated(f) => get_extern_user(f, uname).await?,
     };
