@@ -15,9 +15,15 @@ use actix_web::{delete, get, patch, post, web, HttpRequest, HttpResponse, Result
 use diesel::{Connection, MysqlConnection};
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct ListCommunities {
     host: Option<String>,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct CommunityHost {
+    host: String,
+    id: String,
 }
 
 #[get("/communities")]
@@ -28,42 +34,51 @@ pub(crate) async fn list_communities(
 ) -> Result<HttpResponse> {
     let (_, _) = authenticate(pool.clone(), request)?;
 
-    if let Some(host) = &query.host {
-        // query external host if needbe
-        if host != HOSTNAME {
-            let host_comms = get_host_communities(host.to_string()).await?;
-            return Ok(HttpResponse::Ok().json(host_comms));
+    let communities = match query.host.as_deref() {
+        Some(HOSTNAME) => {
+            let conn = get_conn_from_pool(pool.clone())?;
+            web::block(move || get_communities(&conn))
+                .await?
+                .into_iter()
+                .map(|c| CommunityHost {
+                    id: c.name,
+                    host: HOSTNAME.to_string(),
+                })
+                .collect::<Vec<_>>()
         }
-    }
-
-    let conn = get_conn_from_pool(pool.clone())?;
-    let communities = web::block(move || get_communities(&conn)).await?;
-    let mut v_comms = communities
-        .into_iter()
-        .map(|c| c.name)
-        .collect::<Vec<String>>();
-
-    match &query.host {
-        Some(_) => {
-            // query host has to be our own host.
-            Ok(HttpResponse::Ok().json(v_comms))
-        }
+        Some(host) => external_list_communities(host)
+            .await?
+            .into_iter()
+            .map(|s| CommunityHost {
+                host: host.to_string(),
+                id: s,
+            })
+            .collect::<Vec<_>>(),
         None => {
-            // else collate all communities from all known hosts
+            let mut communities = Vec::new();
             for host in get_known_hosts().iter() {
-                let mut host_comms = get_host_communities(host.to_string()).await?;
-                v_comms.append(&mut host_comms);
+                communities.append(
+                    &mut external_list_communities(host)
+                        .await?
+                        .into_iter()
+                        .map(|s| CommunityHost {
+                            host: host.to_string(),
+                            id: s,
+                        })
+                        .collect(),
+                )
             }
-
-            Ok(HttpResponse::Ok().json(v_comms))
+            communities
         }
-    }
+    };
+
+    Ok(HttpResponse::Ok().json(communities))
 }
 
-pub(crate) async fn get_host_communities(host: String) -> Result<Vec<String>, RouteError> {
+pub(crate) async fn external_list_communities(host: &str) -> Result<Vec<String>, RouteError> {
     let mut query = make_federated_request(
         awc::Client::get,
-        host,
+        host.to_string(),
         "/fed/communities".to_string(),
         "{}".to_string(),
         None,
@@ -72,17 +87,13 @@ pub(crate) async fn get_host_communities(host: String) -> Result<Vec<String>, Ro
     .await
     .map_err(|_| RouteError::ActixInternal)?;
 
-    if !query.status().is_success() {
-        Ok(Vec::new())
+    if query.status().is_success() {
+        Ok(serde_json::from_str(
+            &String::from_utf8(query.body().await?.to_vec())
+                .map_err(|_| RouteError::ActixInternal)?,
+        )?)
     } else {
-        let body = query.body().await?;
-
-        let s_hosts: String =
-            String::from_utf8(body.to_vec()).map_err(|_| RouteError::ActixInternal)?;
-
-        let hosts: Vec<String> = serde_json::from_str(&s_hosts)?;
-
-        Ok(hosts)
+        Ok(vec![])
     }
 }
 

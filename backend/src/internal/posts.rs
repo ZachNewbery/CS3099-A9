@@ -340,39 +340,6 @@ pub(crate) async fn list_local_posts(
     Ok(posts)
 }
 
-// Returns a list of all posts from all known hosts
-pub(crate) async fn external_forall_list_posts(
-    community: Option<&str>,
-    requester_name: &str,
-    pool: web::Data<DBPool>,
-) -> Result<Vec<LocatedPost>, RouteError> {
-    // Construct query map
-    let mut query: HashMap<String, String> = HashMap::new();
-    if let Some(comm) = community {
-        query.insert("community".to_string(), comm.to_string());
-    }
-
-    // Turn empty into none
-    let opt_query = if query.is_empty() { None } else { Some(query) };
-
-    let mut located_posts: Vec<LocatedPost> = Vec::new();
-    let mut failed_hosts: Vec<String> = Vec::new();
-
-    // For each host
-    for host in get_known_hosts().iter() {
-        located_posts.append(
-            &mut external_list_posts_inner(host, requester_name, pool.clone(), opt_query.clone())
-                .await
-                .map_err(|e| {
-                    failed_hosts.push(host.to_string());
-                    e
-                })?,
-        );
-    }
-
-    Ok(located_posts)
-}
-
 // Returns a list of all posts from one host.
 pub(crate) async fn external_list_posts(
     host: &str,
@@ -483,8 +450,19 @@ pub(crate) async fn search_posts(
 
         // No host? Ask them all
         None => {
-            external_forall_list_posts(query.community.as_deref(), &user.username, pool.clone())
-                .await?
+            let mut posts = Vec::new();
+            for host in get_known_hosts() {
+                posts.append(
+                    &mut external_list_posts(
+                        &host,
+                        query.community.as_deref(),
+                        &user.username,
+                        pool.clone(),
+                    )
+                    .await?,
+                )
+            }
+            posts
         }
     }
     .into_iter()
