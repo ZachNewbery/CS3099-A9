@@ -18,6 +18,8 @@ pub(crate) struct User {
 pub enum ContentType {
     Text { text: String },
     Markdown { text: String },
+    #[serde(other)]
+    Other
 }
 
 impl Default for ContentType {

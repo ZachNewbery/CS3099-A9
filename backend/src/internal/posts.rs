@@ -389,6 +389,7 @@ pub(crate) async fn search_posts(
                 let content = match c {
                     ContentType::Text { text } => text,
                     ContentType::Markdown { text } => text,
+                    ContentType::Other => "Content Type not supported"
                 };
                 content.contains(&query.search)
             })
