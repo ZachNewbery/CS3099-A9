@@ -39,16 +39,15 @@ where
         where
             S: SeqAccess<'de>,
         {
-            let field_kinds: Vec<ContentType> = Vec::new();
+            let mut field_kinds: Vec<ContentType> = Vec::new();
 
             loop {
                 match seq.next_element() {
-                    Ok(Some(element)) => dbg!(element),
+                    Ok(Some(element)) => field_kinds.push(element),
                     Ok(None) => break, // end of sequence
-                    Err(e) => {
-                        dbg!(e);
-                        break;
-                    }
+                    Err(_) => field_kinds.push(ContentType::Text {
+                        text: "content not supported.".to_string(),
+                    }),
                 }
             }
 
