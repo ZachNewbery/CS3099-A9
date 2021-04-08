@@ -303,9 +303,12 @@ pub(crate) async fn list_extern_posts(
         let body = req.body().await?;
         let s_posts: String =
             String::from_utf8(body.to_vec()).map_err(|_| RouteError::ActixInternal)?;
-
+        dbg!(s_posts.clone());
         let fed_posts: Vec<Post> =
-            serde_json::from_str(&s_posts).map_err(|_| RouteError::ActixInternal)?;
+            serde_json::from_str(&s_posts).map_err(|e| {
+                dbg!(e);
+                RouteError::ActixInternal
+            })?;
         let host_string = host.clone();
         let f_posts = fed_posts
             .into_iter()
