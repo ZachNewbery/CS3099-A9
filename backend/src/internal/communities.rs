@@ -217,6 +217,64 @@ pub(crate) async fn external_get_community(
     }
 }
 
+#[derive(Serialize, Deserialize, Clone)]
+pub struct SearchCommunities {
+    host: Option<String>,
+    search: String,
+}
+
+#[get("/communities/search")]
+pub(crate) async fn search_communities(
+    pool: web::Data<DBPool>,
+    query: web::Query<SearchCommunities>,
+    request: HttpRequest,
+) -> Result<HttpResponse> {
+    let (_, _) = authenticate(pool.clone(), request)?;
+
+    let communities = match query.host.as_deref() {
+        Some(HOSTNAME) => {
+            let conn = get_conn_from_pool(pool.clone())?;
+            web::block(move || get_communities(&conn))
+                .await?
+                .into_iter()
+                .map(|c| CommunityHost {
+                    id: c.name,
+                    host: HOSTNAME.to_string(),
+                })
+                .collect::<Vec<_>>()
+        }
+        Some(host) => external_list_communities(host)
+            .await?
+            .into_iter()
+            .map(|s| CommunityHost {
+                host: host.to_string(),
+                id: s,
+            })
+            .collect::<Vec<_>>(),
+        None => {
+            let mut communities = Vec::new();
+            for host in get_known_hosts().iter() {
+                communities.append(
+                    &mut external_list_communities(host)
+                        .await?
+                        .into_iter()
+                        .map(|s| CommunityHost {
+                            host: host.to_string(),
+                            id: s,
+                        })
+                        .collect(),
+                )
+            }
+            communities
+        }
+    }
+    .into_iter()
+    .filter(|c| c.id.contains(&query.search))
+    .collect::<Vec<_>>();
+
+    Ok(HttpResponse::Ok().json(communities))
+}
+
 #[delete("/communities/{id}")]
 pub(crate) async fn delete_community(
     pool: web::Data<DBPool>,
