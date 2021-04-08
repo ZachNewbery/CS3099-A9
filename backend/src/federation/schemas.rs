@@ -2,9 +2,10 @@ use crate::database::actions::post::PostInformation;
 use crate::util::route_error::RouteError;
 use chrono::serde::{ts_milliseconds, ts_milliseconds_option};
 use chrono::{DateTime, Utc};
+use serde::{Deserialize, Serialize, Deserializer};
 use serde::de::{SeqAccess, Visitor};
-use serde::{Deserialize, Deserializer, Serialize};
 use std::convert::TryFrom;
+use std::marker::PhantomData;
 use std::fmt::Formatter;
 use uuid::Uuid;
 
@@ -18,15 +19,19 @@ pub(crate) struct User {
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub enum ContentType {
-    Text { text: String },
-    Markdown { text: String },
+    Text {
+        text: String,
+    },
+    Markdown {
+        text: String,
+    },
 }
 
 fn deserialize_vec_content_type<'de, D>(deserializer: D) -> Result<Vec<ContentType>, D::Error>
-where
-    D: Deserializer<'de>,
+    where
+        D: Deserializer<'de>,
 {
-    struct VecContentType(Vec<ContentType>);
+    struct VecContentType(PhantomData<fn() -> Vec<ContentType>>);
 
     impl<'de> Visitor<'de> for VecContentType {
         type Value = Vec<ContentType>;
@@ -36,8 +41,8 @@ where
         }
 
         fn visit_seq<S>(self, mut seq: S) -> Result<Vec<ContentType>, S::Error>
-        where
-            S: SeqAccess<'de>,
+            where
+                S: SeqAccess<'de>,
         {
             let mut field_kinds: Vec<ContentType> = Vec::new();
 
@@ -45,8 +50,8 @@ where
                 match seq.next_element() {
                     Ok(Some(element)) => field_kinds.push(element),
                     Ok(None) => break, // end of sequence
-                    Err(_) => field_kinds.push(ContentType::Text {
-                        text: "content not supported.".to_string(),
+                    Err(_) => field_kinds.push(ContentType::Text{
+                        text: "content not supported.".to_string()
                     }),
                 }
             }
@@ -55,7 +60,7 @@ where
         }
     }
 
-    deserializer.deserialize_seq(VecContentType(vec![]))
+    deserializer.deserialize_seq(VecContentType(PhantomData))
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -101,7 +106,7 @@ pub(crate) struct Post {
     pub(crate) parent_post: Option<Uuid>,
     pub(crate) children: Vec<Uuid>,
     pub(crate) title: String,
-    #[serde(deserialize_with = "deserialize_vec_content_type")]
+    #[serde(deserialize_with="deserialize_vec_content_type")]
     pub(crate) content: Vec<ContentType>,
     pub(crate) author: User,
     #[serde(with = "ts_milliseconds")]
