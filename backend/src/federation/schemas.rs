@@ -3,9 +3,12 @@ use crate::util::route_error::RouteError;
 use chrono::serde::{ts_milliseconds, ts_milliseconds_option};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use serde_with::rust::string_empty_as_none;
-use std::collections::HashMap;
+// use serde::Deserializer;
+// use serde::de::{SeqAccess, Visitor};
 use std::convert::TryFrom;
+use std::collections::HashMap;
+// use std::marker::PhantomData;
+// use std::fmt::Formatter;
 use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -15,16 +18,18 @@ pub(crate) struct User {
     pub host: String,
 }
 
-// #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
-// #[serde(rename_all = "camelCase")]
-// pub enum ContentType {
-//     Text {
-//         text: String,
-//     },
-//     Markdown {
-//         text: String,
-//     }
-// }
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub enum ContentType {
+    Text {
+        text: String,
+    },
+    Markdown {
+        text: String,
+    },
+    #[serde(other)]
+    Unsupported
+}
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
