@@ -86,8 +86,7 @@ pub(crate) async fn external_list_communities(host: &str) -> Result<Vec<String>,
     )?
     .await
     .map_err(|_| RouteError::ActixInternal)?;
-    dbg!(&query);
-    dbg!(&query.body().await?);
+
     if query.status().is_success() {
         Ok(serde_json::from_str(
             &String::from_utf8(query.body().await?.to_vec())
