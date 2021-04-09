@@ -1,3 +1,4 @@
+use actix_web::error::BlockingError;
 use actix_web::http::header::ToStrError;
 use actix_web::http::StatusCode;
 use actix_web::{HttpResponse, ResponseError};
@@ -18,6 +19,8 @@ pub enum RouteError {
     MissingClientHost,
     #[error("bad Client-Host")]
     BadClientHost,
+    #[error("bad Public Key")]
+    BadKey,
     #[error("missing User-ID")]
     MissingUserId,
     #[error("missing Date")]
@@ -50,6 +53,8 @@ pub enum RouteError {
     JsonSerdeUrl(#[from] serde_urlencoded::ser::Error),
     #[error(transparent)]
     OpenSsl(#[from] openssl::error::ErrorStack),
+    #[error("timed out")]
+    Cancelled,
 }
 
 impl From<diesel::result::Error> for RouteError {
@@ -68,6 +73,7 @@ impl ResponseError for RouteError {
             RouteError::MissingUserId => StatusCode::BAD_REQUEST,
             RouteError::MissingDate => StatusCode::BAD_REQUEST,
             RouteError::MissingSignature => StatusCode::BAD_REQUEST,
+            RouteError::BadKey => StatusCode::BAD_REQUEST,
             RouteError::BadClientHost => StatusCode::BAD_REQUEST,
             RouteError::BadDigest => StatusCode::BAD_REQUEST,
             RouteError::BadSignHeader => StatusCode::BAD_REQUEST,
@@ -82,6 +88,7 @@ impl ResponseError for RouteError {
             RouteError::ActixInternal => StatusCode::INTERNAL_SERVER_ERROR,
             RouteError::Payload(_) => StatusCode::INTERNAL_SERVER_ERROR,
             RouteError::ExternalService => StatusCode::BAD_GATEWAY,
+            RouteError::Cancelled => StatusCode::REQUEST_TIMEOUT,
         }
     }
 
@@ -91,6 +98,7 @@ impl ResponseError for RouteError {
             RouteError::MissingUserId => "Missing User-ID".to_string(),
             RouteError::MissingDate => "Missing Date".to_string(),
             RouteError::MissingSignature => "Missing Signature".to_string(),
+            RouteError::BadKey => "Invalid public key".to_string(),
             RouteError::BadClientHost => "Bad Client-Host header".to_string(),
             RouteError::BadDigest => "Invalid Digest".to_string(),
             RouteError::BadSignHeader => "Invalid Signature header".to_string(),
@@ -111,12 +119,11 @@ impl ResponseError for RouteError {
                 "OpenSSL error: Invalid PEM Public Key received from /fed/key".to_string()
             }
             RouteError::ActixInternal => "Invalid body of request".to_string(),
-            RouteError::Payload(_) => {
-                "Could not obtain request body for validation (possibly from /fed/key)".to_string()
-            }
+            RouteError::Payload(_) => "Could not obtain request body for validation".to_string(),
             RouteError::ExternalService => {
                 "Could not connect to external host when requesting key".to_string()
             }
+            RouteError::Cancelled => "Task timed out".to_string(),
         };
 
         match self {
@@ -124,6 +131,7 @@ impl ResponseError for RouteError {
             RouteError::MissingUserId => HttpResponse::BadRequest(),
             RouteError::MissingDate => HttpResponse::BadRequest(),
             RouteError::MissingSignature => HttpResponse::BadRequest(),
+            RouteError::BadKey => HttpResponse::BadRequest(),
             RouteError::BadClientHost => HttpResponse::BadRequest(),
             RouteError::BadDigest => HttpResponse::BadRequest(),
             RouteError::BadSignHeader => HttpResponse::BadRequest(),
@@ -138,10 +146,20 @@ impl ResponseError for RouteError {
             RouteError::ActixInternal => HttpResponse::InternalServerError(),
             RouteError::Payload(_) => HttpResponse::InternalServerError(),
             RouteError::ExternalService => HttpResponse::BadGateway(),
+            RouteError::Cancelled => HttpResponse::RequestTimeout(),
         }
         .json(BadResponse {
             title: title_message.clone(),
             message: title_message,
         })
+    }
+}
+
+impl From<BlockingError<RouteError>> for RouteError {
+    fn from(val: BlockingError<RouteError>) -> Self {
+        match val {
+            BlockingError::Error(e) => e,
+            BlockingError::Canceled => RouteError::Cancelled,
+        }
     }
 }

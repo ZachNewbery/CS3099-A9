@@ -234,16 +234,17 @@ pub async fn verify_federated_request(
             .timeout(Duration::from_secs(5))
             .finish();
 
-        let key_req = client
+        let mut key_req = client
             .get(key_path)
             .header("User-Agent", "Actix Web")
             .header("Host", client_host.to_string())
             .header("Client-Host", "cs3099user-a9.host.cs.st-andrews.ac.uk")
             .send()
-            .await;
+            .await
+            .map_err(|_| RouteError::BadKey)?;
 
         // using body of response, get public key
-        let key_req = key_req.unwrap().body().await?;
+        let key_req = key_req.body().await?;
         let pkey = PKey::public_key_from_pem(&key_req)?;
         println!("Decoded public key successfully: {:?}", pkey);
 

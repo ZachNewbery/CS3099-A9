@@ -26,7 +26,7 @@ pub(crate) fn get_user_detail(
 
 pub(crate) fn insert_new_federated_user(
     conn: &MysqlConnection,
-    new_user: User,
+    new_user: &User,
 ) -> Result<(), diesel::result::Error> {
     use crate::database::models::{DatabaseNewFederatedUser, DatabaseNewUser};
     use crate::database::schema::FederatedUsers::dsl::*;
@@ -42,7 +42,7 @@ pub(crate) fn insert_new_federated_user(
         .filter(username.eq(&db_new_user.username))
         .first::<DatabaseUser>(conn)?;
 
-    let db_new_fed_user: DatabaseNewFederatedUser = (inserted_user, new_user).into();
+    let db_new_fed_user: DatabaseNewFederatedUser = (inserted_user, new_user.clone()).into();
 
     println!("{:?}", db_new_fed_user);
     diesel::insert_into(FederatedUsers)
