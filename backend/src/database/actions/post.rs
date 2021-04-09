@@ -160,22 +160,28 @@ pub(crate) fn get_content_of_post(
 
     // Text
     {
-        let t = DatabaseText::belonging_to(post).first::<DatabaseText>(conn)?;
-        let mut map = HashMap::new();
-        map.insert("text".to_string(), InnerContent {
-            text: t.content
-        });
-        post_content.push(map)
+        let t = DatabaseText::belonging_to(post).first::<DatabaseText>(conn);
+        match t {
+            Ok(con) => {
+                let mut map = HashMap::new();
+                map.insert("text".to_string(), InnerContent { text: con.content });
+                post_content.push(map)
+            }
+            Err(_) => (),
+        }
     }
 
     // Markdown
     {
-        let m = DatabaseMarkdown::belonging_to(post).first::<DatabaseMarkdown>(conn)?;
-        let mut map = HashMap::new();
-        map.insert("markdown".to_string(), InnerContent {
-            text: m.content
-        });
-        post_content.push(map)
+        let m = DatabaseMarkdown::belonging_to(post).first::<DatabaseMarkdown>(conn);
+        match m {
+            Ok(con) => {
+                let mut map = HashMap::new();
+                map.insert("markdown".to_string(), InnerContent { text: con.content });
+                post_content.push(map)
+            }
+            Err(_) => (),
+        }
     }
 
     Ok(post_content)
@@ -249,21 +255,19 @@ pub(crate) fn put_post_contents(
     post: &DatabasePost,
     contents: &Vec<HashMap<String, InnerContent>>,
 ) -> Result<(), diesel::result::Error> {
-    for content in contents {
-        match content {
-            ContentType::Text { text } => {
-                use crate::database::schema::Text::dsl::*;
-                diesel::insert_into(Text)
-                    .values((content.eq(text), postId.eq(post.id)))
-                    .execute(conn)?;
-            }
-            ContentType::Markdown { text } => {
-                use crate::database::schema::Markdown::dsl::*;
-                diesel::insert_into(Markdown)
-                    .values((content.eq(text), postId.eq(post.id)))
-                    .execute(conn)?;
-            }
-            ContentType::Unsupported => ()
+    for content_map in contents {
+        if content_map.contains_key("text") {
+            let text = &content_map.get("text").unwrap().text;
+            use crate::database::schema::Text::dsl::*;
+            diesel::insert_into(Text)
+                .values((content.eq(text), postId.eq(post.id)))
+                .execute(conn)?;
+        } else if content_map.contains_key("markdown") {
+            let text = &content_map.get("markdown").unwrap().text;
+            use crate::database::schema::Markdown::dsl::*;
+            diesel::insert_into(Markdown)
+                .values((content.eq(text), postId.eq(post.id)))
+                .execute(conn)?;
         }
     }
     Ok(())

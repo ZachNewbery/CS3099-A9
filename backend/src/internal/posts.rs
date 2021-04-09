@@ -10,7 +10,7 @@ use crate::database::actions::user::{
 use crate::database::get_conn_from_pool;
 use crate::database::models::{DatabaseLocalUser, DatabaseNewPost};
 use crate::federation::posts::EditPost;
-use crate::federation::schemas::{ContentType, Post, User, InnerContent};
+use crate::federation::schemas::{InnerContent, Post, User};
 use crate::internal::authentication::{authenticate, make_federated_request};
 use crate::internal::communities::get_community_extern;
 use crate::internal::{get_known_hosts, LocatedCommunity};
@@ -394,7 +394,7 @@ pub(crate) async fn search_posts(
         .filter(|(p, _)| {
             p.content.iter().any(|c| {
                 let default = InnerContent {
-                    text: "".to_string()
+                    text: "".to_string(),
                 };
                 let content = if c.contains_key("text") {
                     c.get("text")
