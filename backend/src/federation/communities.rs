@@ -9,7 +9,7 @@ use crate::federation::schemas::{Community, User};
 use crate::internal::authentication::verify_federated_request;
 use crate::util::route_error::RouteError;
 use crate::DBPool;
-use chrono::serde::ts_milliseconds;
+use chrono::serde::ts_seconds;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
@@ -78,7 +78,7 @@ pub(crate) async fn community_by_id(
 #[derive(Clone, Serialize, Deserialize)]
 struct PostModified {
     id: Uuid,
-    #[serde(with = "ts_milliseconds")]
+    #[serde(with = "ts_seconds")]
     modified: DateTime<Utc>,
 }
 

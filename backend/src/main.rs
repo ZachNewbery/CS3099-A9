@@ -95,7 +95,8 @@ async fn main() -> std::io::Result<()> {
                     .service(internal::communities::create_community)
                     .service(internal::communities::get_community_details)
                     .service(internal::communities::delete_community)
-                    .service(internal::communities::edit_community_details),
+                    .service(internal::communities::edit_community_details)
+                    .service(internal::communities::search_communities),
             )
     })
     .workers(2)

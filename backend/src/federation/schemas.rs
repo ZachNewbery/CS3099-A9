@@ -1,8 +1,10 @@
 use crate::database::actions::post::PostInformation;
 use crate::util::route_error::RouteError;
-use chrono::serde::{ts_milliseconds, ts_milliseconds_option};
+use chrono::serde::{ts_seconds, ts_seconds_option};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use serde_with::rust::string_empty_as_none;
+use std::collections::HashMap;
 use std::convert::TryFrom;
 use uuid::Uuid;
 
@@ -13,19 +15,24 @@ pub(crate) struct User {
     pub host: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
 #[serde(rename_all = "camelCase")]
 pub enum ContentType {
-    Text { text: String },
-    Markdown { text: String },
+    Text,
+    Markdown,
+    #[serde(other)]
+    Unsupported,
 }
 
-impl Default for ContentType {
-    fn default() -> Self {
-        ContentType::Text {
-            text: "ContentType not supported".to_string(),
-        }
-    }
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct InnerContent {
+    #[serde(default = "default_string")]
+    pub text: String,
+}
+
+fn default_string() -> String {
+    "unsupported content type".to_string()
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -43,7 +50,7 @@ pub(crate) struct NewPost {
     pub community: String,
     pub parent_post: Option<Uuid>,
     pub title: String,
-    pub content: Vec<ContentType>,
+    pub content: Vec<HashMap<ContentType, serde_json::Value>>,
     pub user_id: String,
 }
 
@@ -51,7 +58,7 @@ pub(crate) struct NewPost {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct UpdatePost {
     pub title: Option<String>,
-    pub content_type: Option<ContentType>,
+    pub content_type: Option<HashMap<ContentType, serde_json::Value>>,
     pub body: Option<String>,
 }
 
@@ -59,7 +66,7 @@ pub(crate) struct UpdatePost {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct PostTimeStamp {
     id: Uuid,
-    #[serde(with = "ts_milliseconds_option")]
+    #[serde(with = "ts_seconds_option")]
     modified: Option<DateTime<Utc>>,
 }
 
@@ -68,14 +75,15 @@ pub(crate) struct PostTimeStamp {
 pub(crate) struct Post {
     pub(crate) id: Uuid,
     pub(crate) community: String,
+    #[serde(deserialize_with = "string_empty_as_none::deserialize")]
     pub(crate) parent_post: Option<Uuid>,
     pub(crate) children: Vec<Uuid>,
-    pub(crate) title: String,
-    pub(crate) content: Vec<ContentType>,
+    pub(crate) title: Option<String>,
+    pub(crate) content: Vec<HashMap<ContentType, serde_json::Value>>,
     pub(crate) author: User,
-    #[serde(with = "ts_milliseconds")]
+    #[serde(with = "ts_seconds")]
     pub(crate) modified: DateTime<Utc>,
-    #[serde(with = "ts_milliseconds")]
+    #[serde(with = "ts_seconds")]
     pub(crate) created: DateTime<Utc>,
 }
 
@@ -95,7 +103,7 @@ impl TryFrom<(PostInformation, Option<Vec<PostInformation>>)> for Post {
                 .into_iter()
                 .map(|p| Ok(p.post.uuid.parse()?))
                 .collect::<Result<Vec<_>, RouteError>>()?,
-            title: post.post.title,
+            title: Some(post.post.title),
             content: post.content,
             author: (post.user, post.user_details).into(),
             modified: DateTime::<Utc>::from_utc(post.post.modified, Utc),
