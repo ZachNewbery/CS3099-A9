@@ -479,7 +479,7 @@ pub(crate) async fn search_posts(
                     .get("text")
                     .unwrap()
                     .as_str()
-            } else if c.contains_key(&ContentType::Text) {
+            } else if c.contains_key(&ContentType::Markdown) {
                 c.get(&ContentType::Markdown)
                     .unwrap()
                     .get("text")
