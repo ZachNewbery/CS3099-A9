@@ -18,6 +18,7 @@ use crate::util::route_error::RouteError;
 use crate::util::HOSTNAME;
 use crate::DBPool;
 use actix_web::{delete, get, patch, post, web, HttpRequest, HttpResponse, Result};
+use chrono::serde::{ts_milliseconds};
 use chrono::{DateTime, Utc};
 use diesel::Connection;
 use serde::{Deserialize, Serialize};
@@ -40,7 +41,9 @@ pub(crate) struct LocatedPost {
     pub(crate) title: Option<String>,
     pub(crate) content: Vec<HashMap<String, InnerContent>>,
     pub(crate) author: User,
+    #[serde(with = "ts_milliseconds")]
     pub(crate) modified: DateTime<Utc>,
+    #[serde(with = "ts_milliseconds")]
     pub(crate) created: DateTime<Utc>,
     #[serde(default)]
     pub(crate) deleted: bool,
@@ -110,19 +113,6 @@ pub(crate) async fn get_post_local(
     Ok(lp)
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct ExternalPost {
-    pub(crate) community: String,
-    pub(crate) parent_post: Option<Uuid>,
-    pub(crate) children: Vec<Uuid>,
-    pub(crate) title: Option<String>,
-    pub(crate) content: Vec<HashMap<String, InnerContent>>,
-    pub(crate) author: User,
-    pub(crate) modified: u64,
-    pub(crate) created: u64,
-}
-
 pub(crate) async fn get_post_extern(
     uuid: Uuid,
     pool: web::Data<DBPool>,
@@ -147,12 +137,10 @@ pub(crate) async fn get_post_extern(
         if query.status().is_success() {
             let body = query.body().await?;
             l_host = Some(host.to_string());
-            let s_post: String =
-                String::from_utf8(body.to_vec()).map_err(|e| {
-                    dbg!(e);
-                    RouteError::ActixInternal
-                })?;
-            println!("String Post: {:?}", s_post);
+            let s_post: String = String::from_utf8(body.to_vec()).map_err(|e| {
+                dbg!(e);
+                RouteError::ActixInternal
+            })?;
             post = serde_json::from_str(&s_post).map_err(|e| {
                 dbg!(e);
                 RouteError::ActixInternal
