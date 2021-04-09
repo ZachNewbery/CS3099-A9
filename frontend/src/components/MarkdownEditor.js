@@ -154,7 +154,7 @@ export const MarkdownEditor = React.forwardRef(({ name, tab = "write", style, re
 
   useEffect(() => {
     if (onChange) onChange(value);
-  }, [value])
+  }, [value, onChange])
   
   useEffect(() => {
     setValue(defaultValue);

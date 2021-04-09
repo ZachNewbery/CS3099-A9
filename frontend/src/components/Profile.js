@@ -66,7 +66,7 @@ export const Profile = ({ user }) => {
           <img
             alt="profile"
             src={
-              user.avatar || `https://eu.ui-avatars.com/api/?rounded=true&bold=true&background=0061ff&color=ffffff&uppercase=true&format=svg&name=${user.username}`
+              user.avatarUrl || `https://eu.ui-avatars.com/api/?rounded=true&bold=true&background=0061ff&color=ffffff&uppercase=true&format=svg&name=${user.id}`
             }
           />
         </StyledProfilePicture>
@@ -80,8 +80,8 @@ export const Profile = ({ user }) => {
 const ProfileModal = ({ user }) => {
   return (
     <StyledModal>
-      <h3>{user.username}</h3>
-      <p>{user.bio}</p>
+      <h3>{user.id}</h3>
+      <p>{user.about}</p>
     </StyledModal>
   );
 };

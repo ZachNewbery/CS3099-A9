@@ -3,7 +3,7 @@ import styled from "styled-components";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { colors } from "../helpers";
-import { InstanceContext } from "../App";
+import { InstanceContext, SearchContext } from "../App";
 import { ListInstances } from "../communities/ListInstances";
 
 const StyledSearch = styled.div`
@@ -59,7 +59,8 @@ const StyledSearch = styled.div`
 `;
 
 export const Search = () => {
-  const [search, setSearch] = useState(null);
+  const { search, setSearch } = useContext(SearchContext)
+  
   const [isOpen, setIsOpen] = useState(false);
   const { instance, setInstance } = useContext(InstanceContext);
 

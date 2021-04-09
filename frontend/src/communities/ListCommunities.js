@@ -1,14 +1,13 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useContext } from "react";
 import styled from "styled-components";
-import { useAsync } from "react-async";
 import { useHistory } from "react-router-dom";
 
 import { CreateCommunity } from "./CreateCommunity";
-import { fetchData, Spinner, Error, colors, fonts } from "../helpers";
+import { colors, fonts } from "../helpers";
 import { CTAButton } from "../components/CTAButton";
 import { ScrollContainer } from "../components/ScrollContainer";
 
-import { InstanceContext } from "../App";
+import { CommunityContext } from "../Home";
 
 const StyledCommunities = styled.div`
   display: flex;
@@ -48,36 +47,21 @@ const StyledCommunities = styled.div`
   }
 `;
 
-const fetchCommunities = async ({ host }) => {
-  const hostParam = host ? `?host=${host}` : "";
-  return await fetchData(`${process.env.REACT_APP_API}/communities${hostParam}`);
-};
 
-export const ListCommunities = ({ community, setCommunity, refresh }) => {
+
+export const ListCommunities = ({ communities, refresh }) => {
   const [showCreate, setShowCreate] = useState(false);
-  const { instance } = useContext(InstanceContext);
+  const { community, setCommunity } = useContext(CommunityContext);
   
   const history = useHistory();
 
   const handleShowCreate = () => setShowCreate(true);
   const handleHideCreate = () => setShowCreate(false);
 
-  const { data: communities, isLoading, error } = useAsync(fetchCommunities, { host: instance });
-
-  useEffect(() => {
-    if (communities && !community) {
-      const first = communities[0];
-      setCommunity(first);
-    }
-  }, [communities, community, setCommunity]);
-
   const handleSelect = (c) => {
     setCommunity(c);
     history.push("/");
   };
-
-  if (isLoading) return <Spinner />;
-  if (error) return <Error message={error} />;
 
   return (
     <StyledCommunities>
@@ -85,8 +69,8 @@ export const ListCommunities = ({ community, setCommunity, refresh }) => {
       <CreateCommunity show={showCreate} hide={handleHideCreate} refresh={refresh} />
       <ScrollContainer className="communities-list">
         {communities.map((c, i) => (
-          <h3 key={i} onClick={() => handleSelect(c)} className={c === community ? "active" : ""} title={c}>
-            {c}
+          <h3 key={i} onClick={() => handleSelect(c.id)} className={c.id === community ? "active" : ""} title={c.id}>
+            {c.id}
           </h3>
         ))}
       </ScrollContainer>

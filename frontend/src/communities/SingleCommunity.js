@@ -1,10 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import styled from "styled-components";
 import { useAsync } from "react-async";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPencilAlt, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { fetchData, Spinner, Error, colors, fonts } from "../helpers";
+import { CommunityContext } from "../Home";
+import { InstanceContext } from "../App";
 
 import { useUser } from "../index";
 import { EditCommunity } from "./EditCommunity";
@@ -67,21 +69,37 @@ const StyledContainer = styled.div`
   }
 `;
 
-const fetchCommunity = async ({ id, host }) => {
-  const hostParam = host ? `?host=${host}` : "";
-  return await fetchData(`${process.env.REACT_APP_API}/communities/${id}${hostParam}`);
+const fetchCommunity = async ({ community, instance }) => {
+  const url = new URL(`${process.env.REACT_APP_API}/communities/${community}`);
+  const appendParam = (key, value) => value && url.searchParams.append(key, value);
+  appendParam("host", instance);
+  return fetchData(url);
 };
 
-const deleteCommunity = async ({ id }) => {
-  return await fetchData(`${process.env.REACT_APP_API}/communities/${id}`, null, "DELETE");
+const deleteCommunity = async ({ community }) => {
+  return await fetchData(`${process.env.REACT_APP_API}/communities/${community}`, null, "DELETE");
 };
 
-export const SingleCommunity = ({ id, host, refresh }) => {
+export const SingleCommunity = ({ communities, refresh }) => {
+  const [selectedCommunity, setSelectedCommunity] = useState(null);
   const [showCommunity, setShowCommunity] = useState(false);
 
-  const { data, isLoading, error } = useAsync(fetchCommunity, { id, host });
+  const { community, setCommunity } = useContext(CommunityContext);
+  const { instance } = useContext(InstanceContext);
 
-  const user = useUser();
+  useEffect(() => {
+    if (!community && communities?.length) {
+      setCommunity(communities[0].id);
+    }
+  }, [community, communities, setCommunity]);
+
+  useEffect(() => {
+    const loadCommunity = async () => {
+      const data = await fetchCommunity({ community, instance });
+      setSelectedCommunity(data);
+    };
+    community && loadCommunity();
+  }, [community, instance]);
 
   const handleShowCommunity = () => setShowCommunity(true);
   const handleHideCommunity = () => setShowCommunity(false);
@@ -89,33 +107,8 @@ export const SingleCommunity = ({ id, host, refresh }) => {
   const handleEdit = () => handleShowCommunity();
   const handleDelete = async (e) => {
     e.preventDefault();
-    await deleteCommunity({ id });
+    await deleteCommunity({ community });
     refresh();
-  };
-
-  const renderCommunity = () => {
-    if (isLoading) return <Spinner />;
-    if (error) return <Error message={error} />;
-
-    const isAdmin = data.admins.find((admin) => admin.id.toLowerCase() === user.username.toLowerCase() && admin.host.toLowerCase() === user.host.toLowerCase());
-
-    return (
-      <>
-        <div className="actions">
-          <p>{`${data.admins.length} ${data.admins.length === 1 ? "admin" : "admins"}`}</p>
-          {isAdmin && (
-            <>
-              <FontAwesomeIcon onClick={handleEdit} icon={faPencilAlt} />
-              <FontAwesomeIcon onClick={handleDelete} icon={faTrash} />
-            </>
-          )}
-        </div>
-        <h1 title={id}>{data.title}</h1>
-        <div className="content">
-          <p title={data.description}>{data.description}</p>
-        </div>
-      </>
-    );
   };
 
   return (
@@ -124,12 +117,37 @@ export const SingleCommunity = ({ id, host, refresh }) => {
         show={showCommunity}
         hide={handleHideCommunity}
         refresh={refresh}
-        id={id}
-        initialTitle={data?.title}
-        initialDescription={data?.description}
+        id={community}
+        initialTitle={selectedCommunity?.title}
+        initialDescription={selectedCommunity?.description}
       />
-
-      <StyledContainer>{renderCommunity()}</StyledContainer>
+      <Community community={selectedCommunity} handleEdit={handleEdit} handleDelete={handleDelete} />
     </>
+  );
+};
+
+export const Community = ({ community, handleDelete, handleEdit }) => {
+  const user = useUser();
+
+  if (!community) return <Spinner />;
+
+  const isAdmin = community.admins.find((admin) => admin.id.toLowerCase() === user.id.toLowerCase() && admin.host.toLowerCase() === user.host.toLowerCase());
+
+  return (
+    <StyledContainer>
+      <div className="actions">
+        <p>{`${community.admins.length} ${community.admins.length === 1 ? "admin" : "admins"}`}</p>
+        {isAdmin && (
+          <>
+            <FontAwesomeIcon onClick={handleEdit} icon={faPencilAlt} />
+            <FontAwesomeIcon onClick={handleDelete} icon={faTrash} />
+          </>
+        )}
+      </div>
+      <h1 title={community.title}>{community.title}</h1>
+      <div className="content">
+        <p title={community.description}>{community.description}</p>
+      </div>
+    </StyledContainer>
   );
 };

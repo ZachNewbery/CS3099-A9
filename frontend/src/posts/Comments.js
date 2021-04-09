@@ -1,7 +1,11 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useContext } from "react";
 import styled from "styled-components";
 import moment from "moment";
 import { useAsync } from "react-async";
+
+import { InstanceContext } from "../App";
+import { CommunityContext } from "../Home";
+
 import { fetchData, Spinner, Error, colors } from "../helpers";
 import { StyledBlock, StyledContent, renderContent } from "./PostContent";
 import { useUser } from "../index";
@@ -12,11 +16,16 @@ import { useDebouncedCallback } from "use-debounce";
 import { Tooltip } from "../components/Tooltip";
 import { Profile } from "../components/Profile";
 
-const loadChildPosts = async ({ children, addComment }) => {
+const loadChildPosts = async ({ children, community, instance, addComment }) => {
+
   let posts = [];
 
   for (const child of children) {
-    const post = await fetchData(`${process.env.REACT_APP_API}/posts/${child}`);
+    const url = new URL(`${process.env.REACT_APP_API}/posts/${child}`);
+    const appendParam = (key, value) => value && url.searchParams.append(key, value);
+    appendParam("host", instance);
+    appendParam("community", community);
+    const post = await fetchData(url);
     const user = await fetchData(`${process.env.REACT_APP_API}/user/${post.author.id}`);
     post.user = user;
     if (!post.deleted) addComment();
@@ -165,7 +174,10 @@ export const CreateComment = ({ postId, communityId, refresh }) => {
 };
 
 export const Comments = ({ children, addComment, removeComment }) => {
-  const { data: comments, isLoading, error, reload } = useAsync(loadChildPosts, { children, addComment });
+  const { instance } = useContext(InstanceContext);
+  const { community } = useContext(CommunityContext);
+  
+  const { data: comments, isLoading, error, reload } = useAsync(loadChildPosts, { children, instance, community, addComment });
   const [showEdit, setShowEdit] = useState({ showModal: false, content: null, id: null });
 
   const user = useUser();
@@ -188,7 +200,7 @@ export const Comments = ({ children, addComment, removeComment }) => {
           .sort((a, b) => moment(b.created).unix() - moment(a.created).unix())
           .map((comment) => {
             const { author } = comment;
-            const isAdmin = author.id.toLowerCase() === user.username.toLowerCase() && author.host.toLowerCase() === user.host.toLowerCase();
+            const isAdmin = author.id.toLowerCase() === user.id.toLowerCase() && author.host.toLowerCase() === user.host.toLowerCase();
 
             const handleEdit = () => {
               setShowEdit({ showModal: true, content: comment.content, id: comment.id });
@@ -200,7 +212,7 @@ export const Comments = ({ children, addComment, removeComment }) => {
                 .then(() => reload());
             };
 
-            const isEdited = moment(comment.created).unix() !== moment(comment.modified).unix();
+            const isEdited = comment.created !== comment.modified;
 
             return (
               <div key={comment.id} className="comment">
@@ -215,7 +227,7 @@ export const Comments = ({ children, addComment, removeComment }) => {
                   </div>
                 </div>
                 <div className="footer">
-                  <p title={moment(comment.created).format("HH:mma - Do MMMM, YYYY")}>{`${moment(comment.created).fromNow()} ${isEdited ? "(Edited)" : ""}`}</p>
+                  <p title={moment.unix(comment.created).format("HH:mma - Do MMMM, YYYY")}>{`${moment.unix(comment.created).fromNow()} ${isEdited ? "(Edited)" : ""}`}</p>
                   {isAdmin && (
                     <div className="actions">
                       <FontAwesomeIcon onClick={handleEdit} icon={faPencilAlt} />
