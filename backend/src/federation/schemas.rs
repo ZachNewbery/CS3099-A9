@@ -15,16 +15,14 @@ pub(crate) struct User {
     pub host: String,
 }
 
-// #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
-// #[serde(rename_all = "camelCase")]
-// pub enum ContentType {
-//     Text {
-//         text: String,
-//     },
-//     Markdown {
-//         text: String,
-//     }
-// }
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
+#[serde(rename_all = "camelCase")]
+pub enum ContentType {
+    Text,
+    Markdown,
+    #[serde(other)]
+    Unsupported,
+}
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -52,7 +50,7 @@ pub(crate) struct NewPost {
     pub community: String,
     pub parent_post: Option<Uuid>,
     pub title: String,
-    pub content: Vec<HashMap<String, InnerContent>>,
+    pub content: Vec<HashMap<ContentType, serde_json::Value>>,
     pub user_id: String,
 }
 
@@ -60,7 +58,7 @@ pub(crate) struct NewPost {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct UpdatePost {
     pub title: Option<String>,
-    pub content_type: Option<HashMap<String, InnerContent>>,
+    pub content_type: Option<HashMap<ContentType, serde_json::Value>>,
     pub body: Option<String>,
 }
 
@@ -81,7 +79,7 @@ pub(crate) struct Post {
     pub(crate) parent_post: Option<Uuid>,
     pub(crate) children: Vec<Uuid>,
     pub(crate) title: Option<String>,
-    pub(crate) content: Vec<HashMap<String, InnerContent>>,
+    pub(crate) content: Vec<HashMap<ContentType, serde_json::Value>>,
     pub(crate) author: User,
     #[serde(with = "ts_milliseconds")]
     pub(crate) modified: DateTime<Utc>,

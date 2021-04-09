@@ -3,7 +3,7 @@ use crate::database::actions::post::{
     put_post_contents, remove_post, remove_post_contents, touch_post,
 };
 use crate::database::get_conn_from_pool;
-use crate::federation::schemas::{InnerContent, NewPost, Post};
+use crate::federation::schemas::{ContentType, NewPost, Post};
 use crate::internal::authentication::verify_federated_request;
 use crate::util::route_error::RouteError;
 use crate::util::{UserDetail, HOSTNAME};
@@ -32,7 +32,7 @@ pub struct PostFilters {
     parent_post: Option<Uuid>,
     #[serde(default = "true_func")]
     include_sub_children_posts: bool,
-    content_type: Option<String>,
+    content_type: Option<ContentType>,
 }
 
 #[get("")]
@@ -211,7 +211,7 @@ pub(crate) async fn get_post_by_id(
 #[derive(Clone, Serialize, Deserialize)]
 pub struct EditPost {
     pub title: Option<String>,
-    pub content: Option<Vec<HashMap<String, InnerContent>>>,
+    pub content: Option<Vec<HashMap<ContentType, serde_json::Value>>>,
 }
 
 #[put("/{id}")]

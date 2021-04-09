@@ -2,7 +2,7 @@ use crate::database::actions::user::get_user_detail;
 use crate::database::models::{
     DatabaseCommunity, DatabaseMarkdown, DatabaseNewPost, DatabasePost, DatabaseText, DatabaseUser,
 };
-use crate::federation::schemas::InnerContent;
+use crate::federation::schemas::ContentType;
 use std::collections::HashMap;
 
 use diesel::prelude::*;
@@ -10,6 +10,7 @@ use diesel::BelongingToDsl;
 
 use crate::util::UserDetail;
 use chrono::Utc;
+use serde_json::json;
 use uuid::Uuid;
 
 pub(crate) fn get_all_top_level_posts(
@@ -52,7 +53,7 @@ pub(crate) fn get_posts_by_user(
 #[derive(Clone, Debug)]
 pub struct PostInformation {
     pub post: DatabasePost,
-    pub content: Vec<HashMap<String, InnerContent>>,
+    pub content: Vec<HashMap<ContentType, serde_json::Value>>,
     pub community: DatabaseCommunity,
     pub user: DatabaseUser,
     pub user_details: UserDetail,
@@ -154,9 +155,9 @@ pub(crate) fn get_children_posts_of(
 pub(crate) fn get_content_of_post(
     conn: &MysqlConnection,
     post: &DatabasePost,
-) -> Result<Vec<HashMap<String, InnerContent>>, diesel::result::Error> {
+) -> Result<Vec<HashMap<ContentType, serde_json::Value>>, diesel::result::Error> {
     // We have to check through *every single* content type to pick up posts.
-    let mut post_content: Vec<HashMap<String, InnerContent>> = Vec::new();
+    let mut post_content: Vec<HashMap<ContentType, serde_json::Value>> = Vec::new();
 
     // Text
     {
@@ -164,7 +165,7 @@ pub(crate) fn get_content_of_post(
         match t {
             Ok(con) => {
                 let mut map = HashMap::new();
-                map.insert("text".to_string(), InnerContent { text: con.content });
+                map.insert(ContentType::Text, json!({ "text": con.content }));
                 post_content.push(map)
             }
             Err(_) => (),
@@ -177,7 +178,7 @@ pub(crate) fn get_content_of_post(
         match m {
             Ok(con) => {
                 let mut map = HashMap::new();
-                map.insert("markdown".to_string(), InnerContent { text: con.content });
+                map.insert(ContentType::Markdown, json!({ "text": con.content }));
                 post_content.push(map)
             }
             Err(_) => (),
@@ -253,17 +254,29 @@ pub(crate) fn put_post(
 pub(crate) fn put_post_contents(
     conn: &MysqlConnection,
     post: &DatabasePost,
-    contents: &Vec<HashMap<String, InnerContent>>,
+    contents: &Vec<HashMap<ContentType, serde_json::Value>>,
 ) -> Result<(), diesel::result::Error> {
     for content_map in contents {
-        if content_map.contains_key("text") {
-            let text = &content_map.get("text").unwrap().text;
+        if content_map.contains_key(&ContentType::Text) {
+            let text = &content_map
+                .get(&ContentType::Text)
+                .unwrap()
+                .get("text")
+                .unwrap()
+                .as_str()
+                .unwrap();
             use crate::database::schema::Text::dsl::*;
             diesel::insert_into(Text)
                 .values((content.eq(text), postId.eq(post.id)))
                 .execute(conn)?;
-        } else if content_map.contains_key("markdown") {
-            let text = &content_map.get("markdown").unwrap().text;
+        } else if content_map.contains_key(&ContentType::Markdown) {
+            let text = &content_map
+                .get(&ContentType::Markdown)
+                .unwrap()
+                .get("text")
+                .unwrap()
+                .as_str()
+                .unwrap();
             use crate::database::schema::Markdown::dsl::*;
             diesel::insert_into(Markdown)
                 .values((content.eq(text), postId.eq(post.id)))

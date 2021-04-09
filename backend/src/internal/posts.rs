@@ -10,7 +10,7 @@ use crate::database::actions::user::{
 use crate::database::get_conn_from_pool;
 use crate::database::models::{DatabaseLocalUser, DatabaseNewPost};
 use crate::federation::posts::EditPost;
-use crate::federation::schemas::{InnerContent, Post, User};
+use crate::federation::schemas::{ContentType, Post, User};
 use crate::internal::authentication::{authenticate, make_federated_request};
 use crate::internal::communities::get_community_extern;
 use crate::internal::{get_known_hosts, LocatedCommunity};
@@ -18,7 +18,7 @@ use crate::util::route_error::RouteError;
 use crate::util::HOSTNAME;
 use crate::DBPool;
 use actix_web::{delete, get, patch, post, web, HttpRequest, HttpResponse, Result};
-use chrono::serde::{ts_milliseconds};
+use chrono::serde::ts_milliseconds;
 use chrono::{DateTime, Utc};
 use diesel::Connection;
 use serde::{Deserialize, Serialize};
@@ -39,7 +39,7 @@ pub(crate) struct LocatedPost {
     pub(crate) parent_post: Option<Uuid>,
     pub(crate) children: Vec<Uuid>,
     pub(crate) title: Option<String>,
-    pub(crate) content: Vec<HashMap<String, InnerContent>>,
+    pub(crate) content: Vec<HashMap<ContentType, serde_json::Value>>,
     pub(crate) author: User,
     #[serde(with = "ts_milliseconds")]
     pub(crate) modified: DateTime<Utc>,
@@ -393,17 +393,22 @@ pub(crate) async fn search_posts(
         .into_iter()
         .filter(|(p, _)| {
             p.content.iter().any(|c| {
-                let default = InnerContent {
-                    text: "".to_string(),
-                };
-                let content = if c.contains_key("text") {
-                    c.get("text")
-                } else if c.contains_key("markdown") {
-                    c.get("markdown")
+                let content = if c.contains_key(&ContentType::Text) {
+                    c.get(&ContentType::Text)
+                        .unwrap()
+                        .get("text")
+                        .unwrap()
+                        .as_str()
+                } else if c.contains_key(&ContentType::Text) {
+                    c.get(&ContentType::Markdown)
+                        .unwrap()
+                        .get("text")
+                        .unwrap()
+                        .as_str()
                 } else {
-                    Some(&default)
+                    Some("")
                 };
-                content.unwrap().text.contains(&query.search)
+                content.unwrap().contains(&query.search)
             })
         })
         .map(|(p, c)| {
@@ -435,7 +440,7 @@ pub struct CreatePost {
     pub community: LocatedCommunity,
     pub parent: Option<Uuid>,
     pub title: String,
-    pub content: Vec<HashMap<String, InnerContent>>,
+    pub content: Vec<HashMap<ContentType, serde_json::Value>>,
 }
 
 #[post("/posts/create")]
