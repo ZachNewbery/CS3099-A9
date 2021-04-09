@@ -17,7 +17,6 @@ use crate::internal::{get_known_hosts, LocatedCommunity};
 use crate::util::route_error::RouteError;
 use crate::util::HOSTNAME;
 use crate::DBPool;
-use std::time::{UNIX_EPOCH, Duration};
 use actix_web::{delete, get, patch, post, web, HttpRequest, HttpResponse, Result};
 use chrono::{DateTime, Utc};
 use diesel::Connection;
@@ -129,7 +128,7 @@ pub(crate) async fn get_post_extern(
     pool: web::Data<DBPool>,
     username: String,
 ) -> Result<LocatedPost, RouteError> {
-    let mut post: Option<ExternalPost> = None;
+    let mut post: Option<Post> = None;
     let mut l_host: Option<String> = None;
     let mut q_string = "/fed/posts/".to_owned();
     q_string.push_str(&uuid.to_string());
@@ -180,8 +179,8 @@ pub(crate) async fn get_post_extern(
             title: p.title,
             content: p.content,
             author: p.author,
-            modified: DateTime::<Utc>::from(UNIX_EPOCH + Duration::from_secs(p.modified)),
-            created: DateTime::<Utc>::from(UNIX_EPOCH + Duration::from_secs(p.created)),
+            modified: p.modified,
+            created: p.created,
             deleted: false,
         })
     } else {

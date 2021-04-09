@@ -3,6 +3,7 @@ use crate::util::route_error::RouteError;
 use chrono::serde::{ts_milliseconds, ts_milliseconds_option};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use serde_with::rust::string_empty_as_none;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use uuid::Uuid;
@@ -76,6 +77,7 @@ pub(crate) struct PostTimeStamp {
 pub(crate) struct Post {
     pub(crate) id: Uuid,
     pub(crate) community: String,
+    #[serde(deserialize_with = "string_empty_as_none::deserialize")]
     pub(crate) parent_post: Option<Uuid>,
     pub(crate) children: Vec<Uuid>,
     pub(crate) title: Option<String>,
