@@ -1,11 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import styled from "styled-components";
 import { Switch, Route } from "react-router-dom";
 
+import { InstanceContext } from "./App";
+import { Spinner } from "./helpers";
 import { ErrorHandledRoute } from "./components/ErrorHandledRoute";
-import { CreatePost, ListPosts, SinglePost } from "./posts";
-import { ListCommunities } from "./communities/ListCommunities";
-import { SingleCommunity } from "./communities/SingleCommunity";
+import { Posts, SinglePost } from "./posts";
+import { Communities } from "./communities/Communities";
 
 const StyledContainer = styled.div`
   display: flex;
@@ -24,33 +25,37 @@ const StyledContainer = styled.div`
   }
 `;
 
-export const Home = ({ search, host }) => {
+export const CommunityContext = React.createContext(null);
+
+export const Home = () => {
   const [community, setCommunity] = useState(null);
-  const [i, setI] = useState(0);
+  const { instance } = useContext(InstanceContext);
 
-  const reload = (communityId = null) => {
-    console.log({ community, communityId });
-    setCommunity(communityId);
-    setI((i) => i + 1);
-  };
-
+  useEffect(() => {
+    setCommunity(null);
+  }, [instance]);
+  
   return (
-    <StyledContainer>
-      <div className="communities-container">
-        {community && <SingleCommunity key={community} id={community} host={host} refresh={reload} />}
-        <ListCommunities key={i} setCommunity={setCommunity} community={community} host={host} refresh={reload} />
-      </div>
-      <div className="posts-container">
-        <Switch>
-          <ErrorHandledRoute path="/post/:postId">
-            <SinglePost community={community} setCommunity={setCommunity} />
-          </ErrorHandledRoute>
-          <Route path="/">
-            <CreatePost key={community} community={community} host={host} refresh={() => reload(community)} />
-            {community && <ListPosts key={`${community}${i}`} community={community} host={host} search={search} />}
-          </Route>
-        </Switch>
-      </div>
-    </StyledContainer>
+    <CommunityContext.Provider value={{ community, setCommunity }}>
+      <StyledContainer>
+        <div className="communities-container">
+          <Communities />
+        </div>
+        {community ? (
+          <div className="posts-container">
+            <Switch>
+              <ErrorHandledRoute path="/post/:postId">
+                <SinglePost />
+              </ErrorHandledRoute>
+              <Route path="/">
+                <Posts />
+              </Route>
+            </Switch>
+          </div>
+        ) : (
+          <Spinner />
+        )}
+      </StyledContainer>
+    </CommunityContext.Provider>
   );
 };

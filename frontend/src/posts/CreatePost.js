@@ -1,12 +1,15 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useContext, useRef } from "react";
 import styled from "styled-components";
+
+import { InstanceContext } from "../App";
+import { CommunityContext } from "../Home";
 
 import { fetchData, colors, fonts } from "../helpers";
 import { StyledForm } from "../helpers/styles";
 import { Tooltip } from "../components/Tooltip";
 import { MarkdownEditor } from "../components/MarkdownEditor";
 
-const createPost = async ({ title, community, content }) => {
+const createPost = async ({ title, community, instance, content }) => {
   const post = {
     content: [content],
     community: {
@@ -16,7 +19,10 @@ const createPost = async ({ title, community, content }) => {
     parent: null,
   };
 
-  return fetchData(`${process.env.REACT_APP_API}/posts/create`, JSON.stringify(post), "POST");
+  const url = new URL(`${process.env.REACT_APP_API}/posts/create`);
+  const appendParam = (key, value) => value && url.searchParams.append(key, value);
+  appendParam("host", instance);
+  return fetchData(url, JSON.stringify(post), "POST");
 };
 
 const StyledContainer = styled.div`
@@ -49,7 +55,10 @@ const StyledContainer = styled.div`
   }
 `;
 
-export const CreatePost = ({ community, host, refresh }) => {
+export const CreatePost = ({ refresh }) => {
+  const { instance } = useContext(InstanceContext);
+  const { community } = useContext(CommunityContext);
+  
   const formRef = useRef(null);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -77,7 +86,7 @@ export const CreatePost = ({ community, host, refresh }) => {
 
     if (Object.keys(currentErrors).length === 0) {
       try {
-        await createPost({ title, community, content: { markdown: { text: body } } });
+        await createPost({ title, community, instance, content: { markdown: { text: body } } });
         setTitle("");
         setBody("");
         setErrors({});

@@ -1,8 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import styled from "styled-components";
 import moment from "moment";
 import { useParams, useHistory } from "react-router-dom";
 import { useAsync } from "react-async";
+
+import { InstanceContext } from "../App";
+import { CommunityContext } from "../Home";
 
 import { fetchData, Spinner, colors, fonts } from "../helpers";
 import { StyledBlock, StyledContent, renderContent } from "./PostContent";
@@ -14,8 +17,13 @@ import { Profile } from "../components/Profile";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeft, faPencilAlt, faTrash } from "@fortawesome/free-solid-svg-icons";
 
-const loadSinglePost = async ({ id }) => {
-  const post = await fetchData(`${process.env.REACT_APP_API}/posts/${id}`);
+const loadSinglePost = async ({ postId, instance, community }) => {
+  const url = new URL(`${process.env.REACT_APP_API}/posts/${postId}`);
+  const appendParam = (key, value) => value && url.searchParams.append(key, value);
+  appendParam("host", instance);
+  appendParam("community", community);
+  
+  const post = await fetchData(url);
   const user = await fetchData(`${process.env.REACT_APP_API}/user/${post.author.id}`);
   post.user = user;
   return post;
@@ -145,18 +153,26 @@ const StyledPost = styled.div`
   }
 `;
 
-export const SinglePost = ({ community, setCommunity }) => {
+export const SinglePost = () => {
   const [commentCount, setCommentCount] = useState(0);
   const { postId } = useParams();
   const history = useHistory();
 
-  const { data, isLoading, reload } = useAsync(loadSinglePost, { id: postId });
+  const { instance } = useContext(InstanceContext);
+  const { community, setCommunity } = useContext(CommunityContext);
+  
+  const { data, isLoading, reload } = useAsync(loadSinglePost, { postId, instance, community });
 
   useEffect(() => {
     if (data && data.community.id !== community) {
       setCommunity(data.community.id);
     }
   }, [data, community, setCommunity]);
+
+  const refresh = () => {
+    setCommentCount(0);
+    reload();
+  }
 
   const addComment = () => setCommentCount((c) => c + 1);
   const removeComment = () => setCommentCount((c) => c - 1);
@@ -167,8 +183,8 @@ export const SinglePost = ({ community, setCommunity }) => {
 
   return (
     <StyledPostContainer>
-      <Post {...data} refresh={reload} commentCount={commentCount} />
-      <CreateComment postId={data.id} refresh={reload} communityId={data.community.id} />
+      <Post {...data} refresh={refresh} commentCount={commentCount} />
+      <CreateComment postId={data.id} refresh={refresh} communityId={data.community.id} />
       <Comments children={data.children} addComment={addComment} removeComment={removeComment} />
     </StyledPostContainer>
   );
@@ -179,7 +195,7 @@ export const Post = ({ id, title, content, created, modified, author, user: _use
   const [showEdit, setShowEdit] = useState(false);
 
   const user = useUser();
-  const isAdmin = author.id.toLowerCase() === user.username.toLowerCase() && author.host.toLowerCase() === user.host.toLowerCase();
+  const isAdmin = author.id.toLowerCase() === user.id.toLowerCase() && author.host.toLowerCase() === user.host.toLowerCase();
 
   const handleEdit = () => {
     setShowEdit(true);
@@ -189,7 +205,7 @@ export const Post = ({ id, title, content, created, modified, author, user: _use
     await deletePost({ id }).then(history.goBack());
   };
 
-  const isEdited = moment(created).unix() !== moment(modified).unix();
+  const isEdited = created !== modified;
 
   return (
     <StyledPost>
@@ -200,7 +216,7 @@ export const Post = ({ id, title, content, created, modified, author, user: _use
         </div>
         <div className="title">
           <h3>{title}</h3>
-          <p title={moment(created).format("HH:mma - MMMM D, YYYY")}>{`${moment(created).format("MMMM D, YYYY")} ${isEdited ? "(Edited)" : ""}`}</p>
+          <p title={moment.unix(created).format("HH:mma - MMMM D, YYYY")}>{`${moment.unix(created).format("MMMM D, YYYY")} ${isEdited ? "(Edited)" : ""}`}</p>
         </div>
         <div className="profile">
           <div className="details">

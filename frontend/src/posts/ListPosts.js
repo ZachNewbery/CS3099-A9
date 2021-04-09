@@ -1,27 +1,21 @@
-import React from "react";
+import React, { useContext } from "react";
 import styled from "styled-components";
 import moment from "moment";
 import { useHistory } from "react-router-dom";
 
+import { InstanceContext } from "../App";
 import { StyledBlock, StyledContent, renderContent } from "./PostContent";
 import { useAsync } from "react-async";
 import { fetchData, Spinner, Error } from "../helpers";
 
 import { Post } from "./SinglePost";
 
-const loadPosts = async ({ host, community }) => {
-  const hostParam = host ? `host=${host}&` : "";
-  return fetchData(`${process.env.REACT_APP_API}/posts?${hostParam}community=${community}`);
-};
-
 const StyledPosts = styled.div`
   padding-bottom: 5rem;
 `;
 
-export const ListPosts = ({ host, community }) => {
+export const ListPosts = ({ posts, isLoading, error }) => {
   const history = useHistory();
-
-  const { data: posts, isLoading, error } = useAsync(loadPosts, { host, community });
 
   if (isLoading) return <Spinner />;
   if (error) return <Error message={error} />;
@@ -32,7 +26,7 @@ export const ListPosts = ({ host, community }) => {
     <StyledPosts>
       {filteredPosts.length > 0 ? (
         filteredPosts
-          .sort((a, b) => moment(b.created).unix() - moment(a.created).unix())
+          .sort((a, b) => b.created - a.created)
           .map(({ id, title, content, user, created, children }) => (
             <StyledContent key={id} onClick={() => history.push(`/post/${id}`)}>
               <div className="header">
@@ -40,8 +34,8 @@ export const ListPosts = ({ host, community }) => {
                   {title}
                 </h1>
                 <div className="date-time">
-                  <p className="time">{moment(created).format("HH:mm")}</p>
-                  <p className="date">{moment(created).format("DD MMMM YYYY")}</p>
+                  <p className="time">{moment.unix(created).format("HH:mm")}</p>
+                  <p className="date">{moment.unix(created).format("DD MMMM YYYY")}</p>
                 </div>
               </div>
               {content.map((block, i) => (

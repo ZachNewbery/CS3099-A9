@@ -21,7 +21,13 @@ export const Login = ({ setUser }) => {
       const user = await getUserToken({ email, password });
       const { token } = user;
       sessionStorage.setItem("access-token", token);
-      setUser(user);
+      const normalizedUser = {
+        avatarUrl: user.avatar,
+        about: user.bio,
+        id: user.username,
+        host: user.host
+      }
+      setUser(normalizedUser);
       return history.push("/");
     } catch (error) {
       setError("Please check email or password is entered correctly.");
