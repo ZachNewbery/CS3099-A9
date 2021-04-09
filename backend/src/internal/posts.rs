@@ -9,7 +9,7 @@ use crate::database::actions::user::{
     get_name_from_local_user, get_user_detail_by_name, insert_new_federated_user,
 };
 use crate::database::get_conn_from_pool;
-use crate::database::models::{DatabaseLocalUser, DatabaseNewPost, DatabaseUser};
+use crate::database::models::{DatabaseLocalUser, DatabaseNewPost};
 use crate::federation::posts::EditPost;
 use crate::federation::schemas::{ContentType, Post, User};
 use crate::internal::authentication::{authenticate, make_federated_request};
@@ -19,6 +19,7 @@ use crate::util::HOSTNAME;
 use crate::DBPool;
 use actix_web::{delete, get, patch, post, web, HttpRequest, HttpResponse, Result};
 use awc::SendClientRequest;
+use chrono::serde::ts_seconds;
 use chrono::{DateTime, Utc};
 use diesel::{Connection, MysqlConnection};
 use serde::{Deserialize, Serialize};
@@ -472,11 +473,22 @@ pub(crate) async fn search_posts(
     // Search
     .filter(|p| {
         p.content.iter().any(|c| {
-            match c {
-                ContentType::Text { text } => text,
-                ContentType::Markdown { text } => text,
-            }
-            .contains(&query.search)
+            let content = if c.contains_key(&ContentType::Text) {
+                c.get(&ContentType::Text)
+                    .unwrap()
+                    .get("text")
+                    .unwrap()
+                    .as_str()
+            } else if c.contains_key(&ContentType::Text) {
+                c.get(&ContentType::Markdown)
+                    .unwrap()
+                    .get("text")
+                    .unwrap()
+                    .as_str()
+            } else {
+                Some("")
+            };
+            content.unwrap().contains(&query.search)
         })
     })
     .collect::<Vec<_>>();
@@ -541,7 +553,10 @@ pub(crate) async fn create_post(
             let user = web::block(move || get_name_from_local_user(&conn, local_user)).await?;
 
             let body = CreatePost {
-                community: post.community.clone(),
+                community: LocatedCommunity::Federated {
+                    id: id.clone(),
+                    host: host.clone(),
+                },
                 parent: post.parent.clone(),
                 title: post.title.clone(),
                 content: post.content.clone(),
