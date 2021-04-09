@@ -1,3 +1,4 @@
+use actix_web::error::BlockingError;
 use actix_web::http::header::ToStrError;
 use actix_web::http::StatusCode;
 use actix_web::{HttpResponse, ResponseError};
@@ -50,6 +51,8 @@ pub enum RouteError {
     JsonSerdeUrl(#[from] serde_urlencoded::ser::Error),
     #[error(transparent)]
     OpenSsl(#[from] openssl::error::ErrorStack),
+    #[error("timed out")]
+    Cancelled,
 }
 
 impl From<diesel::result::Error> for RouteError {
@@ -82,6 +85,7 @@ impl ResponseError for RouteError {
             RouteError::ActixInternal => StatusCode::INTERNAL_SERVER_ERROR,
             RouteError::Payload(_) => StatusCode::INTERNAL_SERVER_ERROR,
             RouteError::ExternalService => StatusCode::BAD_GATEWAY,
+            RouteError::Cancelled => StatusCode::REQUEST_TIMEOUT,
         }
     }
 
@@ -117,6 +121,7 @@ impl ResponseError for RouteError {
             RouteError::ExternalService => {
                 "Could not connect to external host when requesting key".to_string()
             }
+            RouteError::Cancelled => "Task timed out".to_string(),
         };
 
         match self {
@@ -138,10 +143,20 @@ impl ResponseError for RouteError {
             RouteError::ActixInternal => HttpResponse::InternalServerError(),
             RouteError::Payload(_) => HttpResponse::InternalServerError(),
             RouteError::ExternalService => HttpResponse::BadGateway(),
+            RouteError::Cancelled => HttpResponse::RequestTimeout(),
         }
         .json(BadResponse {
             title: title_message.clone(),
             message: title_message,
         })
+    }
+}
+
+impl From<BlockingError<RouteError>> for RouteError {
+    fn from(val: BlockingError<RouteError>) -> Self {
+        match val {
+            BlockingError::Error(e) => e,
+            BlockingError::Canceled => RouteError::Cancelled,
+        }
     }
 }
