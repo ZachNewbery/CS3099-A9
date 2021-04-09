@@ -3,10 +3,10 @@ use crate::util::route_error::RouteError;
 use chrono::serde::{ts_milliseconds, ts_milliseconds_option};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use serde_with::rust::string_empty_as_none;
 // use serde::Deserializer;
 // use serde::de::{SeqAccess, Visitor};
 use std::convert::TryFrom;
+use std::collections::HashMap;
 // use std::marker::PhantomData;
 // use std::fmt::Formatter;
 use uuid::Uuid;
@@ -31,44 +31,16 @@ pub enum ContentType {
     Unsupported
 }
 
-#[derive(Serialize, Deserialize, Debug)]
-struct Unsupported;
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct InnerContent {
+    #[serde(default = "default_string")]
+    pub text: String,
+}
 
-// fn deserialize_vec_content_type<'de, D>(deserializer: D) -> Result<Vec<ContentType>, D::Error>
-//     where
-//         D: Deserializer<'de>,
-// {
-//     struct VecContentType(PhantomData<fn() -> Vec<ContentType>>);
-
-//     impl<'de> Visitor<'de> for VecContentType {
-//         type Value = Vec<ContentType>;
-
-//         fn expecting(&self, formatter: &mut Formatter) -> std::fmt::Result {
-//             formatter.write_str("Array of ContentType")
-//         }
-
-//         fn visit_seq<S>(self, mut seq: S) -> Result<Vec<ContentType>, S::Error>
-//             where
-//                 S: SeqAccess<'de>,
-//         {
-//             let mut field_kinds: Vec<ContentType> = Vec::new();
-
-//             loop {
-//                 match seq.next_element() {
-//                     Ok(Some(element)) => field_kinds.push(element),
-//                     Ok(None) => break, // end of sequence
-//                     Err(_) => field_kinds.push(ContentType::Text{
-//                         text: "content not supported.".to_string()
-//                     }),
-//                 }
-//             }
-
-//             Ok(field_kinds)
-//         }
-//     }
-
-//     deserializer.deserialize_seq(VecContentType(PhantomData))
-// }
+fn default_string() -> String {
+    "unsupported content type".to_string()
+}
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -85,7 +57,7 @@ pub(crate) struct NewPost {
     pub community: String,
     pub parent_post: Option<Uuid>,
     pub title: String,
-    pub content: Vec<ContentType>,
+    pub content: Vec<HashMap<String, InnerContent>>,
     pub user_id: String,
 }
 
@@ -93,7 +65,7 @@ pub(crate) struct NewPost {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct UpdatePost {
     pub title: Option<String>,
-    pub content_type: Option<ContentType>,
+    pub content_type: Option<HashMap<String, InnerContent>>,
     pub body: Option<String>,
 }
 
@@ -114,8 +86,7 @@ pub(crate) struct Post {
     pub(crate) parent_post: Option<Uuid>,
     pub(crate) children: Vec<Uuid>,
     pub(crate) title: Option<String>,
-    // #[serde(deserialize_with="deserialize_vec_content_type")]
-    pub(crate) content: Vec<ContentType>,
+    pub(crate) content: Vec<HashMap<String, InnerContent>>,
     pub(crate) author: User,
     #[serde(with = "ts_milliseconds")]
     pub(crate) modified: DateTime<Utc>,

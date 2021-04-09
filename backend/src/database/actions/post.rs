@@ -2,7 +2,8 @@ use crate::database::actions::user::get_user_detail;
 use crate::database::models::{
     DatabaseCommunity, DatabaseMarkdown, DatabaseNewPost, DatabasePost, DatabaseText, DatabaseUser,
 };
-use crate::federation::schemas::ContentType;
+use crate::federation::schemas::InnerContent;
+use std::collections::HashMap;
 
 use diesel::prelude::*;
 use diesel::BelongingToDsl;
@@ -51,7 +52,7 @@ pub(crate) fn get_posts_by_user(
 #[derive(Clone, Debug)]
 pub struct PostInformation {
     pub post: DatabasePost,
-    pub content: Vec<ContentType>,
+    pub content: Vec<HashMap<String, InnerContent>>,
     pub community: DatabaseCommunity,
     pub user: DatabaseUser,
     pub user_details: UserDetail,
@@ -153,30 +154,28 @@ pub(crate) fn get_children_posts_of(
 pub(crate) fn get_content_of_post(
     conn: &MysqlConnection,
     post: &DatabasePost,
-) -> Result<Vec<ContentType>, diesel::result::Error> {
+) -> Result<Vec<HashMap<String, InnerContent>>, diesel::result::Error> {
     // We have to check through *every single* content type to pick up posts.
-    let mut post_content: Vec<ContentType> = Vec::new();
+    let mut post_content: Vec<HashMap<String, InnerContent>> = Vec::new();
 
     // Text
     {
-        post_content.append(
-            &mut DatabaseText::belonging_to(post)
-                .load::<DatabaseText>(conn)?
-                .into_iter()
-                .map(|t| ContentType::Text { text: t.content })
-                .collect(),
-        )
+        let t = DatabaseText::belonging_to(post).first::<DatabaseText>(conn)?;
+        let mut map = HashMap::new();
+        map.insert("text".to_string(), InnerContent {
+            text: t.content
+        });
+        post_content.push(map)
     }
 
     // Markdown
     {
-        post_content.append(
-            &mut DatabaseMarkdown::belonging_to(post)
-                .load::<DatabaseMarkdown>(conn)?
-                .into_iter()
-                .map(|m| ContentType::Markdown { text: m.content })
-                .collect(),
-        )
+        let m = DatabaseMarkdown::belonging_to(post).first::<DatabaseMarkdown>(conn)?;
+        let mut map = HashMap::new();
+        map.insert("markdown".to_string(), InnerContent {
+            text: m.content
+        });
+        post_content.push(map)
     }
 
     Ok(post_content)
@@ -248,7 +247,7 @@ pub(crate) fn put_post(
 pub(crate) fn put_post_contents(
     conn: &MysqlConnection,
     post: &DatabasePost,
-    contents: &Vec<ContentType>,
+    contents: &Vec<HashMap<String, InnerContent>>,
 ) -> Result<(), diesel::result::Error> {
     for content in contents {
         match content {
