@@ -3,7 +3,7 @@ use crate::database::actions::post::{
     put_post_contents, remove_post, remove_post_contents, touch_post,
 };
 use crate::database::get_conn_from_pool;
-use crate::federation::schemas::{InnerContent, NewPost, Post};
+use crate::federation::schemas::{ContentType, NewPost, Post};
 use crate::internal::authentication::verify_federated_request;
 use crate::util::route_error::RouteError;
 use crate::util::{UserDetail, HOSTNAME};
@@ -13,7 +13,7 @@ use actix_web::{HttpResponse, Result};
 use chrono::NaiveDateTime;
 use diesel::Connection;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+// use std::collections::HashMap;
 use std::convert::{TryFrom, TryInto};
 use uuid::Uuid;
 
@@ -32,7 +32,7 @@ pub struct PostFilters {
     parent_post: Option<Uuid>,
     #[serde(default = "true_func")]
     include_sub_children_posts: bool,
-    content_type: Option<String>,
+    content_type: Option<ContentType>,
 }
 
 #[get("")]
@@ -121,7 +121,7 @@ pub(crate) async fn post_matching_filters(
     if let Some(ct) = &parameters.content_type {
         posts = posts
             .into_iter()
-            .filter(|(p, _)| p.content.iter().any(|c| c.contains_key(ct)))
+            .filter(|(p, _)| p.content.iter().any(|c| c == ct))
             .collect();
     }
 
@@ -211,7 +211,7 @@ pub(crate) async fn get_post_by_id(
 #[derive(Clone, Serialize, Deserialize)]
 pub struct EditPost {
     pub title: Option<String>,
-    pub content: Option<Vec<HashMap<String, InnerContent>>>,
+    pub content: Option<Vec<ContentType>>,
 }
 
 #[put("/{id}")]
