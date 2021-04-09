@@ -13,6 +13,7 @@ use actix_web::{HttpResponse, Result};
 use chrono::NaiveDateTime;
 use diesel::Connection;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::convert::{TryFrom, TryInto};
 use uuid::Uuid;
 
@@ -120,7 +121,7 @@ pub(crate) async fn post_matching_filters(
     if let Some(ct) = &parameters.content_type {
         posts = posts
             .into_iter()
-            .filter(|(p, _)| p.content.iter().any(|c| c == ct))
+            .filter(|(p, _)| p.content.iter().any(|c| c.contains_key(ct)))
             .collect();
     }
 
@@ -210,7 +211,7 @@ pub(crate) async fn get_post_by_id(
 #[derive(Clone, Serialize, Deserialize)]
 pub struct EditPost {
     pub title: Option<String>,
-    pub content: Option<Vec<ContentType>>,
+    pub content: Option<Vec<HashMap<ContentType, serde_json::Value>>>,
 }
 
 #[put("/{id}")]

@@ -9,7 +9,7 @@ use crate::database::actions::user::{
     get_name_from_local_user, get_user_detail_by_name, insert_new_federated_user,
 };
 use crate::database::get_conn_from_pool;
-use crate::database::models::{DatabaseLocalUser, DatabaseNewPost, DatabaseUser};
+use crate::database::models::{DatabaseLocalUser, DatabaseNewPost};
 use crate::federation::posts::EditPost;
 use crate::federation::schemas::{ContentType, Post, User};
 use crate::internal::authentication::{authenticate, make_federated_request};
@@ -19,6 +19,7 @@ use crate::util::HOSTNAME;
 use crate::DBPool;
 use actix_web::{delete, get, patch, post, web, HttpRequest, HttpResponse, Result};
 use awc::SendClientRequest;
+use chrono::serde::ts_seconds;
 use chrono::{DateTime, Utc};
 use diesel::{Connection, MysqlConnection};
 use serde::{Deserialize, Serialize};
@@ -38,10 +39,12 @@ pub(crate) struct LocatedPost {
     pub(crate) community: LocatedCommunity,
     pub(crate) parent_post: Option<Uuid>,
     pub(crate) children: Vec<Uuid>,
-    pub(crate) title: String,
-    pub(crate) content: Vec<ContentType>,
+    pub(crate) title: Option<String>,
+    pub(crate) content: Vec<HashMap<ContentType, serde_json::Value>>,
     pub(crate) author: User,
+    #[serde(with = "ts_seconds")]
     pub(crate) modified: DateTime<Utc>,
+    #[serde(with = "ts_seconds")]
     pub(crate) created: DateTime<Utc>,
     #[serde(default)]
     pub(crate) deleted: bool,
@@ -104,7 +107,7 @@ pub(crate) async fn get_post_local(
             .into_iter()
             .map(|p| Ok(p.post.uuid.parse()?))
             .collect::<Result<Vec<_>, RouteError>>()?,
-        title: post.post.title,
+        title: Some(post.post.title),
         content: post.content,
         author: (post.user, post.user_details).into(),
         modified: DateTime::<Utc>::from_utc(post.post.modified, Utc),
@@ -231,7 +234,7 @@ pub(crate) async fn external_forall_get_post(
 
         println!("Post Children: {:?}", p.children);
         Ok(LocatedPost {
-            id: p.id,
+            id: uuid.clone(),
             community: LocatedCommunity::Federated {
                 id: p.community,
                 host: found_host.clone().unwrap(),
@@ -327,7 +330,7 @@ pub(crate) async fn list_local_posts(
                     .into_iter()
                     .map(|h| h.post.uuid.parse().map_err(RouteError::UuidParse))
                     .collect::<Result<Vec<Uuid>, RouteError>>()?,
-                title: p.post.title,
+                title: Some(p.post.title),
                 content: p.content,
                 author: (p.user, p.user_details).into(),
                 modified: DateTime::<Utc>::from_utc(p.post.modified, Utc),
@@ -470,11 +473,22 @@ pub(crate) async fn search_posts(
     // Search
     .filter(|p| {
         p.content.iter().any(|c| {
-            match c {
-                ContentType::Text { text } => text,
-                ContentType::Markdown { text } => text,
-            }
-            .contains(&query.search)
+            let content = if c.contains_key(&ContentType::Text) {
+                c.get(&ContentType::Text)
+                    .unwrap()
+                    .get("text")
+                    .unwrap()
+                    .as_str()
+            } else if c.contains_key(&ContentType::Text) {
+                c.get(&ContentType::Markdown)
+                    .unwrap()
+                    .get("text")
+                    .unwrap()
+                    .as_str()
+            } else {
+                Some("")
+            };
+            content.unwrap().contains(&query.search)
         })
     })
     .collect::<Vec<_>>();
@@ -487,7 +501,7 @@ pub struct CreatePost {
     pub community: LocatedCommunity,
     pub parent: Option<Uuid>,
     pub title: String,
-    pub content: Vec<ContentType>,
+    pub content: Vec<HashMap<ContentType, serde_json::Value>>,
 }
 
 #[post("/posts/create")]
@@ -529,7 +543,7 @@ pub(crate) async fn create_post(
             let conn = get_conn_from_pool(pool.clone())?;
             web::block(move || {
                 let db_post = put_post(&conn, &new_post)?;
-                put_post_contents(&conn, &db_post, &post.content[..])
+                put_post_contents(&conn, &db_post, &post.content)
             })
             .await?;
             Ok(HttpResponse::Ok().finish())
@@ -539,7 +553,10 @@ pub(crate) async fn create_post(
             let user = web::block(move || get_name_from_local_user(&conn, local_user)).await?;
 
             let body = CreatePost {
-                community: post.community.clone(),
+                community: LocatedCommunity::Federated {
+                    id: id.clone(),
+                    host: host.clone(),
+                },
                 parent: post.parent.clone(),
                 title: post.title.clone(),
                 content: post.content.clone(),
