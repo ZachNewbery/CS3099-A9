@@ -18,7 +18,7 @@ use crate::util::route_error::RouteError;
 use crate::util::HOSTNAME;
 use crate::DBPool;
 use actix_web::{delete, get, patch, post, web, HttpRequest, HttpResponse, Result};
-use chrono::serde::ts_milliseconds;
+use chrono::serde::ts_seconds;
 use chrono::{DateTime, Utc};
 use diesel::Connection;
 use serde::{Deserialize, Serialize};
@@ -41,9 +41,9 @@ pub(crate) struct LocatedPost {
     pub(crate) title: Option<String>,
     pub(crate) content: Vec<HashMap<ContentType, serde_json::Value>>,
     pub(crate) author: User,
-    #[serde(with = "ts_milliseconds")]
+    #[serde(with = "ts_seconds")]
     pub(crate) modified: DateTime<Utc>,
-    #[serde(with = "ts_milliseconds")]
+    #[serde(with = "ts_seconds")]
     pub(crate) created: DateTime<Utc>,
     #[serde(default)]
     pub(crate) deleted: bool,

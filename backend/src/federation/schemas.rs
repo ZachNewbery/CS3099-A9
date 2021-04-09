@@ -1,6 +1,6 @@
 use crate::database::actions::post::PostInformation;
 use crate::util::route_error::RouteError;
-use chrono::serde::{ts_milliseconds, ts_milliseconds_option};
+use chrono::serde::{ts_seconds, ts_seconds_option};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_with::rust::string_empty_as_none;
@@ -66,7 +66,7 @@ pub(crate) struct UpdatePost {
 #[serde(rename_all = "camelCase")]
 pub(crate) struct PostTimeStamp {
     id: Uuid,
-    #[serde(with = "ts_milliseconds_option")]
+    #[serde(with = "ts_seconds_option")]
     modified: Option<DateTime<Utc>>,
 }
 
@@ -81,9 +81,9 @@ pub(crate) struct Post {
     pub(crate) title: Option<String>,
     pub(crate) content: Vec<HashMap<ContentType, serde_json::Value>>,
     pub(crate) author: User,
-    #[serde(with = "ts_milliseconds")]
+    #[serde(with = "ts_seconds")]
     pub(crate) modified: DateTime<Utc>,
-    #[serde(with = "ts_milliseconds")]
+    #[serde(with = "ts_seconds")]
     pub(crate) created: DateTime<Utc>,
 }
 
