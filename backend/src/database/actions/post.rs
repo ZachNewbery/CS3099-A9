@@ -167,20 +167,24 @@ pub(crate) fn get_content_of_post(
 
     // Text
     {
-        let t = DatabaseText::belonging_to(post).first::<DatabaseText>(conn);
-        if let Ok(cont) = t {
+        let t = DatabaseText::belonging_to(post)
+            .first::<DatabaseText>(conn)
+            .optional()?;
+        if let Some(content) = t {
             let mut map = HashMap::new();
-            map.insert(ContentType::Text, json!({ "text": cont.content }));
+            map.insert(ContentType::Text, json!({ "text": content.content }));
             post_content.push(map)
         }
     }
 
     // Markdown
     {
-        let m = DatabaseMarkdown::belonging_to(post).first::<DatabaseMarkdown>(conn);
-        if let Ok(cont) = m {
+        let m = DatabaseMarkdown::belonging_to(post)
+            .first::<DatabaseMarkdown>(conn)
+            .optional()?;
+        if let Some(content) = m {
             let mut map = HashMap::new();
-            map.insert(ContentType::Markdown, json!({ "text": cont.content }));
+            map.insert(ContentType::Markdown, json!({ "text": content.content }));
             post_content.push(map)
         }
     }
