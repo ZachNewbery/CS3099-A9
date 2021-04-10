@@ -497,22 +497,41 @@ pub(crate) async fn search_posts(
 }
 
 #[derive(Serialize, Deserialize)]
+pub struct CreateCommunity {
+    id: String,
+}
+
+#[derive(Serialize, Deserialize)]
 pub struct CreatePost {
-    pub community: LocatedCommunity,
+    pub community: CreateCommunity,
     pub parent: Option<Uuid>,
     pub title: String,
     pub content: Vec<HashMap<ContentType, serde_json::Value>>,
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct CreatePostExtern {
+    pub community: String,
+    pub parent: Option<Uuid>,
+    pub title: String,
+    pub content: Vec<HashMap<ContentType, serde_json::Value>>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct HostQuery {
+    host: Option<String>,
+}
+
 #[post("/posts/create")]
 pub(crate) async fn create_post(
+    query: web::Query<HostQuery>,
     pool: web::Data<DBPool>,
     post: web::Json<CreatePost>,
     request: HttpRequest,
 ) -> Result<HttpResponse> {
     let (_, local_user) = authenticate(pool.clone(), request)?;
-    match &post.community {
-        LocatedCommunity::Local { id } => {
+    match query.host.as_deref() {
+        Some(HOSTNAME) => {
             let conn = get_conn_from_pool(pool.clone())?;
             let parent = match post.parent {
                 None => None,
@@ -525,7 +544,7 @@ pub(crate) async fn create_post(
                 }
             };
             let conn = get_conn_from_pool(pool.clone())?;
-            let id = id.clone();
+            let id = post.community.id.clone();
             let community = web::block(move || get_community(&conn, &id))
                 .await?
                 .ok_or(RouteError::NotFound)?;
@@ -548,15 +567,12 @@ pub(crate) async fn create_post(
             .await?;
             Ok(HttpResponse::Ok().finish())
         }
-        LocatedCommunity::Federated { id, host } => {
+        Some(host) => {
             let conn = get_conn_from_pool(pool.clone())?;
             let user = web::block(move || get_name_from_local_user(&conn, local_user)).await?;
 
-            let body = CreatePost {
-                community: LocatedCommunity::Federated {
-                    id: id.clone(),
-                    host: host.clone(),
-                },
+            let body = CreatePostExtern {
+                community: post.community.id.clone(),
                 parent: post.parent.clone(),
                 title: post.title.clone(),
                 content: post.content.clone(),
@@ -564,7 +580,7 @@ pub(crate) async fn create_post(
 
             let req = make_federated_request(
                 awc::Client::post,
-                host.clone(),
+                host.clone().to_string(),
                 "/fed/posts".to_string(),
                 body,
                 Some(user.username),
@@ -572,13 +588,14 @@ pub(crate) async fn create_post(
             )?
             .await
             .map_err(|_| RouteError::ActixInternal)?;
-            
+
             if req.status().is_success() {
                 Ok(HttpResponse::Ok().finish())
             } else {
                 Ok(HttpResponse::InternalServerError().finish())
             }
-        },
+        }
+        None => Ok(HttpResponse::InternalServerError().finish()),
     }
 }
 
