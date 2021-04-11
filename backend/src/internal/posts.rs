@@ -601,50 +601,75 @@ pub(crate) async fn create_post(
 
 #[patch("/posts/{id}")]
 pub(crate) async fn edit_post(
+    query: web::Query<HostQuery>,
     pool: web::Data<DBPool>,
     web::Path(id): web::Path<Uuid>,
     edit_post: web::Json<EditPost>,
     request: HttpRequest,
 ) -> Result<HttpResponse> {
-    let (_, _local_user) = authenticate(pool.clone(), request)?;
+    let (_, local_user) = authenticate(pool.clone(), request)?;
+    match query.host.as_deref() {
+        Some(HOSTNAME) => {
+            let conn = get_conn_from_pool(pool.clone())?;
+            let post = web::block(move || {
+                use crate::database::actions::post;
+                post::get_post(&conn, &id)
+            })
+            .await?
+            .ok_or(RouteError::NotFound)?;
 
-    // Get the post first
-    let conn = get_conn_from_pool(pool.clone())?;
-    let post = web::block(move || {
-        use crate::database::actions::post;
-        post::get_post(&conn, &id)
-    })
-    .await?
-    .ok_or(RouteError::NotFound)?; // change here to send to federated host?
-
-    // Check permissions
-    if !local_user_has_modify_post_permission(pool.clone(), _local_user, &post).await? {
-        return Ok(HttpResponse::Unauthorized().finish());
-    };
-
-    let conn = get_conn_from_pool(pool.clone())?;
-    web::block(move || {
-        conn.transaction(|| {
-            match &edit_post.title {
-                None => {}
-                Some(n) => {
-                    modify_post_title(&conn, post.post.clone(), n)?;
-                }
+            // Check permissions
+            if !local_user_has_modify_post_permission(pool.clone(), local_user, &post).await? {
+                return Ok(HttpResponse::Unauthorized().finish());
             };
-            match &edit_post.content {
-                None => {}
-                Some(n) => {
-                    remove_post_contents(&conn, &post.post.clone())?;
-                    put_post_contents(&conn, &post.post, n)?;
-                }
-            }
-            touch_post(&conn, post.post)?;
-            Ok::<(), diesel::result::Error>(())
-        })
-    })
-    .await?;
 
-    Ok(HttpResponse::Ok().finish())
+            let conn = get_conn_from_pool(pool.clone())?;
+            web::block(move || {
+                conn.transaction(|| {
+                    match &edit_post.title {
+                        None => {}
+                        Some(n) => {
+                            modify_post_title(&conn, post.post.clone(), n)?;
+                        }
+                    };
+                    match &edit_post.content {
+                        None => {}
+                        Some(n) => {
+                            remove_post_contents(&conn, &post.post.clone())?;
+                            put_post_contents(&conn, &post.post, n)?;
+                        }
+                    }
+                    touch_post(&conn, post.post)?;
+                    Ok::<(), diesel::result::Error>(())
+                })
+            })
+            .await?;
+
+            Ok(HttpResponse::Ok().finish())
+        }
+        Some(host) => {
+            let conn = get_conn_from_pool(pool.clone())?;
+            let user = web::block(move || get_name_from_local_user(&conn, local_user)).await?;
+
+            let req = make_federated_request(
+                awc::Client::put,
+                host.clone().to_string(),
+                format!("/fed/posts/{}", id.to_string()),
+                edit_post.into_inner(),
+                Some(user.username),
+                Option::<()>::None,
+            )?
+            .await
+            .map_err(|_| RouteError::ActixInternal)?;
+
+            if req.status().is_success() {
+                Ok(HttpResponse::Ok().finish())
+            } else {
+                Ok(HttpResponse::InternalServerError().finish())
+            }
+        }
+        None => Ok(HttpResponse::InternalServerError().finish()),
+    }
 }
 
 async fn local_user_has_modify_post_permission(
@@ -669,28 +694,54 @@ async fn local_user_has_modify_post_permission(
 
 #[delete("/posts/{id}")]
 pub(crate) async fn delete_post(
+    query: web::Query<HostQuery>,
     pool: web::Data<DBPool>,
     web::Path(id): web::Path<Uuid>,
     request: HttpRequest,
 ) -> Result<HttpResponse> {
-    let (_, _local_user) = authenticate(pool.clone(), request)?;
+    let (_, local_user) = authenticate(pool.clone(), request)?;
+    match query.host.as_deref() {
+        Some(HOSTNAME) => {
+            // Get the post first
+            let conn = get_conn_from_pool(pool.clone())?;
+            let post = web::block(move || {
+                use crate::database::actions::post;
+                post::get_post(&conn, &id)
+            })
+            .await?
+            .ok_or(RouteError::NotFound)?;
 
-    // Get the post first
-    let conn = get_conn_from_pool(pool.clone())?;
-    let post = web::block(move || {
-        use crate::database::actions::post;
-        post::get_post(&conn, &id)
-    })
-    .await?
-    .ok_or(RouteError::NotFound)?; // change here for federation
+            // Check permissions
+            if !local_user_has_modify_post_permission(pool.clone(), local_user, &post).await? {
+                return Ok(HttpResponse::Unauthorized().finish());
+            };
 
-    // Check permissions
-    if !local_user_has_modify_post_permission(pool.clone(), _local_user, &post).await? {
-        return Ok(HttpResponse::Unauthorized().finish());
-    };
+            let conn = get_conn_from_pool(pool.clone())?;
+            web::block(move || remove_post(&conn, post.post)).await?;
 
-    let conn = get_conn_from_pool(pool.clone())?;
-    web::block(move || remove_post(&conn, post.post)).await?;
+            Ok(HttpResponse::Ok().finish())
+        }
+        Some(host) => {
+            let conn = get_conn_from_pool(pool.clone())?;
+            let user = web::block(move || get_name_from_local_user(&conn, local_user)).await?;
 
-    Ok(HttpResponse::Ok().finish())
+            let req = make_federated_request(
+                awc::Client::delete,
+                host.clone().to_string(),
+                format!("/fed/posts/{}", id.to_string()),
+                "{}".to_string(),
+                Some(user.username),
+                Option::<()>::None,
+            )?
+            .await
+            .map_err(|_| RouteError::ActixInternal)?;
+
+            if req.status().is_success() {
+                Ok(HttpResponse::Ok().finish())
+            } else {
+                Ok(HttpResponse::InternalServerError().finish())
+            }
+        }
+        None => Ok(HttpResponse::InternalServerError().finish()),
+    }
 }
