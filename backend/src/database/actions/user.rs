@@ -31,8 +31,9 @@ pub(crate) fn insert_new_federated_user(
     use crate::database::models::{DatabaseNewFederatedUser, DatabaseNewUser};
     use crate::database::schema::FederatedUsers::dsl::*;
     use crate::database::schema::Users::dsl::*;
-
-    let db_new_user: DatabaseNewUser = new_user.clone().into();
+    let mut formatted_user = new_user.clone();
+    formatted_user.host = formatted_user.host.replace("https://", "").replace("/", "");
+    let db_new_user: DatabaseNewUser = formatted_user.clone().into();
 
     diesel::insert_into(Users)
         .values(db_new_user.clone())
@@ -42,7 +43,7 @@ pub(crate) fn insert_new_federated_user(
         .filter(username.eq(&db_new_user.username))
         .first::<DatabaseUser>(conn)?;
 
-    let db_new_fed_user: DatabaseNewFederatedUser = (inserted_user, new_user.clone()).into();
+    let db_new_fed_user: DatabaseNewFederatedUser = (inserted_user, formatted_user.clone()).into();
 
     println!("{:?}", db_new_fed_user);
     diesel::insert_into(FederatedUsers)
