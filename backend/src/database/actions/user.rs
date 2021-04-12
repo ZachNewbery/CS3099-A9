@@ -43,7 +43,7 @@ pub(crate) fn insert_new_federated_user(
         .filter(username.eq(&db_new_user.username))
         .first::<DatabaseUser>(conn)?;
 
-    let db_new_fed_user: DatabaseNewFederatedUser = (inserted_user, formatted_user.clone()).into();
+    let db_new_fed_user: DatabaseNewFederatedUser = (inserted_user, formatted_user).into();
 
     println!("{:?}", db_new_fed_user);
     diesel::insert_into(FederatedUsers)
