@@ -8,6 +8,7 @@ export const colors = {
   lightBlue: "#5595ff",
   white: "rgba(255, 255, 255, 0.9)",
   softWhite: "rgba(255, 255, 255, 0.775)",
+  verySoftWhite: "rgba(255, 255, 255, 0.4)",
   text: "#3a3a3a",
   lightText: "#5c5c5c",
   blueGradient: "linear-gradient(to left, #1143f7, #0007d6, #0d0ab7)",

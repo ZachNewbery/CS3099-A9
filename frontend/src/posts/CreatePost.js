@@ -1,8 +1,7 @@
 import React, { useState, useContext, useRef } from "react";
 import styled from "styled-components";
 
-import { InstanceContext } from "../App";
-import { CommunityContext } from "../Home";
+import { InstanceContext, CommunityContext } from "../App";
 
 import { fetchData, colors, fonts } from "../helpers";
 import { StyledForm } from "../helpers/styles";

@@ -5,14 +5,15 @@ import { faSearch } from "@fortawesome/free-solid-svg-icons";
 import { colors } from "../helpers";
 import { InstanceContext, SearchContext } from "../App";
 import { ListInstances } from "../communities/ListInstances";
+import { ListPosts } from "../communities/ListPosts";
+import { useDebouncedCallback } from "use-debounce";
 
 const StyledSearch = styled.div`
-  width: 25rem;
+  width: 35rem;
   height: 2.5rem;
   border-radius: 1.25rem;
   background: ${colors.blueGradient};
   overflow: hidden;
-  padding: 0 1rem;
   box-shadow: ${colors.blueInsetShadow};
   transition: all 0.3s;
   &.open {
@@ -28,6 +29,34 @@ const StyledSearch = styled.div`
     & > svg {
       color: ${colors.white};
       font-size: 1rem;
+      margin-left: 1rem;
+    }
+
+    & > .current-instance {
+      cursor: pointer;
+      box-shadow: ${colors.blueInsetShadow};
+      margin: 0;
+      color: ${colors.white};
+      font-size: 0.85rem;
+      height: calc(100% - 0.5rem);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 1.25rem;
+      padding: 0 1rem;
+      margin: 0.5rem;
+      box-sizing: border-box;
+      & > p {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 12rem;
+      }
+
+      transition: all 0.1s ease-out;
+      &:hover {
+        box-shadow: ${colors.blueInsetShadow}, inset 0px 0px 0px 1px rgb(255 255 255 / 30%), inset 0 0 10px 2px rgb(255 255 255 / 42%);
+      }
     }
 
     & > .search-control {
@@ -45,44 +74,52 @@ const StyledSearch = styled.div`
         color: ${colors.softWhite};
       }
     }
-
-    & > p {
-      margin: 0;
-      color: ${colors.white};
-      font-size: 0.85rem;
-      max-width: 8rem;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
+  }
+  & > .instance-area {
+    padding: 1rem;
   }
 `;
 
 export const Search = () => {
-  const { search, setSearch } = useContext(SearchContext)
-  
+  const { search, setSearch } = useContext(SearchContext);
+
   const [isOpen, setIsOpen] = useState(false);
   const { instance, setInstance } = useContext(InstanceContext);
 
-  const handleChange = (e) => {
+  const [handleChange] = useDebouncedCallback((e) => {
     const text = e.target.value;
     setSearch(text);
-  };
+  }, 300);
 
   useEffect(() => {
     setIsOpen(false);
-  }, [instance])
+  }, [instance]);
 
   return (
     <>
-      <StyledSearch className={isOpen ? "open" : ""} onClick={() => setIsOpen(true)}>
+      <StyledSearch className={isOpen ? "open" : ""}>
         <div className="search-area">
           <FontAwesomeIcon icon={faSearch} />
-          <input className="search-control" onChange={handleChange} placeholder="Search" />
-          <p title={instance || "All hosts"}>{instance || "All hosts"}</p>
+          <input
+            className="search-control"
+            onChange={handleChange}
+            defaultValue={search}
+            key={search}
+            placeholder="Search"
+            onClick={() => setIsOpen("posts")}
+          />
+          <div className={`current-instance ${isOpen === "instance" ? "active" : ""}`} onClick={() => setIsOpen("instance")}>
+            <p title={instance || "All hosts"}>{instance || "All hosts"}</p>
+          </div>
         </div>
         <div className="instance-area">
-          <ListInstances instance={instance} setInstance={setInstance} />
+          {isOpen ? (
+            isOpen === "instance" ? (
+              <ListInstances instance={instance} setInstance={setInstance} />
+            ) : (
+              <ListPosts instance={instance} search={search} key={search} setIsOpen={setIsOpen} />
+            )
+          ) : null}
         </div>
       </StyledSearch>
       {isOpen && <StyledBackground onClick={() => setIsOpen(false)} />}

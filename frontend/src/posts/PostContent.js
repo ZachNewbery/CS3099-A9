@@ -39,21 +39,8 @@ export const StyledContent = styled.div`
     bottom: 0;
   }
 
-  .header {
-    display: flex;
-    padding: 1rem 1rem 0;
-    .title {
-      font-size: 1.5em;
-      flex: 1;
-      margin: 0;
-      width: 10rem;
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-    }
-  }
   .header + div {
-    padding: 0 0.5em 0.3rem;
+    padding: 0.5rem;
   }
   .date-time {
     display: flex;
