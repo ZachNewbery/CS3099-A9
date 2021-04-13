@@ -223,7 +223,7 @@ pub struct SearchCommunities {
     search: String,
 }
 
-#[get("/communities/search")]
+#[get("/communities-search")]
 pub(crate) async fn search_communities(
     pool: web::Data<DBPool>,
     query: web::Query<SearchCommunities>,

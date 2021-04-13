@@ -422,7 +422,7 @@ pub struct SearchPosts {
     search: String,
 }
 
-#[get("/posts/search")]
+#[get("/posts-search")]
 pub(crate) async fn search_posts(
     query: web::Query<SearchPosts>,
     pool: web::Data<DBPool>,
