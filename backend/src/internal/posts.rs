@@ -486,7 +486,8 @@ pub(crate) async fn search_posts(
                 Some("")
             };
             content.unwrap().contains(&query.search)
-        })
+        }) || p.title.as_ref().unwrap().contains(&query.search)
+        
     })
     .collect::<Vec<_>>();
 
