@@ -1,46 +1,9 @@
-use crate::internal::authentication::make_federated_request;
 use actix_web::{get, http, web, HttpResponse, Result};
 use std::fs;
 
 #[get("/hello/{name}")]
 pub async fn hello(web::Path(name): web::Path<String>) -> Result<String> {
-    let mut test = make_federated_request(
-        awc::Client::get,
-        "cs3099user-a1.host.cs.st-andrews.ac.uk".to_string(),
-        "/fed/communities".to_string(),
-        "{}".to_string(),
-        Some("zn6".to_string()),
-        Option::<()>::None,
-    )?
-    .await?;
-
-    let mut test2 = make_federated_request(
-        awc::Client::get,
-        "nebula0.herokuapp.com".to_string(),
-        "/fed/communities".to_string(),
-        "{}".to_string(),
-        Some("zn6".to_string()),
-        Option::<()>::None,
-    )?
-    .await?;
-
-    let mut test3 = make_federated_request(
-        awc::Client::get,
-        "cs3099user-a9.host.cs.st-andrews.ac.uk".to_string(),
-        "/fed/communities".to_string(),
-        "{}".to_string(),
-        Some("zn6".to_string()),
-        Option::<()>::None,
-    )?
-    .await?;
-
-    Ok(format!(
-        "Hello {} \nVerification: {:?} \nVerification 2: {:?} \nVerification Self: {:?}",
-        name,
-        test.body().await?,
-        test2.body().await?,
-        test3.body().await?
-    ))
+    Ok(format!("Hello {}", name))
 }
 
 #[get("/key")]

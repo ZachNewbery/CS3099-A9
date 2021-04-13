@@ -24,7 +24,6 @@ pub(crate) async fn communities(
         .headers()
         .get("Client-Host")
         .ok_or(RouteError::MissingClientHost)?;
-    // TODO: Parse the client host
     verify_federated_request(req, payload).await?;
 
     let conn = get_conn_from_pool(pool.clone())?;
@@ -50,7 +49,6 @@ pub(crate) async fn community_by_id(
         .headers()
         .get("Client-Host")
         .ok_or(RouteError::MissingClientHost)?;
-    // TODO: Parse the client host
     verify_federated_request(req, payload).await?;
 
     let conn = get_conn_from_pool(pool.clone())?;
@@ -93,7 +91,6 @@ pub(crate) async fn community_by_id_timestamps(
         .headers()
         .get("Client-Host")
         .ok_or(RouteError::MissingClientHost)?;
-    // TODO: Parse the client host
     verify_federated_request(req, payload).await?;
 
     let conn = get_conn_from_pool(pool.clone())?;

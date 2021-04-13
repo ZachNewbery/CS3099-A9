@@ -223,7 +223,7 @@ pub struct SearchCommunities {
     search: String,
 }
 
-#[get("/communities/search")]
+#[get("/communities-search")]
 pub(crate) async fn search_communities(
     pool: web::Data<DBPool>,
     query: web::Query<SearchCommunities>,
@@ -290,7 +290,7 @@ pub(crate) async fn delete_community(
     })
     .await?;
 
-    if !admins.into_iter().any(|a| a.0.id == local_user.id) {
+    if !admins.into_iter().any(|a| a.0.id == local_user.user_id) {
         return Ok(HttpResponse::Unauthorized().finish());
     }
 
@@ -322,7 +322,7 @@ pub(crate) async fn edit_community_details(
     })
     .await?;
 
-    if !admins.into_iter().any(|a| a.0.id == local_user.id) {
+    if !admins.into_iter().any(|a| a.0.id == local_user.user_id) {
         return Ok(HttpResponse::Unauthorized().finish());
     }
 
