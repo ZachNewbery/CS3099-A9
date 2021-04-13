@@ -174,7 +174,7 @@ pub(crate) fn update_community_title(
     use crate::database::schema::Communities::dsl::*;
 
     diesel::update(&community)
-        .set((title.eq(new_title), name.eq(new_title))) // FIXME: in the future "name" will be immutable
+        .set(title.eq(new_title))
         .execute(conn)?;
 
     community.title = new_title.to_string();
