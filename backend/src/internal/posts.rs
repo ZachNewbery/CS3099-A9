@@ -674,14 +674,14 @@ async fn local_user_has_modify_post_permission(
     local_user: DatabaseLocalUser,
     post: &PostInformation,
 ) -> std::result::Result<bool, actix_web::Error> {
-    if local_user.id != post.user.id {
+    if local_user.user_id != post.user.id {
         // Check if admin
         let conn = get_conn_from_pool(pool.clone())?;
         let post_to_check = post.clone();
         let admins =
             web::block(move || get_community_admins(&conn, &post_to_check.community)).await?;
 
-        if !admins.into_iter().any(|(u, _)| u.id == local_user.id) {
+        if !admins.into_iter().any(|(u, _)| u.id == local_user.user_id) {
             return Ok(false);
         }
     }
