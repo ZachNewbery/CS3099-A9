@@ -141,7 +141,6 @@ pub(crate) async fn new_post_federated(
     payload: web::Payload,
     _new_post: web::Json<NewPost>,
 ) -> Result<HttpResponse> {
-    // TODO: Authentication for /fed/posts (POST)
     let _client_host = req
         .headers()
         .get("Client-Host")
