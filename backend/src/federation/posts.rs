@@ -157,7 +157,6 @@ pub(crate) async fn new_post_federated(
         .map(DatabaseContentType::try_from)
         .collect::<Result<Vec<DatabaseContentType>, RouteError>>()?;
 
-
     let post = web::block(move || {
         let user = User {
             id: user_id.to_str()?.to_string(),
