@@ -64,12 +64,6 @@ pub(crate) async fn user_by_id(
     payload: web::Payload,
 ) -> Result<HttpResponse> {
     use std::convert::TryInto;
-    let _client_host = request
-        .headers()
-        .get("Client-Host")
-        .ok_or(RouteError::MissingClientHost)?
-        .to_str()
-        .map_err(RouteError::HeaderParse)?;
 
     verify_federated_request(request, payload).await?;
 

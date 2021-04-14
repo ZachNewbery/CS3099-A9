@@ -99,7 +99,7 @@ async fn main() -> std::io::Result<()> {
                     .service(internal::communities::search_communities),
             )
     })
-    .workers(2)
+    .workers(4)
     .bind(bind)?
     .run()
     .await

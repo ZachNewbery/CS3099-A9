@@ -1,4 +1,4 @@
-use crate::database::actions::communities::{get_community, get_community_admins};
+use crate::database::actions::communities::{get_community_admins, get_community_by_id};
 use crate::database::actions::post;
 use crate::database::actions::post::{
     get_all_top_level_posts, get_children_posts_of, get_top_level_posts_of_community,
@@ -11,7 +11,7 @@ use crate::database::actions::user::{
 use crate::database::get_conn_from_pool;
 use crate::database::models::{DatabaseLocalUser, DatabaseNewPost};
 use crate::federation::posts::EditPost;
-use crate::federation::schemas::{ContentType, Post, User};
+use crate::federation::schemas::{ContentType, DatabaseContentType, Post, User};
 use crate::internal::authentication::{authenticate, make_federated_request};
 use crate::internal::{get_known_hosts, LocatedCommunity};
 use crate::util::route_error::RouteError;
@@ -24,6 +24,7 @@ use chrono::{DateTime, Utc};
 use diesel::{Connection, MysqlConnection};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::convert::TryFrom;
 use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -104,7 +105,7 @@ pub(crate) async fn get_post_local(
             .into_iter()
             .map(|p| Ok(p.post.uuid.parse()?))
             .collect::<Result<Vec<_>, RouteError>>()?,
-        title: Some(post.post.title),
+        title: post.post.title,
         content: post.content,
         author: (post.user, post.user_details).into(),
         modified: DateTime::<Utc>::from_utc(post.post.modified, Utc),
@@ -182,73 +183,18 @@ pub(crate) fn cache_federated_user(
     conn: &MysqlConnection,
     federated_user: &User,
 ) -> Result<(), diesel::result::Error> {
-    match get_user_detail_by_name(conn, &federated_user.id) {
-        Ok(_) => Ok(()),
-        Err(diesel::NotFound) => insert_new_federated_user(conn, federated_user),
-        Err(e) => Err(e),
+    match federated_user.host.as_ref() {
+        HOSTNAME => Ok(()),
+        _ => match get_user_detail_by_name(conn, &federated_user.id) {
+            Ok(_) => Ok(()),
+            Err(diesel::NotFound) => {
+                insert_new_federated_user(conn, federated_user)?;
+                Ok(())
+            }
+            Err(e) => Err(e),
+        },
     }
 }
-
-// // TODO: Use this somewhere
-// // Gets one post matching UUID from all known hosts.
-// pub(crate) async fn external_forall_get_post(
-//     uuid: &Uuid,
-//     pool: web::Data<DBPool>,
-//     username: &str,
-// ) -> Result<LocatedPost, RouteError> {
-//     let mut post: Option<Post> = None;
-//     let mut found_host: Option<String> = None;
-//     for host in get_known_hosts().iter() {
-//         // Ask host
-//         let mut query = request_get_post(&uuid, host, username)?
-//             .await
-//             .map_err(|_| RouteError::ActixInternal)?;
-
-//         if query.status().is_success() {
-//             // Set the found host's string
-//             found_host = Some(host.to_string());
-
-//             post = {
-//                 let body = query.body().await?;
-//                 serde_json::from_str(
-//                     &String::from_utf8(body.to_vec()).map_err(|_| RouteError::ActixInternal)?,
-//                 )?
-//             };
-
-//             break;
-//         }
-//     }
-
-//     if let Some(p) = post {
-//         let conn = get_conn_from_pool(pool.clone()).map_err(|_| RouteError::ActixInternal)?;
-//         let author = p.author.clone();
-
-//         web::block(move || {
-//             cache_federated_user(&conn, &author)?;
-//             Ok::<(), RouteError>(())
-//         })
-//         .await?;
-
-//         println!("Post Children: {:?}", p.children);
-//         Ok(LocatedPost {
-//             id: *uuid,
-//             community: LocatedCommunity::Federated {
-//                 id: p.community,
-//                 host: found_host.clone().unwrap(),
-//             },
-//             parent_post: p.parent_post,
-//             children: p.children,
-//             title: p.title,
-//             content: p.content,
-//             author: p.author,
-//             modified: p.modified,
-//             created: p.created,
-//             deleted: false,
-//         })
-//     } else {
-//         Err(RouteError::NotFound)
-//     }
-// }
 
 #[get("/posts")]
 pub(crate) async fn list_posts(
@@ -293,7 +239,7 @@ pub(crate) async fn list_local_posts(
         let posts = match &comm {
             None => get_all_top_level_posts(&conn),
             Some(c) => {
-                let community = get_community(&conn, c)?.ok_or(diesel::NotFound)?;
+                let community = get_community_by_id(&conn, c)?.ok_or(diesel::NotFound)?;
 
                 get_top_level_posts_of_community(&conn, &community)
             }
@@ -327,7 +273,7 @@ pub(crate) async fn list_local_posts(
                     .into_iter()
                     .map(|h| h.post.uuid.parse().map_err(RouteError::UuidParse))
                     .collect::<Result<Vec<Uuid>, RouteError>>()?,
-                title: Some(p.post.title),
+                title: p.post.title,
                 content: p.content,
                 author: (p.user, p.user_details).into(),
                 modified: DateTime::<Utc>::from_utc(p.post.modified, Utc),
@@ -382,6 +328,7 @@ async fn external_list_posts_inner(
                 .map_err(|_| RouteError::ActixInternal)?;
             serde_json::from_str(&s_posts).map_err(|_| RouteError::ActixInternal)?
         };
+        dbg!(posts.clone());
 
         let conn = get_conn_from_pool(pool.clone()).map_err(|_| RouteError::ActixInternal)?;
         let host2 = host.to_string();
@@ -487,7 +434,6 @@ pub(crate) async fn search_posts(
             };
             content.unwrap().contains(&query.search)
         }) || p.title.as_ref().unwrap().contains(&query.search)
-        
     })
     .collect::<Vec<_>>();
 
@@ -503,15 +449,15 @@ pub struct CreateCommunity {
 pub struct CreatePost {
     pub community: CreateCommunity,
     pub parent: Option<Uuid>,
-    pub title: String,
+    pub title: Option<String>,
     pub content: Vec<HashMap<ContentType, serde_json::Value>>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct CreatePostExtern {
     pub community: String,
     pub parent: Option<Uuid>,
-    pub title: String,
+    pub title: Option<String>,
     pub content: Vec<HashMap<ContentType, serde_json::Value>>,
 }
 
@@ -543,7 +489,7 @@ pub(crate) async fn create_post(
             };
             let conn = get_conn_from_pool(pool.clone())?;
             let id = post.community.id.clone();
-            let community = web::block(move || get_community(&conn, &id))
+            let community = web::block(move || get_community_by_id(&conn, &id))
                 .await?
                 .ok_or(RouteError::NotFound)?;
 
@@ -558,9 +504,16 @@ pub(crate) async fn create_post(
             };
 
             let conn = get_conn_from_pool(pool.clone())?;
+
+            let content = post
+                .content
+                .iter()
+                .map(DatabaseContentType::try_from)
+                .collect::<Result<Vec<DatabaseContentType>, RouteError>>()?;
+
             web::block(move || {
                 let db_post = put_post(&conn, &new_post)?;
-                put_post_contents(&conn, &db_post, &post.content)
+                put_post_contents(&conn, &db_post, &content)
             })
             .await?;
             Ok(HttpResponse::Ok().finish())
@@ -575,6 +528,8 @@ pub(crate) async fn create_post(
                 title: post.title.clone(),
                 content: post.content.clone(),
             };
+
+            dbg!(&body);
 
             let req = make_federated_request(
                 awc::Client::post,
@@ -634,11 +589,17 @@ pub(crate) async fn edit_post(
                         None => {}
                         Some(n) => {
                             remove_post_contents(&conn, &post.post.clone())?;
-                            put_post_contents(&conn, &post.post, n)?;
+
+                            let content = n
+                                .iter()
+                                .map(DatabaseContentType::try_from)
+                                .collect::<Result<Vec<DatabaseContentType>, RouteError>>()?;
+
+                            put_post_contents(&conn, &post.post, &content)?;
                         }
                     }
                     touch_post(&conn, post.post)?;
-                    Ok::<(), diesel::result::Error>(())
+                    Ok::<(), RouteError>(())
                 })
             })
             .await?;

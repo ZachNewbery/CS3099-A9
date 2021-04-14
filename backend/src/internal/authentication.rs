@@ -183,7 +183,7 @@ where
             .header("Signature", str_header),
         None => req.header("Signature", str_header),
     };
-
+    
     // send request
     if body_string.is_empty() {
         Ok(new_req.send())
@@ -195,15 +195,13 @@ where
 pub async fn verify_federated_request(
     request: HttpRequest,
     mut payload: web::Payload,
-) -> Result<bool, RouteError> {
+) -> Result<web::Bytes, RouteError> {
     // get host from request
     let headers = request.headers();
     let client_host = headers
         .get("Client-Host")
         .ok_or(RouteError::MissingClientHost)?
         .to_str()?;
-
-    println!("Recieved Request from: {}", client_host);
 
     if client_host == "localhost" {
         Err(RouteError::BadClientHost)
@@ -218,10 +216,6 @@ pub async fn verify_federated_request(
             body.extend_from_slice(&chunk);
         }
         let digest_header = &base64::encode(Sha512::digest(&body));
-
-        // TODO: Remove debug when confident :)
-        let test_s = String::from_utf8(body.to_vec()).map_err(|_| RouteError::ActixInternal)?;
-        println!("Recieved Body: {}", test_s);
 
         // construct and send GET request to host/fed/key
         let key_path = format!("https://{}/fed/key", client_host);
@@ -246,7 +240,6 @@ pub async fn verify_federated_request(
         // using body of response, get public key
         let key_req = key_req.body().await?;
         let pkey = PKey::public_key_from_pem(&key_req)?;
-        println!("Decoded public key successfully: {:?}", pkey);
 
         // generate expected signature string
         let mut string = String::new();
@@ -290,7 +283,6 @@ pub async fn verify_federated_request(
         verifier.set_rsa_padding(Padding::PKCS1)?;
         verifier.update(string.as_bytes())?;
         verifier.verify(signature.as_bytes())?;
-        println!("Verified signature.");
 
         // verify digest header through matching
         let exp_digest = ["sha-512=", digest_header].join("");
@@ -303,8 +295,7 @@ pub async fn verify_federated_request(
             println!("Given digest {}", given_digest);
             Err(RouteError::BadDigest)
         } else {
-            println!("Digest Verification successful!");
-            Ok(true)
+            Ok(body.freeze())
         }
     }
 }

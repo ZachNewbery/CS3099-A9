@@ -14,7 +14,6 @@ pub struct BadResponse {
 // Errors that may be encountered during the processing of a route.
 #[derive(thiserror::Error, Debug)]
 pub enum RouteError {
-    // TODO: Refactor this to use string
     #[error("missing Client-Host")]
     MissingClientHost,
     #[error("bad Client-Host")]
@@ -55,6 +54,10 @@ pub enum RouteError {
     OpenSsl(#[from] openssl::error::ErrorStack),
     #[error("timed out")]
     Cancelled,
+    #[error("unsupported content type")]
+    UnsupportedContentType,
+    #[error("bad post content")]
+    BadPostContent,
 }
 
 impl From<diesel::result::Error> for RouteError {
@@ -82,13 +85,15 @@ impl ResponseError for RouteError {
             RouteError::UuidParse(_) => StatusCode::INTERNAL_SERVER_ERROR,
             RouteError::HeaderParse(_) => StatusCode::BAD_REQUEST,
             RouteError::Hex(_) => StatusCode::INTERNAL_SERVER_ERROR,
-            RouteError::JsonSerde(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            RouteError::JsonSerde(_) => StatusCode::BAD_REQUEST,
             RouteError::JsonSerdeUrl(_) => StatusCode::INTERNAL_SERVER_ERROR,
             RouteError::OpenSsl(_) => StatusCode::INTERNAL_SERVER_ERROR,
             RouteError::ActixInternal => StatusCode::INTERNAL_SERVER_ERROR,
             RouteError::Payload(_) => StatusCode::INTERNAL_SERVER_ERROR,
             RouteError::ExternalService => StatusCode::BAD_GATEWAY,
             RouteError::Cancelled => StatusCode::REQUEST_TIMEOUT,
+            RouteError::UnsupportedContentType => StatusCode::BAD_REQUEST,
+            RouteError::BadPostContent => StatusCode::BAD_REQUEST,
         }
     }
 
@@ -124,6 +129,8 @@ impl ResponseError for RouteError {
                 "Could not connect to external host when requesting key".to_string()
             }
             RouteError::Cancelled => "Task timed out".to_string(),
+            RouteError::UnsupportedContentType => "unsupported content typed used".to_string(),
+            RouteError::BadPostContent => "invalid content in post".to_string(),
         };
 
         match self {
@@ -140,13 +147,15 @@ impl ResponseError for RouteError {
             RouteError::UuidParse(_) => HttpResponse::InternalServerError(),
             RouteError::HeaderParse(_) => HttpResponse::BadRequest(),
             RouteError::Hex(_) => HttpResponse::InternalServerError(),
-            RouteError::JsonSerde(_) => HttpResponse::InternalServerError(),
+            RouteError::JsonSerde(_) => HttpResponse::BadRequest(),
             RouteError::JsonSerdeUrl(_) => HttpResponse::InternalServerError(),
             RouteError::OpenSsl(_) => HttpResponse::InternalServerError(),
             RouteError::ActixInternal => HttpResponse::InternalServerError(),
             RouteError::Payload(_) => HttpResponse::InternalServerError(),
             RouteError::ExternalService => HttpResponse::BadGateway(),
             RouteError::Cancelled => HttpResponse::RequestTimeout(),
+            RouteError::UnsupportedContentType => HttpResponse::BadRequest(),
+            RouteError::BadPostContent => HttpResponse::BadRequest(),
         }
         .json(BadResponse {
             title: title_message.clone(),
