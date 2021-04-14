@@ -12,7 +12,7 @@ const StyledProfilePicture = styled.div`
   justify-content: center;
   align-items: center;
   position: relative;
-  cursor: pointer;
+  cursor: ${(props) => props.hasclick && "pointer"};
   & > img {
     height: 2.5rem;
     width: auto;
@@ -46,7 +46,7 @@ const StyledModal = styled.div`
     margin: 0;
     font-family: ${fonts.accent};
     font-size: 1rem;
-    letter-spacing: 0.5px
+    letter-spacing: 0.5px;
   }
 
   & > p {
@@ -62,7 +62,7 @@ export const Profile = ({ user, hasClickthrough = true, className }) => {
   return (
     <>
       <div style={{ position: "relative" }} className="profile-picture">
-        <StyledProfilePicture className={className} onClick={() => setShowModal(true)}>
+        <StyledProfilePicture className={className} onClick={() => setShowModal(true)} hasclick={hasClickthrough}>
           <img
             alt="profile"
             src={
@@ -70,7 +70,7 @@ export const Profile = ({ user, hasClickthrough = true, className }) => {
             }
           />
         </StyledProfilePicture>
-        {showModal && <ProfileModal user={user} />}
+        {showModal && hasClickthrough && <ProfileModal user={user} />}
       </div>
       {showModal && hasClickthrough && <StyledModalContainer onClick={() => setShowModal(false)} />}
     </>

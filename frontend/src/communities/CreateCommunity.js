@@ -64,15 +64,15 @@ export const CreateCommunity = ({ show, hide, refresh }) => {
     if (Object.keys(currentErrors).length === 0) {
       try {
         await createCommunity({ title, description, id: getId() });
-
-        setLoading(false);
         refresh(title);
         return hide();
       } catch (error) {
-        currentErrors.text = error.message;
+        console.log(error.message);
+        currentErrors.text = error.message || "An error occurred creating this community...";
       }
     }
 
+    setLoading(false);
     setErrors(currentErrors);
   }
   
@@ -93,6 +93,7 @@ export const CreateCommunity = ({ show, hide, refresh }) => {
             <textarea onChange={e => setDescription(e.target.value)} type="text" placeholder="Description" />
             {errors.description && <Tooltip text={errors.description} />}
           </label>
+          {errors.text && <p style={{ color: "red", textAlign: "center", margin: 0 }}>{errors.text}</p>}
           <button type="button" onClick={handleCreate}>{loading ? "Loading..." : "Create"}</button>
         </StyledForm>
       </StyledContainer>

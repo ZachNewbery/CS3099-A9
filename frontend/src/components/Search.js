@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext, useEffect, useRef } from "react";
 import styled from "styled-components";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSearch } from "@fortawesome/free-solid-svg-icons";
@@ -82,9 +82,15 @@ const StyledSearch = styled.div`
 
 export const Search = () => {
   const { search, setSearch } = useContext(SearchContext);
+  const searchRef = useRef(null);
 
   const [isOpen, setIsOpen] = useState(false);
   const { instance, setInstance } = useContext(InstanceContext);
+
+  const handleClose = () => {
+    setIsOpen(false);
+    searchRef.current.value = "";
+  };
 
   const [handleChange] = useDebouncedCallback((e) => {
     const text = e.target.value;
@@ -92,7 +98,7 @@ export const Search = () => {
   }, 300);
 
   useEffect(() => {
-    setIsOpen(false);
+    handleClose();
   }, [instance]);
 
   return (
@@ -104,8 +110,8 @@ export const Search = () => {
             className="search-control"
             onChange={handleChange}
             defaultValue={search}
-            key={search}
             placeholder="Search"
+            ref={searchRef}
             onClick={() => setIsOpen("posts")}
           />
           <div className={`current-instance ${isOpen === "instance" ? "active" : ""}`} onClick={() => setIsOpen("instance")}>
@@ -122,7 +128,7 @@ export const Search = () => {
           ) : null}
         </div>
       </StyledSearch>
-      {isOpen && <StyledBackground onClick={() => setIsOpen(false)} />}
+      {isOpen && <StyledBackground onClick={handleClose} />}
     </>
   );
 };
