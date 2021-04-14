@@ -508,7 +508,7 @@ pub struct CreateCommunity {
 pub struct CreatePost {
     pub community: CreateCommunity,
     pub parent: Option<Uuid>,
-    pub title: String,
+    pub title: Option<String>,
     pub content: Vec<HashMap<ContentType, serde_json::Value>>,
 }
 
@@ -516,7 +516,7 @@ pub struct CreatePost {
 pub struct CreatePostExtern {
     pub community: String,
     pub parent: Option<Uuid>,
-    pub title: String,
+    pub title: Option<String>,
     pub content: Vec<HashMap<ContentType, serde_json::Value>>,
 }
 

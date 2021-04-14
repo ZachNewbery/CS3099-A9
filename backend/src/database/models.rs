@@ -123,7 +123,7 @@ pub struct DatabaseMarkdown {
 #[table_name = "Posts"]
 pub struct DatabaseNewPost {
     pub uuid: String,
-    pub title: String,
+    pub title: Option<String>,
     #[column_name = "authorId"]
     pub author_id: u64,
     pub created: NaiveDateTime,

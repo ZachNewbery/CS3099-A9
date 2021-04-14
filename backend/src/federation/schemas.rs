@@ -49,7 +49,7 @@ pub(crate) struct Community {
 pub(crate) struct NewPost {
     pub community: String,
     pub parent_post: Option<Uuid>,
-    pub title: String,
+    pub title: Option<String>,
     pub content: Vec<HashMap<ContentType, serde_json::Value>>,
 }
 

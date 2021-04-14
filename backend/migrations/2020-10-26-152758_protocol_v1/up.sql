@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS CommunitiesUsers (
 CREATE TABLE IF NOT EXISTS Posts (
     id SERIAL PRIMARY KEY,
     uuid VARCHAR(36) NOT NULL UNIQUE,
-    title TEXT NOT NULL,
+    title TEXT,
     authorId BIGINT UNSIGNED NOT NULL,
     CONSTRAINT FK_Posts_authorId FOREIGN KEY (authorId) REFERENCES Users(id),
     created TIMESTAMP NOT NULL,
