@@ -159,7 +159,7 @@ pub(crate) async fn new_post_federated(
     verify_federated_request(req, payload).await?;
 
     let conn = get_conn_from_pool(pool.clone())?;
-
+    dbg!("Recieved create post req.");
     let post = web::block(move || {
         let user = User {
             id: user_id.to_str()?.to_string(),
@@ -169,7 +169,7 @@ pub(crate) async fn new_post_federated(
         let post = conn.transaction(|| {
             use crate::database::actions::user;
             let user = user::insert_new_federated_user(&conn, &user)?;
-
+            dbg!(user.clone());
             let parent = if let Some(u) = &new_post.parent_post {
                 Some(get_post(&conn, u)?.ok_or(diesel::NotFound)?)
             } else {
@@ -187,6 +187,7 @@ pub(crate) async fn new_post_federated(
                 parent_id: parent.map(|p| p.post.id),
                 community_id: community.id,
             };
+            dbg!(db_new_post.clone());
 
             let post = put_post(&conn, &db_new_post)?;
             put_post_contents(&conn, &post, &new_post.content)?;
@@ -195,11 +196,11 @@ pub(crate) async fn new_post_federated(
         })?;
 
         let post = get_post(&conn, &post.uuid.parse()?)?.ok_or(diesel::NotFound)?;
-
+        dbg!(post.clone());
         Post::try_from((post, None))
     })
     .await?;
-
+    dbg!(post.clone());
     Ok(HttpResponse::Ok().json(post))
 }
 
