@@ -55,6 +55,10 @@ pub enum RouteError {
     OpenSsl(#[from] openssl::error::ErrorStack),
     #[error("timed out")]
     Cancelled,
+    #[error("unsupported content type")]
+    UnsupportedContentType,
+    #[error("bad post content")]
+    BadPostContent,
 }
 
 impl From<diesel::result::Error> for RouteError {
@@ -89,6 +93,8 @@ impl ResponseError for RouteError {
             RouteError::Payload(_) => StatusCode::INTERNAL_SERVER_ERROR,
             RouteError::ExternalService => StatusCode::BAD_GATEWAY,
             RouteError::Cancelled => StatusCode::REQUEST_TIMEOUT,
+            RouteError::UnsupportedContentType => StatusCode::BAD_REQUEST,
+            RouteError::BadPostContent => StatusCode::BAD_REQUEST,
         }
     }
 
@@ -124,6 +130,8 @@ impl ResponseError for RouteError {
                 "Could not connect to external host when requesting key".to_string()
             }
             RouteError::Cancelled => "Task timed out".to_string(),
+            RouteError::UnsupportedContentType => "unsupported content typed used".to_string(),
+            RouteError::BadPostContent => "invalid content in post".to_string(),
         };
 
         match self {
@@ -147,6 +155,8 @@ impl ResponseError for RouteError {
             RouteError::Payload(_) => HttpResponse::InternalServerError(),
             RouteError::ExternalService => HttpResponse::BadGateway(),
             RouteError::Cancelled => HttpResponse::RequestTimeout(),
+            RouteError::UnsupportedContentType => HttpResponse::BadRequest(),
+            RouteError::BadPostContent => HttpResponse::BadRequest(),
         }
         .json(BadResponse {
             title: title_message.clone(),

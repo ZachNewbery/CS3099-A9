@@ -1,11 +1,11 @@
-use crate::database::actions::communities::get_community;
+use crate::database::actions::communities::get_community_by_id;
 use crate::database::actions::post::{
     get_all_posts, get_all_top_level_posts, get_children_posts_of, get_post, modify_post_title,
     put_post, put_post_contents, remove_post, remove_post_contents, touch_post,
 };
 use crate::database::get_conn_from_pool;
 use crate::database::models::{DatabaseNewPost, DatabasePost};
-use crate::federation::schemas::{ContentType, NewPost, Post, User};
+use crate::federation::schemas::{ContentType, DatabaseContentType, NewPost, Post, User};
 use crate::internal::authentication::verify_federated_request;
 use crate::internal::posts::cache_federated_user;
 use crate::util::route_error::RouteError;
@@ -160,6 +160,13 @@ pub(crate) async fn new_post_federated(
 
     let conn = get_conn_from_pool(pool.clone())?;
     dbg!("Recieved create post req.");
+
+    let content = new_post
+        .content
+        .iter()
+        .map(DatabaseContentType::try_from)
+        .collect::<Result<Vec<DatabaseContentType>, RouteError>>()?;
+
     let post = web::block(move || {
         let user = User {
             id: user_id.to_str()?.to_string(),
@@ -177,7 +184,8 @@ pub(crate) async fn new_post_federated(
                 None
             };
 
-            let community = get_community(&conn, &new_post.community)?.ok_or(diesel::NotFound)?;
+            let community =
+                get_community_by_id(&conn, &new_post.community)?.ok_or(diesel::NotFound)?;
 
             let db_new_post = DatabaseNewPost {
                 uuid: Uuid::new_v4().to_string(),
@@ -191,7 +199,8 @@ pub(crate) async fn new_post_federated(
             dbg!(db_new_post.clone());
 
             let post = put_post(&conn, &db_new_post)?;
-            put_post_contents(&conn, &post, &new_post.content)?;
+
+            put_post_contents(&conn, &post, &content)?;
 
             Ok::<DatabasePost, diesel::result::Error>(post)
         })?;
@@ -283,7 +292,7 @@ pub(crate) async fn edit_post(
 
             // Internal post deletion semantic should be opaque to federated requests
             if post.deleted {
-                return Err(diesel::NotFound);
+                return Err(diesel::NotFound.into());
             }
 
             match &edit_post.title {
@@ -299,12 +308,17 @@ pub(crate) async fn edit_post(
                     // Now clear everything that existed
                     remove_post_contents(&conn, &post)?;
 
+                    let content = n
+                        .iter()
+                        .map(DatabaseContentType::try_from)
+                        .collect::<Result<Vec<DatabaseContentType>, RouteError>>()?;
+
                     // Then put the new contents in.
-                    put_post_contents(&conn, &post, &n)?;
+                    put_post_contents(&conn, &post, &content)?;
                 }
             }
             touch_post(&conn, post)?;
-            Ok::<(), diesel::result::Error>(())
+            Ok::<(), RouteError>(())
         })
     })
     .await?;

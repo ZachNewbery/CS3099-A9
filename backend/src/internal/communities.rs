@@ -1,5 +1,5 @@
 use crate::database::actions::communities::{
-    get_communities, get_community, get_community_admins, put_community, remove_community,
+    get_communities, get_community_admins, get_community_by_id, put_community, remove_community,
     set_community_admins, update_community_description, update_community_title,
 };
 use crate::database::get_conn_from_pool;
@@ -163,7 +163,7 @@ pub(crate) fn local_get_community(
     conn: &MysqlConnection,
     id: &str,
 ) -> std::result::Result<Community, RouteError> {
-    let community = get_community(&conn, id)?.ok_or(RouteError::NotFound)?;
+    let community = get_community_by_id(&conn, id)?.ok_or(RouteError::NotFound)?;
     let admins = get_community_admins(&conn, &community)?
         .into_iter()
         .map(|ud| ud.into())
@@ -285,7 +285,7 @@ pub(crate) async fn delete_community(
 
     let conn = get_conn_from_pool(pool.clone())?;
     let (community, admins) = web::block(move || {
-        let community = get_community(&conn, &id)?.ok_or(RouteError::NotFound)?;
+        let community = get_community_by_id(&conn, &id)?.ok_or(RouteError::NotFound)?;
         Ok::<(_, _), RouteError>((community.clone(), get_community_admins(&conn, &community)?))
     })
     .await?;
@@ -317,7 +317,7 @@ pub(crate) async fn edit_community_details(
 
     let conn = get_conn_from_pool(pool.clone())?;
     let (community, admins) = web::block(move || {
-        let community = get_community(&conn, &id)?.ok_or(RouteError::NotFound)?;
+        let community = get_community_by_id(&conn, &id)?.ok_or(RouteError::NotFound)?;
         Ok::<(_, _), RouteError>((community.clone(), get_community_admins(&conn, &community)?))
     })
     .await?;

@@ -53,7 +53,7 @@ pub(crate) fn get_community_admins(
     Ok(v)
 }
 
-pub(crate) fn get_community(
+pub(crate) fn get_community_by_id(
     conn: &MysqlConnection,
     id_: &str,
 ) -> Result<Option<DatabaseCommunity>, diesel::result::Error> {
