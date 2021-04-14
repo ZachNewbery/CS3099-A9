@@ -622,7 +622,6 @@ pub(crate) async fn edit_post(
             if req.status().is_success() {
                 Ok(HttpResponse::Ok().finish())
             } else {
-                dbg!(req);
                 Ok(HttpResponse::InternalServerError().finish())
             }
         }
