@@ -1,3 +1,4 @@
+//! Authentication handling functions
 use actix_web::http::header::Header as ActixHeader;
 use actix_web::{web, HttpRequest, HttpResponse};
 use actix_web_httpauth::headers::authorization::{Authorization, Bearer};
@@ -26,32 +27,37 @@ use crate::util::route_error::RouteError;
 use crate::DBPool;
 use awc::{http, ClientRequest, SendClientRequest};
 
+/// JWT Secret Key used to generate Tokens.
 pub static JWT_SECRET_KEY: [u8; 16] = *include_bytes!("../../jwt_secret.key");
 
-// Timeout of one week in seconds
+/// Timeout of one week in seconds
 const TIMEOUT: i64 = 60 * 60 * 24 * 7;
 
-// Max request payload size of 256kBs
+/// Max request payload size of 256kBs
 const MAX_SIZE: usize = 262_144;
 
+/// Returns a new UUID identifying a new session
 pub fn generate_session() -> String {
     Uuid::new_v4().to_simple().to_string()
 }
 
+/// Struct representing a JWT Authentication Token
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Token {
+    /// Issue time of Token
     #[serde(rename = "iat")]
     pub issued_at: i64,
+    /// Expiry time of Token
     #[serde(rename = "exp")]
     pub expiration: i64,
-    // Claims
-    // This is the id (i.e. pk of LocalUsers)
+    /// Internal id of the row in LocalUsers the Token belongs to
     pub id: u64,
-    // Session
+    /// Session the Token validates
     pub session: String,
 }
 
 impl Token {
+    /// Returns a new session for use to generate a Token
     pub fn new(id: u64, session: &str) -> Self {
         Self {
             issued_at: Utc::now().timestamp(),
@@ -61,6 +67,7 @@ impl Token {
         }
     }
 
+    /// Generates a JWT Token for a session using the JWT secret key
     pub fn generate_token(&self) -> jsonwebtoken::errors::Result<String> {
         jsonwebtoken::encode(
             &Header::default(),
@@ -69,6 +76,7 @@ impl Token {
         )
     }
 
+    /// Decodes a JWT Token to ensure validity
     pub fn decode_token(token: &str) -> jsonwebtoken::errors::Result<TokenData<Token>> {
         jsonwebtoken::decode(
             token,
@@ -78,6 +86,7 @@ impl Token {
     }
 }
 
+/// Authenticates a LocalUser upon login to ensure session is valid
 pub fn authenticate(
     pool: web::Data<DBPool>,
     request: HttpRequest,
@@ -96,6 +105,7 @@ pub fn authenticate(
     Ok((token, local_user))
 }
 
+/// Wrapper function to send a federated request with the supergroup authentication
 pub fn make_federated_request<T, U>(
     rq_ctor: fn(&awc::Client, url: String) -> ClientRequest,
     host: String,
@@ -192,6 +202,7 @@ where
     }
 }
 
+/// Wrapper method to verify an incoming request using the supergroup protocol authentication
 pub async fn verify_federated_request(
     request: HttpRequest,
     mut payload: web::Payload,

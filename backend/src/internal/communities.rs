@@ -1,3 +1,4 @@
+//! Internal API endpoints for actions concerning communities 
 use crate::database::actions::communities::{
     get_communities, get_community_admins, get_community_by_id, put_community, remove_community,
     set_community_admins, update_community_description, update_community_title,
@@ -15,17 +16,23 @@ use actix_web::{delete, get, patch, post, web, HttpRequest, HttpResponse, Result
 use diesel::{Connection, MysqlConnection};
 use serde::{Deserialize, Serialize};
 
+/// Struct representing a query to list the communities of an optionally specified host
 #[derive(Clone, Serialize, Deserialize)]
 pub struct ListCommunities {
+    /// Optionally specified host (default lists all communities in all hosts)
     host: Option<String>,
 }
 
+/// Struct representing a community stored on a federated host
 #[derive(Clone, Serialize, Deserialize)]
 pub struct CommunityHost {
+    /// Hostname the community is stored on
     host: String,
+    /// Name of the community (id as per supergroup spec)
     id: String,
 }
 
+/// Internal endpoint to list all of the communities in the database, which can be filtered by host
 #[get("/communities")]
 pub(crate) async fn list_communities(
     pool: web::Data<DBPool>,
@@ -75,6 +82,7 @@ pub(crate) async fn list_communities(
     Ok(HttpResponse::Ok().json(communities))
 }
 
+/// Queries external hosts to also obtain their list of communities
 pub(crate) async fn external_list_communities(host: &str) -> Result<Vec<String>, RouteError> {
     let mut query = make_federated_request(
         awc::Client::get,
@@ -97,13 +105,18 @@ pub(crate) async fn external_list_communities(host: &str) -> Result<Vec<String>,
     }
 }
 
+/// Struct representing a query to create a new community
 #[derive(Serialize, Deserialize)]
 pub struct CreateCommunity {
+    /// Name of the community to be created
     id: String,
+    /// Title of the community
     title: String,
+    /// Description of the community
     description: String,
 }
 
+/// Internal endpoint to create a new Community
 #[post("/communities/create")]
 pub(crate) async fn create_community(
     pool: web::Data<DBPool>,
@@ -132,11 +145,14 @@ pub(crate) async fn create_community(
     Ok(HttpResponse::Ok().finish())
 }
 
+/// Struct representing a query specifying the host of a community
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CommunityDetails {
+    /// Hostname the community is stored on
     host: String,
 }
 
+/// Internal endpoint to retrieve the details of a Community by its name (id as per supergroup spec)
 #[get("/communities/{id}")]
 pub(crate) async fn get_community_details(
     pool: web::Data<DBPool>,
@@ -159,6 +175,7 @@ pub(crate) async fn get_community_details(
     Ok(HttpResponse::Ok().json(community))
 }
 
+/// Obtains a community that is locally stored
 pub(crate) fn local_get_community(
     conn: &MysqlConnection,
     id: &str,
@@ -177,6 +194,7 @@ pub(crate) fn local_get_community(
     })
 }
 
+/// Obtains a community stored on an external host
 pub(crate) async fn external_get_community(
     pool: web::Data<DBPool>,
     id: &str,
@@ -217,12 +235,16 @@ pub(crate) async fn external_get_community(
     }
 }
 
+/// Struct representing a query to search communities
 #[derive(Serialize, Deserialize, Clone)]
 pub struct SearchCommunities {
+    /// Optionally specified host
     host: Option<String>,
+    /// Search string
     search: String,
 }
 
+/// Internal endpoint to search through Communities with a search string, can be filtered by host
 #[get("/communities-search")]
 pub(crate) async fn search_communities(
     pool: web::Data<DBPool>,
@@ -275,6 +297,7 @@ pub(crate) async fn search_communities(
     Ok(HttpResponse::Ok().json(communities))
 }
 
+/// Internal endpoint to delete a Community given its name (id as per supergroup spec)
 #[delete("/communities/{id}")]
 pub(crate) async fn delete_community(
     pool: web::Data<DBPool>,
@@ -300,12 +323,16 @@ pub(crate) async fn delete_community(
     Ok(HttpResponse::Ok().finish())
 }
 
+/// Struct representing a query to edit a community's details
 #[derive(Serialize, Deserialize, Clone)]
 pub struct EditCommunity {
+    /// Optional new title to be set
     title: Option<String>,
+    /// Optional new description to be set
     description: Option<String>,
 }
 
+/// Internal endpoint to edit a Community given its name (id as per supergroup spec)
 #[patch("/communities/{id}")]
 pub(crate) async fn edit_community_details(
     pool: web::Data<DBPool>,

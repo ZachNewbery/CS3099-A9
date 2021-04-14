@@ -1,3 +1,4 @@
+//! Database actions concerning Users
 use crate::database::models::{DatabaseFederatedUser, DatabaseLocalUser, DatabaseUser};
 
 use crate::federation::schemas::User;

@@ -1,3 +1,4 @@
+//! Database actions concerning Posts
 use crate::database::actions::user::get_user_detail;
 use crate::database::models::{
     DatabaseCommunity, DatabaseMarkdown, DatabaseNewPost, DatabasePost, DatabaseText, DatabaseUser,
@@ -50,13 +51,20 @@ pub(crate) fn get_posts_by_user(
     Posts.filter(authorId.eq(user.id)).load(conn).optional()
 }
 
+/// Struct representing an unwrapped Post, containing all useful information
 #[derive(Clone, Debug)]
 pub struct PostInformation {
+    /// Row belonging to the Post in the Posts table in the database
     pub post: DatabasePost,
+    /// Content of the Post, stored as a Vector
     pub content: Vec<HashMap<ContentType, serde_json::Value>>,
+    /// Community that the Post belongs to
     pub community: DatabaseCommunity,
+    /// User who authored the Post
     pub user: DatabaseUser,
+    /// Further details of the author
     pub user_details: UserDetail,
+    /// Row belonging to the parent Post of the Post in the Posts table in the database
     pub parent: Option<DatabasePost>,
 }
 

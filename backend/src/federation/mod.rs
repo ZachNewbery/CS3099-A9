@@ -1,3 +1,4 @@
+//! Federated endpoint implementation specified as part of the supergroup protocol.
 use actix_web::{get, http, web, HttpResponse, Result};
 use std::fs;
 

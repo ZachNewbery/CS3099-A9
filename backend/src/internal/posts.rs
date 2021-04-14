@@ -1,3 +1,4 @@
+//! Internal API endpoints for actions concerning posts 
 use crate::database::actions::communities::{get_community_admins, get_community_by_id};
 use crate::database::actions::post;
 use crate::database::actions::post::{
@@ -27,30 +28,45 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 use uuid::Uuid;
 
+/// Struct representing a query to get all posts from a host (optionally from a community as well)
 #[derive(Serialize, Deserialize, Clone)]
 pub struct GetPost {
+    /// Hostname to be queried
     host: String,
+    /// Optional community to be queried
     community: Option<String>,
 }
 
+/// Struct representing a singular Post that can be serialized into a JSON response
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct LocatedPost {
+    /// UUID of the Post
     pub(crate) id: Uuid,
+    /// Community that the Post belongs to
     pub(crate) community: LocatedCommunity,
+    /// UUID of the parent Post of the Post
     pub(crate) parent_post: Option<Uuid>,
+    /// Array of children of the Post
     pub(crate) children: Vec<Uuid>,
+    /// Title of the post (null for comments)
     pub(crate) title: Option<String>,
+    /// Array of content of the Post
     pub(crate) content: Vec<HashMap<ContentType, serde_json::Value>>,
+    /// User information for the author of the Post
     pub(crate) author: User,
+    /// Time of Post creation
     #[serde(with = "ts_seconds")]
     pub(crate) modified: DateTime<Utc>,
+    /// Time of last Post modification
     #[serde(with = "ts_seconds")]
     pub(crate) created: DateTime<Utc>,
+    /// Boolean representing if post has been deleted
     #[serde(default)]
     pub(crate) deleted: bool,
 }
 
+/// Internal endpoint to obtain a post given its UUID
 #[get("/posts/{id}")]
 pub(crate) async fn get_post(
     web::Path(id): web::Path<Uuid>,
@@ -361,10 +377,14 @@ async fn external_list_posts_inner(
     }
 }
 
+/// Struct representing a query to search posts
 #[derive(Serialize, Deserialize, Clone)]
 pub struct SearchPosts {
+    /// Optional hostname to be searched
     host: Option<String>,
+    /// Optional community to be searched
     community: Option<String>,
+    /// Search string
     search: String,
 }
 
@@ -439,30 +459,43 @@ pub(crate) async fn search_posts(
     Ok(HttpResponse::Ok().json(posts))
 }
 
+/// Struct representing a community object sent when creating a Post
 #[derive(Serialize, Deserialize)]
 pub struct CreateCommunity {
     id: String,
 }
 
+/// Struct representing the body of a POST request making a new Post
 #[derive(Serialize, Deserialize)]
 pub struct CreatePost {
+    /// Community the Post is to be created in
     pub community: CreateCommunity,
+    /// Optional parent post UUID
     pub parent: Option<Uuid>,
+    /// Title of the post (null for comments)
     pub title: Option<String>,
+    /// Content of the new Post
     pub content: Vec<HashMap<ContentType, serde_json::Value>>,
 }
 
+/// Struct representing a body of a POST request matching that of the supergroup specification
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct CreatePostExtern {
+    /// Community name to make the Post in
     pub community: String,
+    /// Optional part post UUID
     pub parent_post: Option<Uuid>,
+    /// Title of the post (null for comments)
     pub title: Option<String>,
+    /// Content of the new Post
     pub content: Vec<HashMap<ContentType, serde_json::Value>>,
 }
 
+/// Struct representing the query of post creation, where a host is specified
 #[derive(Serialize, Deserialize)]
 pub struct HostQuery {
+    /// Optional hostname to create post on
     host: Option<String>,
 }
 

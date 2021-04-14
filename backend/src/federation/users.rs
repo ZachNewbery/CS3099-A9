@@ -1,3 +1,4 @@
+//! Federated API endpoints for actions concerning users
 use crate::database::actions::local::get_local_user_by_user_id;
 use crate::database::actions::post::get_posts_by_user;
 use crate::database::actions::post::{get_children_posts_of, get_post};
@@ -10,14 +11,19 @@ use crate::DBPool;
 use actix_web::{get, post, web, HttpRequest, HttpResponse, Result};
 use serde::{Deserialize, Serialize};
 
+/// Struct representing the body of a sent message
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct MessageParameters {
+    /// Title of the message
     title: String,
+    /// Content of the message
     content: String,
 }
 
+/// Struct representing the query when searching users
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SearchUsersParameters {
+    /// Search string
     prefix: Option<String>,
 }
 

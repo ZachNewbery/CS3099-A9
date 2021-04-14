@@ -1,3 +1,4 @@
+//! Database actions concerning local authentication and users
 use diesel::prelude::*;
 use diesel::MysqlConnection;
 

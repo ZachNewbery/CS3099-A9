@@ -1,3 +1,6 @@
+//! Backend binary project developed as part of Fediversity: A Federated Social Media Service
+//!
+//! Provides an API for use by the frontend to interact with other hosts, and our local database.
 #[macro_use]
 extern crate diesel;
 
@@ -23,6 +26,7 @@ pub mod federation;
 pub mod internal;
 pub mod util;
 
+/// Type alias to abstract over a r2d2 connection pool
 #[allow(clippy::upper_case_acronyms)]
 type DBPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 

@@ -1,3 +1,4 @@
+//! Federated schema implementations for serialization
 use crate::database::actions::post::PostInformation;
 use crate::util::route_error::RouteError;
 use crate::util::route_error::RouteError::{BadPostContent, UnsupportedContentType};
@@ -17,19 +18,32 @@ pub(crate) struct User {
     pub host: String,
 }
 
+/// Enum representing the currently supported content types
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
 #[serde(rename_all = "camelCase")]
 pub enum ContentType {
+    /// Text content type
     Text,
+    /// Markdown content type
     Markdown,
+    /// Unsupported content type (all values other than the above are mapped to this)
     #[serde(other)]
     Unsupported,
 }
 
+/// Struct representing the content of a content type object
 #[derive(Clone, Serialize, Deserialize)]
 pub enum DatabaseContentType {
-    Text { text: String },
-    Markdown { text: String },
+    /// Text content object
+    Text { 
+        /// Actual text content
+        text: String 
+    },
+    /// Markdown content object
+    Markdown { 
+        /// Actual markdown content
+        text: String
+    },
 }
 
 impl TryFrom<&HashMap<ContentType, serde_json::Value>> for DatabaseContentType {
@@ -66,17 +80,6 @@ impl TryFrom<&HashMap<ContentType, serde_json::Value>> for DatabaseContentType {
 
         Ok(ct)
     }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
-#[serde(rename_all = "camelCase")]
-pub struct InnerContent {
-    #[serde(default = "default_string")]
-    pub text: String,
-}
-
-fn default_string() -> String {
-    "unsupported content type".to_string()
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

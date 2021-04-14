@@ -1,3 +1,4 @@
+//! Federated API endpoints for actions concerning communities
 use actix_web::{get, web, HttpResponse};
 use actix_web::{HttpRequest, Result};
 

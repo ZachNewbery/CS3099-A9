@@ -1,3 +1,4 @@
+//! Federated API endpoints for actions concerning posts
 use crate::database::actions::communities::get_community_by_id;
 use crate::database::actions::post::{
     get_all_posts, get_all_top_level_posts, get_children_posts_of, get_post, modify_post_title,
@@ -24,17 +25,26 @@ const fn true_func() -> bool {
     true
 }
 
+/// Struct representing the multiple filters that can be set when obtaining posts
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct PostFilters {
+    /// Optional limit of posts to be sent
     limit: Option<u64>,
+    /// Optional community to be specified
     community: Option<String>,
+    /// Optional minimum date for posts
     min_date: Option<NaiveDateTime>,
+    /// Optional author of posts
     author: Option<String>,
+    /// Optional hostname of posts
     host: Option<String>,
+    /// Optional parent post of posts
     parent_post: Option<Uuid>,
+    /// Optional boolean to include comments when getting posts (default: true)
     #[serde(default = "true_func")]
     include_sub_children_posts: bool,
+    /// Optional content type of posts
     content_type: Option<ContentType>,
 }
 
@@ -228,9 +238,12 @@ pub(crate) async fn get_post_by_id(
     Ok(HttpResponse::Created().json(Post::try_from((post, children))?))
 }
 
+/// Struct reprsenting a request body to edit a post
 #[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct EditPost {
+    /// Optional new title to be set
     pub title: Option<String>,
+    /// Optional new content to be set
     pub content: Option<Vec<HashMap<ContentType, serde_json::Value>>>,
 }
 
@@ -287,11 +300,6 @@ pub(crate) async fn edit_post(
 
     // Nothing to return
     Ok(HttpResponse::Ok().finish())
-}
-
-#[derive(Clone, Serialize, Deserialize)]
-pub struct DeletePost {
-    id: Uuid,
 }
 
 #[delete("/{id}")]
