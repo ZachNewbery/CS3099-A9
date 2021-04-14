@@ -182,10 +182,13 @@ pub(crate) fn cache_federated_user(
     conn: &MysqlConnection,
     federated_user: &User,
 ) -> Result<(), diesel::result::Error> {
-    match get_user_detail_by_name(conn, &federated_user.id) {
-        Ok(_) => Ok(()),
-        Err(diesel::NotFound) => insert_new_federated_user(conn, federated_user),
-        Err(e) => Err(e),
+    match federated_user.host.as_ref() {
+        HOSTNAME => Ok(()),
+        _ => match get_user_detail_by_name(conn, &federated_user.id) {
+            Ok(_) => Ok(()),
+            Err(diesel::NotFound) => insert_new_federated_user(conn, federated_user),
+            Err(e) => Err(e),
+        }
     }
 }
 
