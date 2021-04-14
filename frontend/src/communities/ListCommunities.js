@@ -7,11 +7,12 @@ import { colors, fonts } from "../helpers";
 import { CTAButton } from "../components/CTAButton";
 import { ScrollContainer } from "../components/ScrollContainer";
 
-import { CommunityContext } from "../Home";
+import { InstanceContext, CommunityContext } from "../App";
 
 const StyledCommunities = styled.div`
   display: flex;
   height: 100%;
+  width: 100%;
   flex-flow: column nowrap;
   background: white;
   border: 1px solid ${colors.mediumLightGray};
@@ -47,12 +48,11 @@ const StyledCommunities = styled.div`
   }
 `;
 
-
-
 export const ListCommunities = ({ communities, refresh }) => {
   const [showCreate, setShowCreate] = useState(false);
   const { community, setCommunity } = useContext(CommunityContext);
-  
+  const { instance, INTERNAL_INSTANCE } = useContext(InstanceContext);
+
   const history = useHistory();
 
   const handleShowCreate = () => setShowCreate(true);
@@ -68,13 +68,17 @@ export const ListCommunities = ({ communities, refresh }) => {
       <h1>Communities</h1>
       <CreateCommunity show={showCreate} hide={handleHideCreate} refresh={refresh} />
       <ScrollContainer className="communities-list">
-        {communities.map((c, i) => (
-          <h3 key={i} onClick={() => handleSelect(c.id)} className={c.id === community ? "active" : ""} title={c.id}>
-            {c.id}
-          </h3>
-        ))}
+        {communities.length ? (
+          communities.map((c, i) => (
+            <h3 key={i} onClick={() => handleSelect(c.id)} className={c.id === community ? "active" : ""} title={c.id}>
+              {c.id}
+            </h3>
+          ))
+        ) : (
+          <p style={{ textAlign: "center", fontSize: "1rem" }}>No communities yet. Please create one!</p>
+        )}
       </ScrollContainer>
-      <CTAButton onClick={handleShowCreate}>Create your own!</CTAButton>
+      {instance === INTERNAL_INSTANCE && <CTAButton onClick={handleShowCreate}>Create your own!</CTAButton>}
     </StyledCommunities>
   );
 };

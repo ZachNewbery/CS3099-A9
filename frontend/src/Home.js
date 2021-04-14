@@ -2,7 +2,7 @@ import React, { useState, useContext, useEffect } from "react";
 import styled from "styled-components";
 import { Switch, Route } from "react-router-dom";
 
-import { InstanceContext } from "./App";
+import { InstanceContext, CommunityContext } from "./App";
 import { Spinner } from "./helpers";
 import { ErrorHandledRoute } from "./components/ErrorHandledRoute";
 import { Posts, SinglePost } from "./posts";
@@ -13,7 +13,8 @@ const StyledContainer = styled.div`
   margin: 2rem 0;
 
   & > .communities-container {
-    width: 15rem;
+    min-width: 15rem;
+    max-width: 15rem;
     min-height: 20rem;
     height: 100%;
     margin-right: 1rem;
@@ -21,41 +22,35 @@ const StyledContainer = styled.div`
   }
 
   & > .posts-container {
-    width: 35rem;
+    min-width: 35rem;
+    max-width: 35rem;
   }
 `;
 
-export const CommunityContext = React.createContext(null);
-
 export const Home = () => {
-  const [community, setCommunity] = useState(null);
-  const { instance } = useContext(InstanceContext);
+  const { community, communities } = useContext(CommunityContext);
 
-  useEffect(() => {
-    setCommunity(null);
-  }, [instance]);
-  
   return (
-    <CommunityContext.Provider value={{ community, setCommunity }}>
-      <StyledContainer>
-        <div className="communities-container">
-          <Communities />
-        </div>
+    <StyledContainer>
+      <div className="communities-container">
+        <Communities />
+      </div>
+      <div className="posts-container">
         {community ? (
-          <div className="posts-container">
-            <Switch>
-              <ErrorHandledRoute path="/post/:postId">
-                <SinglePost />
-              </ErrorHandledRoute>
-              <Route path="/">
-                <Posts />
-              </Route>
-            </Switch>
-          </div>
+          <Switch>
+            <ErrorHandledRoute path="/post/:postId">
+              <SinglePost />
+            </ErrorHandledRoute>
+            <Route path="/">
+              <Posts />
+            </Route>
+          </Switch>
+        ) : communities ? (
+          <h3 style={{ textAlign: "center", margin: "2rem 0" }}>No community selected</h3>
         ) : (
           <Spinner />
         )}
-      </StyledContainer>
-    </CommunityContext.Provider>
+      </div>
+    </StyledContainer>
   );
 };

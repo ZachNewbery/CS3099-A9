@@ -1,17 +1,25 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useContext } from "react";
 
 import { Modal } from "../components/Modal";
 import { StyledForm, fetchData, getFormValues } from "../helpers";
 import { MarkdownEditor } from "../components/MarkdownEditor";
 import { Tooltip } from "../components/Tooltip";
 
-const editPost = async ({ id, title, content }) => {
-  return fetchData(`${process.env.REACT_APP_API}/posts/${id}`, JSON.stringify({ title, content }), "PATCH");
+import { InstanceContext, CommunityContext } from "../App";
+
+const editPost = async ({ id, title, content, instance, community }) => {
+  const url = new URL(`${process.env.REACT_APP_API}/posts/${id}`);
+  const appendParam = (key, value) => value && url.searchParams.append(key, value);
+  appendParam("host", instance);
+  appendParam("community", community);
+  return fetchData(url, JSON.stringify({ title, content }), "PATCH");
 };
 
 export const EditPost = ({ show, hide, id, initialTitle, initialContent, refresh }) => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const { instance } = useContext(InstanceContext);
+  const { community } = useContext(CommunityContext);
 
   const formRef = useRef(null);
 
@@ -49,7 +57,7 @@ export const EditPost = ({ show, hide, id, initialTitle, initialContent, refresh
 
     if (Object.keys(currentErrors).length === 0) {
       try {
-        await editPost({ title, content, id });
+        await editPost({ title, content, id, instance, community });
 
         setLoading(false);
         refresh();

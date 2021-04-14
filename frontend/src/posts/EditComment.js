@@ -4,11 +4,15 @@ import { Modal } from "../components/Modal";
 import { StyledForm, fetchData, getFormValues } from "../helpers";
 import { MarkdownEditor } from "../components/MarkdownEditor";
 
-const editComment = async ({ id, content }) => {
-  return fetchData(`${process.env.REACT_APP_API}/posts/${id}`, JSON.stringify({ content }), "PATCH");
+const editComment = async ({ id, content, instance, community }) => {
+  const url = new URL(`${process.env.REACT_APP_API}/posts/${id}`);
+  const appendParam = (key, value) => value && url.searchParams.append(key, value);
+  appendParam("host", instance);
+  appendParam("community", community);
+  return fetchData(url, JSON.stringify({ content }), "PATCH");
 };
 
-export const EditComment = ({ show, hide, id, initialTitle, initialContent, refresh }) => {
+export const EditComment = ({ show, hide, id, initialTitle, initialContent, refresh, instance, community }) => {
   const [loading, setLoading] = useState(false);
 
   const formRef = useRef(null);
@@ -24,7 +28,7 @@ export const EditComment = ({ show, hide, id, initialTitle, initialContent, refr
 
     content = Object.entries(content).map(([key, value]) => ({ [key.split("-")[1]]: { text: value } }));
     
-    await editComment({ content, id });
+    await editComment({ content, id, instance, community });
 
     setLoading(false);
     refresh();

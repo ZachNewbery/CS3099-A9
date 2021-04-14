@@ -1,10 +1,11 @@
 import React, { useContext } from "react";
 import styled from "styled-components";
 import { useAsync } from "react-async";
+import { useHistory } from "react-router-dom";
 
 import { Spinner, Error, colors, fonts, fetchData } from "../helpers";
 import { ScrollContainer } from "../components/ScrollContainer";
-import { InstanceContext } from "../App";
+import { InstanceContext, CommunityContext } from "../App";
 
 const loadInstances = async () => {
   return await fetchData(`${process.env.REACT_APP_API}/servers`);
@@ -46,8 +47,16 @@ const StyledInstance = styled.div`
 
 export const ListInstances = () => {
   const { instance, setInstance, INTERNAL_INSTANCE } = useContext(InstanceContext);
+  const { setCommunity } = useContext(CommunityContext);
+  const history = useHistory();
 
   const { data: instances, isLoading, error } = useAsync(loadInstances);
+
+  const handleClick = (instance) => {
+    history.push("/");
+    setInstance(instance);
+    setCommunity(null);
+  };
 
   if (isLoading) return <Spinner />;
   if (error) return <Error message={error} />;
@@ -56,18 +65,15 @@ export const ListInstances = () => {
     <StyledInstances>
       <h1>Instances</h1>
       <ScrollContainer
-        style={{ maxHeight: "16.7rem", margin: "0.5rem -1.2rem", padding: "0 1.2rem" }}
+        style={{ maxHeight: "16.7rem", margin: "0 -1.2rem", padding: "0 1.2rem 1.2rem" }}
         scrollcolor="rgba(255, 255, 255, 0.5)"
         scrollhover="rgba(255, 255, 255, 0.7)"
       >
-        <StyledInstance active={instance === ""} onClick={() => setInstance("")}>
-          <h3>All hosts</h3>
-        </StyledInstance>
-        <StyledInstance active={instance === INTERNAL_INSTANCE} onClick={() => setInstance(INTERNAL_INSTANCE)}>
+        <StyledInstance active={instance === INTERNAL_INSTANCE} onClick={() => handleClick(INTERNAL_INSTANCE)}>
           <h3>{INTERNAL_INSTANCE}</h3>
         </StyledInstance>
         {instances.map((inst, i) => (
-          <StyledInstance key={i} active={instance === inst} onClick={() => setInstance(inst)}>
+          <StyledInstance key={i} active={instance === inst} onClick={() => handleClick(inst)}>
             <h3>{inst}</h3>
           </StyledInstance>
         ))}

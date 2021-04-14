@@ -4,8 +4,7 @@ import moment from "moment";
 import { useParams, useHistory } from "react-router-dom";
 import { useAsync } from "react-async";
 
-import { InstanceContext } from "../App";
-import { CommunityContext } from "../Home";
+import { InstanceContext, CommunityContext } from "../App";
 
 import { fetchData, Spinner, colors, fonts } from "../helpers";
 import { StyledBlock, StyledContent, renderContent } from "./PostContent";
@@ -16,6 +15,7 @@ import { Profile } from "../components/Profile";
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faArrowLeft, faPencilAlt, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { users } from "./Posts";
 
 const loadSinglePost = async ({ postId, instance, community }) => {
   const url = new URL(`${process.env.REACT_APP_API}/posts/${postId}`);
@@ -24,13 +24,30 @@ const loadSinglePost = async ({ postId, instance, community }) => {
   appendParam("community", community);
   
   const post = await fetchData(url);
-  const user = await fetchData(`${process.env.REACT_APP_API}/user/${post.author.id}`);
+
+  if (!users[instance]) {
+    users[instance] = {};
+  }
+
+  let user;
+
+  if (users[instance][post.author.id]) {
+    user = users[instance][post.author.id];
+  } else {
+    user = await fetchData(`${process.env.REACT_APP_API}/user/${post.author.id}`);
+  }
+  
   post.user = user;
   return post;
 };
 
-const deletePost = async ({ id }) => {
-  return fetchData(`${process.env.REACT_APP_API}/posts/${id}`, null, "DELETE");
+const deletePost = async ({ id, instance, community }) => {
+  const url = new URL(`${process.env.REACT_APP_API}/posts/${id}`);
+  const appendParam = (key, value) => value && url.searchParams.append(key, value);
+  appendParam("host", instance);
+  appendParam("community", community);
+  
+  return fetchData(url, null, "DELETE");
 };
 
 const StyledPostContainer = styled.div`
@@ -183,14 +200,14 @@ export const SinglePost = () => {
 
   return (
     <StyledPostContainer>
-      <Post {...data} refresh={refresh} commentCount={commentCount} />
+      <Post {...data} refresh={refresh} commentCount={commentCount} instance={instance} community={community} />
       <CreateComment postId={data.id} refresh={refresh} communityId={data.community.id} />
-      <Comments children={data.children} addComment={addComment} removeComment={removeComment} />
+      <Comments children={data.children} addComment={addComment} removeComment={removeComment} setCommentCount={setCommentCount} />
     </StyledPostContainer>
   );
 };
 
-export const Post = ({ id, title, content, created, modified, author, user: _user, refresh, commentCount }) => {
+export const Post = ({ id, title, content, created, modified, author, user: _user, refresh, commentCount, instance, community }) => {
   const history = useHistory();
   const [showEdit, setShowEdit] = useState(false);
 
@@ -202,7 +219,7 @@ export const Post = ({ id, title, content, created, modified, author, user: _use
   };
 
   const handleDelete = async () => {
-    await deletePost({ id }).then(history.goBack());
+    await deletePost({ id, instance, community }).then(history.goBack());
   };
 
   const isEdited = created !== modified;

@@ -34,7 +34,7 @@ export const useUser = () => {
 
 const App = () => {
   const [user, setUser] = useState(getUser() || {});
-
+  
   return (
     <React.StrictMode>
       <GlobalStyle />

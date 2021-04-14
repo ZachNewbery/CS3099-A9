@@ -5,8 +5,7 @@ import { useAsync } from "react-async";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPencilAlt, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { fetchData, Spinner, Error, colors, fonts } from "../helpers";
-import { CommunityContext } from "../Home";
-import { InstanceContext } from "../App";
+import { InstanceContext, CommunityContext } from "../App";
 
 import { useUser } from "../index";
 import { EditCommunity } from "./EditCommunity";
@@ -76,8 +75,11 @@ const fetchCommunity = async ({ community, instance }) => {
   return fetchData(url);
 };
 
-const deleteCommunity = async ({ community }) => {
-  return await fetchData(`${process.env.REACT_APP_API}/communities/${community}`, null, "DELETE");
+const deleteCommunity = async ({ community, instance }) => {
+  const url = new URL(`${process.env.REACT_APP_API}/communities/${community}`);
+  const appendParam = (key, value) => value && url.searchParams.append(key, value);
+  appendParam("host", instance);
+  return await fetchData(url, null, "DELETE");
 };
 
 export const SingleCommunity = ({ communities, refresh }) => {
@@ -107,27 +109,40 @@ export const SingleCommunity = ({ communities, refresh }) => {
   const handleEdit = () => handleShowCommunity();
   const handleDelete = async (e) => {
     e.preventDefault();
-    await deleteCommunity({ community });
+    await deleteCommunity({ community, instance });
+    setCommunity(null);
     refresh();
   };
 
   return (
     <>
-      <EditCommunity
-        show={showCommunity}
-        hide={handleHideCommunity}
-        refresh={refresh}
-        id={community}
-        initialTitle={selectedCommunity?.title}
-        initialDescription={selectedCommunity?.description}
-      />
-      <Community community={selectedCommunity} handleEdit={handleEdit} handleDelete={handleDelete} />
+      {selectedCommunity && (
+        <EditCommunity
+          show={showCommunity}
+          hide={handleHideCommunity}
+          refresh={refresh}
+          id={community}
+          initialTitle={selectedCommunity?.title}
+          initialDescription={selectedCommunity?.description}
+          key={selectedCommunity?.title}
+        />
+      )}
+      <Community communities={communities} community={selectedCommunity} handleEdit={handleEdit} handleDelete={handleDelete} />
     </>
   );
 };
 
-export const Community = ({ community, handleDelete, handleEdit }) => {
+export const Community = ({ community, communities, handleDelete, handleEdit }) => {
   const user = useUser();
+
+  if (!community && !communities.length)
+    return (
+      <StyledContainer>
+        <div className="content">
+          <p style={{ margin: "1rem 0" }}>This instance has no communities yet!</p>
+        </div>
+      </StyledContainer>
+    );
 
   if (!community) return <Spinner />;
 

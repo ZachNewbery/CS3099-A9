@@ -56,13 +56,13 @@ const StyledModal = styled.div`
   }
 `;
 
-export const Profile = ({ user }) => {
+export const Profile = ({ user, hasClickthrough = true, className }) => {
   const [showModal, setShowModal] = useState(false);
 
   return (
     <>
       <div style={{ position: "relative" }} className="profile-picture">
-        <StyledProfilePicture onClick={() => setShowModal(true)}>
+        <StyledProfilePicture className={className} onClick={() => setShowModal(true)}>
           <img
             alt="profile"
             src={
@@ -72,7 +72,7 @@ export const Profile = ({ user }) => {
         </StyledProfilePicture>
         {showModal && <ProfileModal user={user} />}
       </div>
-      {showModal && <StyledModalContainer onClick={() => setShowModal(false)} />}
+      {showModal && hasClickthrough && <StyledModalContainer onClick={() => setShowModal(false)} />}
     </>
   );
 };

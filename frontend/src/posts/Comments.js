@@ -3,8 +3,7 @@ import styled from "styled-components";
 import moment from "moment";
 import { useAsync } from "react-async";
 
-import { InstanceContext } from "../App";
-import { CommunityContext } from "../Home";
+import { InstanceContext, CommunityContext } from "../App";
 
 import { fetchData, Spinner, Error, colors } from "../helpers";
 import { StyledBlock, StyledContent, renderContent } from "./PostContent";
@@ -16,30 +15,46 @@ import { useDebouncedCallback } from "use-debounce";
 import { Tooltip } from "../components/Tooltip";
 import { Profile } from "../components/Profile";
 
+import { users } from "./Posts";
+
 const loadChildPosts = async ({ children, community, instance, addComment }) => {
-
-  let posts = [];
-
-  for (const child of children) {
+  let posts = children.map(async (child) => {
     const url = new URL(`${process.env.REACT_APP_API}/posts/${child}`);
     const appendParam = (key, value) => value && url.searchParams.append(key, value);
     appendParam("host", instance);
     appendParam("community", community);
     const post = await fetchData(url);
-    const user = await fetchData(`${process.env.REACT_APP_API}/user/${post.author.id}`);
-    post.user = user;
+
+    if (!users[instance]) {
+      users[instance] = {};
+    }
+
+    let user;
+
+    if (users[instance][post.author.id]) {
+      user = users[instance][post.author.id];
+    } else {
+      user = await fetchData(`${process.env.REACT_APP_API}/user/${post.author.id}`);
+    }
     if (!post.deleted) addComment();
-    posts.push(post);
-  }
+    post.user = user;
+    return post;
+  });
+
+  posts = await Promise.all([...posts]);
 
   return posts;
 };
 
-const deletePost = async ({ id }) => {
-  return fetchData(`${process.env.REACT_APP_API}/posts/${id}`, null, "DELETE");
+const deletePost = async ({ id, community, instance }) => {
+  const url = new URL(`${process.env.REACT_APP_API}/posts/${id}`);
+  const appendParam = (key, value) => value && url.searchParams.append(key, value);
+  appendParam("host", instance);
+  appendParam("community", community);
+  return fetchData(url, null, "DELETE");
 };
 
-const createComment = async ({ postId, communityId, content }) => {
+const createComment = async ({ postId, communityId, instance, content }) => {
   const post = {
     parent: postId,
     content: [
@@ -55,7 +70,11 @@ const createComment = async ({ postId, communityId, content }) => {
     title: "atitle",
   };
 
-  return fetchData(`${process.env.REACT_APP_API}/posts/create`, JSON.stringify(post), "POST");
+  const url = new URL(`${process.env.REACT_APP_API}/posts/create`);
+  const appendParam = (key, value) => value && url.searchParams.append(key, value);
+  appendParam("host", instance);
+  appendParam("community", communityId);
+  return fetchData(url, JSON.stringify(post), "POST");
 };
 
 const StyledComments = styled.div`
@@ -131,6 +150,8 @@ const StyledCreateComment = styled.div`
 `;
 
 export const CreateComment = ({ postId, communityId, refresh }) => {
+  const { instance } = useContext(InstanceContext);
+
   const contentRef = useRef(null);
   const [errors, setErrors] = useState({});
 
@@ -147,7 +168,7 @@ export const CreateComment = ({ postId, communityId, refresh }) => {
     if (Object.keys(currentErrors).length === 0) {
       try {
         contentRef.current.value = "";
-        await createComment({ postId, content, communityId });
+        await createComment({ postId, content, instance, communityId });
         return refresh();
       } catch (error) {
         currentErrors.content = error.message; // TODO: see how they're passing errors
@@ -173,12 +194,17 @@ export const CreateComment = ({ postId, communityId, refresh }) => {
   );
 };
 
-export const Comments = ({ children, addComment, removeComment }) => {
+export const Comments = ({ children, addComment, removeComment, setCommentCount }) => {
   const { instance } = useContext(InstanceContext);
   const { community } = useContext(CommunityContext);
-  
+
   const { data: comments, isLoading, error, reload } = useAsync(loadChildPosts, { children, instance, community, addComment });
   const [showEdit, setShowEdit] = useState({ showModal: false, content: null, id: null });
+
+  const refresh = () => {
+    setCommentCount(0);
+    reload();
+  };
 
   const user = useUser();
 
@@ -192,7 +218,9 @@ export const Comments = ({ children, addComment, removeComment }) => {
         hide={() => setShowEdit({ showModal: false })}
         show={showEdit.showModal}
         initialContent={showEdit.content}
-        refresh={reload}
+        refresh={refresh}
+        instance={instance}
+        community={community}
       />
       <StyledComments>
         {comments
@@ -207,9 +235,9 @@ export const Comments = ({ children, addComment, removeComment }) => {
             };
 
             const handleDelete = async () => {
-              await deletePost({ id: comment.id })
+              await deletePost({ id: comment.id, instance, community })
                 .then(() => removeComment())
-                .then(() => reload());
+                .then(() => refresh());
             };
 
             const isEdited = comment.created !== comment.modified;
@@ -227,7 +255,9 @@ export const Comments = ({ children, addComment, removeComment }) => {
                   </div>
                 </div>
                 <div className="footer">
-                  <p title={moment.unix(comment.created).format("HH:mma - Do MMMM, YYYY")}>{`${moment.unix(comment.created).fromNow()} ${isEdited ? "(Edited)" : ""}`}</p>
+                  <p title={moment.unix(comment.created).format("HH:mma - Do MMMM, YYYY")}>{`${moment.unix(comment.created).fromNow()} ${
+                    isEdited ? "(Edited)" : ""
+                  }`}</p>
                   {isAdmin && (
                     <div className="actions">
                       <FontAwesomeIcon onClick={handleEdit} icon={faPencilAlt} />

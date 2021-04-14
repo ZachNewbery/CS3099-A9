@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import styled from "styled-components";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSignOutAlt, faCog } from "@fortawesome/free-solid-svg-icons";
 import { Link } from "react-router-dom";
 
+import { InstanceContext, CommunityContext } from "../App";
 import { Settings } from "../settings";
 import { Logo } from "../assets/Logo";
 import { fonts, colors } from "../helpers";
@@ -101,14 +102,22 @@ const StyledHeader = styled.header`
 export const Header = ({ children }) => {
   const [showSettings, setShowSettings] = useState(false);
 
+  const { setInstance, INTERNAL_INSTANCE } = useContext(InstanceContext);
+  const { setCommunity } = useContext(CommunityContext);
+
   const handleShowSettings = () => setShowSettings(true);
   const handleHideSettings = () => setShowSettings(false);
+
+  const handleClick = () => {
+    setInstance(INTERNAL_INSTANCE);
+    setCommunity(null);
+  };
 
   return (
     <>
       <Settings show={showSettings} hide={handleHideSettings} />
       <StyledHeader>
-        <Link to="/" className="logo-container">
+        <Link to="/" className="logo-container" onClick={handleClick}>
           <Logo />
           <div className="logo-text">
             <h3>Fediversity</h3>
