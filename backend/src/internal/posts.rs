@@ -617,15 +617,12 @@ pub(crate) async fn edit_post(
                 Option::<()>::None,
             )?
             .await
-            .map_err(|e| {
-                dbg!(e);
-                RouteError::ActixInternal
-            })?;
+            .map_err(|_| RouteError::ActixInternal)?;
 
             if req.status().is_success() {
                 Ok(HttpResponse::Ok().finish())
             } else {
-                dbg!(req.status());
+                dbg!(req);
                 Ok(HttpResponse::InternalServerError().finish())
             }
         }
