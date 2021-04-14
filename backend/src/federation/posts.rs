@@ -130,7 +130,7 @@ pub(crate) async fn post_matching_filters(
         .into_iter()
         .map(|x| x.try_into())
         .collect::<Result<Vec<Post>, _>>()?;
-    dbg!(posts.clone());
+
     // Return type: Vec<Post>
     Ok(HttpResponse::Ok().json(posts))
 }
