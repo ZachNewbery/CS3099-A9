@@ -328,7 +328,6 @@ async fn external_list_posts_inner(
                 .map_err(|_| RouteError::ActixInternal)?;
             serde_json::from_str(&s_posts).map_err(|_| RouteError::ActixInternal)?
         };
-        dbg!(posts.clone());
 
         let conn = get_conn_from_pool(pool.clone()).map_err(|_| RouteError::ActixInternal)?;
         let host2 = host.to_string();
@@ -530,8 +529,6 @@ pub(crate) async fn create_post(
                 content: post.content.clone(),
             };
 
-            dbg!(&body);
-
             let req = make_federated_request(
                 awc::Client::post,
                 host.to_string(),
@@ -610,7 +607,7 @@ pub(crate) async fn edit_post(
         Some(host) => {
             let conn = get_conn_from_pool(pool.clone())?;
             let user = web::block(move || get_name_from_local_user(&conn, local_user)).await?;
-
+            dbg!(&edit_post);
             let req = make_federated_request(
                 awc::Client::put,
                 host.to_string(),
