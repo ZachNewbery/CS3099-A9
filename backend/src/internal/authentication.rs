@@ -195,7 +195,7 @@ where
 pub async fn verify_federated_request(
     request: HttpRequest,
     mut payload: web::Payload,
-) -> Result<bool, RouteError> {
+) -> Result<web::Bytes, RouteError> {
     // get host from request
     let headers = request.headers();
     let client_host = headers
@@ -295,7 +295,7 @@ pub async fn verify_federated_request(
             println!("Given digest {}", given_digest);
             Err(RouteError::BadDigest)
         } else {
-            Ok(true)
+            Ok(body.freeze())
         }
     }
 }

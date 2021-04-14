@@ -142,7 +142,6 @@ pub(crate) async fn new_post_federated(
     pool: web::Data<DBPool>,
     req: HttpRequest,
     payload: web::Payload,
-    new_post: web::Json<NewPost>,
 ) -> Result<HttpResponse> {
     let client_host = req
         .headers()
@@ -156,7 +155,7 @@ pub(crate) async fn new_post_federated(
         .ok_or(RouteError::MissingClientHost)?
         .clone();
 
-    verify_federated_request(req, payload).await?;
+    let new_post: NewPost = serde_json::from_slice(&verify_federated_request(req, payload).await?)?;
 
     let conn = get_conn_from_pool(pool.clone())?;
     dbg!("Recieved create post req.");
