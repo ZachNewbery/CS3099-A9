@@ -85,7 +85,7 @@ pub(crate) fn get_post(
         Some(t) => t,
     };
 
-    let content = get_content_of_post(conn, &post);
+    let content = get_content_of_post(conn, &post)?;
 
     let parent = get_parent_of(conn, &post)?;
 
@@ -146,7 +146,7 @@ pub(crate) fn get_children_posts_of(
         .map(|(p, c, u)| {
             Ok(PostInformation {
                 post: p.clone(),
-                content: get_content_of_post(conn, &p),
+                content: get_content_of_post(conn, &p)?,
                 community: c,
                 user: u.clone(),
                 user_details: get_user_detail(conn, &u)?,
@@ -161,7 +161,7 @@ pub(crate) fn get_children_posts_of(
 pub(crate) fn get_content_of_post(
     conn: &MysqlConnection,
     post: &DatabasePost,
-) -> Vec<HashMap<ContentType, serde_json::Value>> {
+) -> Result<Vec<HashMap<ContentType, serde_json::Value>>, diesel::result::Error> {
     // We have to check through *every single* content type to pick up posts.
     let mut post_content: Vec<HashMap<ContentType, serde_json::Value>> = Vec::new();
 
@@ -189,7 +189,7 @@ pub(crate) fn get_content_of_post(
         }
     }
 
-    post_content
+    Ok(post_content)
 }
 
 pub(crate) fn remove_post_contents(
