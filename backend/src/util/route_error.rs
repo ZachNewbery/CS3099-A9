@@ -14,7 +14,6 @@ pub struct BadResponse {
 // Errors that may be encountered during the processing of a route.
 #[derive(thiserror::Error, Debug)]
 pub enum RouteError {
-    // TODO: Refactor this to use string
     #[error("missing Client-Host")]
     MissingClientHost,
     #[error("bad Client-Host")]
