@@ -203,8 +203,6 @@ pub async fn verify_federated_request(
         .ok_or(RouteError::MissingClientHost)?
         .to_str()?;
 
-    println!("Recieved Request from: {}", client_host);
-
     if client_host == "localhost" {
         Err(RouteError::BadClientHost)
     } else {
@@ -219,19 +217,15 @@ pub async fn verify_federated_request(
         }
         let digest_header = &base64::encode(Sha512::digest(&body));
 
-        // TODO: Remove debug when confident :)
-        let test_s = String::from_utf8(body.to_vec()).map_err(|_| RouteError::ActixInternal)?;
-        println!("Recieved Body: {}", test_s);
-
         // construct and send GET request to host/fed/key
         let key_path = format!("https://{}/fed/key", client_host);
         let connector = awc::Connector::new()
-            .timeout(Duration::from_secs(10))
+            .timeout(Duration::from_secs(3))
             .finish();
 
         let client = awc::Client::builder()
             .connector(connector)
-            .timeout(Duration::from_secs(10))
+            .timeout(Duration::from_secs(5))
             .finish();
 
         let mut key_req = client
@@ -241,15 +235,11 @@ pub async fn verify_federated_request(
             .header("Client-Host", "cs3099user-a9.host.cs.st-andrews.ac.uk")
             .send()
             .await
-            .map_err(|e| {
-                dbg!(e);
-                RouteError::BadKey
-            })?;
+            .map_err(|_| RouteError::BadKey)?;
 
         // using body of response, get public key
         let key_req = key_req.body().await?;
         let pkey = PKey::public_key_from_pem(&key_req)?;
-        println!("Decoded public key successfully: {:?}", pkey);
 
         // generate expected signature string
         let mut string = String::new();
@@ -293,7 +283,6 @@ pub async fn verify_federated_request(
         verifier.set_rsa_padding(Padding::PKCS1)?;
         verifier.update(string.as_bytes())?;
         verifier.verify(signature.as_bytes())?;
-        println!("Verified signature.");
 
         // verify digest header through matching
         let exp_digest = ["sha-512=", digest_header].join("");
@@ -306,7 +295,6 @@ pub async fn verify_federated_request(
             println!("Given digest {}", given_digest);
             Err(RouteError::BadDigest)
         } else {
-            println!("Digest Verification successful!");
             Ok(true)
         }
     }
