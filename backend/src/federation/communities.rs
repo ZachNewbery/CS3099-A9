@@ -22,10 +22,6 @@ pub(crate) async fn communities(
     req: HttpRequest,
     payload: web::Payload,
 ) -> Result<HttpResponse> {
-    let _client_host = req
-        .headers()
-        .get("Client-Host")
-        .ok_or(RouteError::MissingClientHost)?;
     verify_federated_request(req, payload).await?;
 
     let conn = get_conn_from_pool(pool.clone())?;
@@ -47,10 +43,6 @@ pub(crate) async fn community_by_id(
     payload: web::Payload,
     web::Path(id): web::Path<String>,
 ) -> Result<HttpResponse> {
-    let _client_host = req
-        .headers()
-        .get("Client-Host")
-        .ok_or(RouteError::MissingClientHost)?;
     verify_federated_request(req, payload).await?;
 
     let conn = get_conn_from_pool(pool.clone())?;
@@ -89,10 +81,6 @@ pub(crate) async fn community_by_id_timestamps(
     payload: web::Payload,
     web::Path(id): web::Path<String>,
 ) -> Result<HttpResponse> {
-    let _client_host = req
-        .headers()
-        .get("Client-Host")
-        .ok_or(RouteError::MissingClientHost)?;
     verify_federated_request(req, payload).await?;
 
     let conn = get_conn_from_pool(pool.clone())?;

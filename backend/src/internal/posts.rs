@@ -196,67 +196,6 @@ pub(crate) fn cache_federated_user(
     }
 }
 
-// // TODO: Use this somewhere
-// // Gets one post matching UUID from all known hosts.
-// pub(crate) async fn external_forall_get_post(
-//     uuid: &Uuid,
-//     pool: web::Data<DBPool>,
-//     username: &str,
-// ) -> Result<LocatedPost, RouteError> {
-//     let mut post: Option<Post> = None;
-//     let mut found_host: Option<String> = None;
-//     for host in get_known_hosts().iter() {
-//         // Ask host
-//         let mut query = request_get_post(&uuid, host, username)?
-//             .await
-//             .map_err(|_| RouteError::ActixInternal)?;
-
-//         if query.status().is_success() {
-//             // Set the found host's string
-//             found_host = Some(host.to_string());
-
-//             post = {
-//                 let body = query.body().await?;
-//                 serde_json::from_str(
-//                     &String::from_utf8(body.to_vec()).map_err(|_| RouteError::ActixInternal)?,
-//                 )?
-//             };
-
-//             break;
-//         }
-//     }
-
-//     if let Some(p) = post {
-//         let conn = get_conn_from_pool(pool.clone()).map_err(|_| RouteError::ActixInternal)?;
-//         let author = p.author.clone();
-
-//         web::block(move || {
-//             cache_federated_user(&conn, &author)?;
-//             Ok::<(), RouteError>(())
-//         })
-//         .await?;
-
-//         println!("Post Children: {:?}", p.children);
-//         Ok(LocatedPost {
-//             id: *uuid,
-//             community: LocatedCommunity::Federated {
-//                 id: p.community,
-//                 host: found_host.clone().unwrap(),
-//             },
-//             parent_post: p.parent_post,
-//             children: p.children,
-//             title: p.title,
-//             content: p.content,
-//             author: p.author,
-//             modified: p.modified,
-//             created: p.created,
-//             deleted: false,
-//         })
-//     } else {
-//         Err(RouteError::NotFound)
-//     }
-// }
-
 #[get("/posts")]
 pub(crate) async fn list_posts(
     query: web::Query<GetPost>,

@@ -45,16 +45,6 @@ pub(crate) async fn post_matching_filters(
     payload: web::Payload,
     parameters: web::Query<PostFilters>,
 ) -> Result<HttpResponse> {
-    let _client_host = req
-        .headers()
-        .get("Client-Host")
-        .ok_or(RouteError::MissingClientHost)?;
-
-    let _user_id = req
-        .headers()
-        .get("User-ID")
-        .ok_or(RouteError::MissingUserId)?;
-
     verify_federated_request(req, payload).await?;
 
     let conn = get_conn_from_pool(pool.clone())?;
@@ -229,20 +219,6 @@ pub(crate) async fn get_post_by_id(
     req: HttpRequest,
     payload: web::Payload,
 ) -> Result<HttpResponse> {
-    let _client_host = req
-        .headers()
-        .get("Client-Host")
-        .ok_or(RouteError::MissingClientHost)?
-        .to_str()
-        .map_err(RouteError::HeaderParse)?;
-
-    let _user_id = req
-        .headers()
-        .get("User-ID")
-        .ok_or(RouteError::MissingUserId)?
-        .to_str()
-        .map_err(RouteError::HeaderParse)?;
-
     verify_federated_request(req, payload).await?;
 
     let conn = get_conn_from_pool(pool.clone())?;
@@ -277,16 +253,6 @@ pub(crate) async fn edit_post(
     req: HttpRequest,
     payload: web::Payload,
 ) -> Result<HttpResponse> {
-    let _client_host = req
-        .headers()
-        .get("Client-Host")
-        .ok_or(RouteError::MissingClientHost)?;
-
-    let _user_id = req
-        .headers()
-        .get("User-ID")
-        .ok_or(RouteError::MissingUserId)?;
-
     let edit_post: EditPost =
         serde_json::from_slice(&verify_federated_request(req, payload).await?)?;
     // TODO: Check permissions
@@ -347,16 +313,6 @@ pub(crate) async fn delete_post(
     req: HttpRequest,
     payload: web::Payload,
 ) -> Result<HttpResponse> {
-    let _client_host = req
-        .headers()
-        .get("Client-Host")
-        .ok_or(RouteError::MissingClientHost)?;
-
-    let _user_id = req
-        .headers()
-        .get("User-ID")
-        .ok_or(RouteError::MissingUserId)?;
-
     verify_federated_request(req, payload).await?;
 
     let conn = get_conn_from_pool(pool)?;
