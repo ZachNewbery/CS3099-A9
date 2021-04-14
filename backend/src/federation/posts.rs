@@ -152,7 +152,7 @@ pub(crate) async fn new_post_federated(
     let user_id = req
         .headers()
         .get("User-ID")
-        .ok_or(RouteError::MissingClientHost)?
+        .ok_or(RouteError::MissingUserId)?
         .clone();
 
     let new_post: NewPost = serde_json::from_slice(&verify_federated_request(req, payload).await?)?;
@@ -255,7 +255,6 @@ pub struct EditPost {
 pub(crate) async fn edit_post(
     pool: web::Data<DBPool>,
     web::Path(id): web::Path<Uuid>,
-    edit_post: web::Json<EditPost>,
     req: HttpRequest,
     payload: web::Payload,
 ) -> Result<HttpResponse> {
@@ -269,7 +268,8 @@ pub(crate) async fn edit_post(
         .get("User-ID")
         .ok_or(RouteError::MissingUserId)?;
 
-    verify_federated_request(req, payload).await?;
+    let edit_post: EditPost =
+        serde_json::from_slice(&verify_federated_request(req, payload).await?)?;
     // TODO: Check permissions
 
     let conn = get_conn_from_pool(pool)?;

@@ -187,11 +187,11 @@ pub(crate) fn cache_federated_user(
         _ => match get_user_detail_by_name(conn, &federated_user.id) {
             Ok(_) => Ok(()),
             Err(diesel::NotFound) => {
-            insert_new_federated_user(conn, federated_user)?;
-            Ok(())
-        }
+                insert_new_federated_user(conn, federated_user)?;
+                Ok(())
+            }
             Err(e) => Err(e),
-        }
+        },
     }
 }
 
