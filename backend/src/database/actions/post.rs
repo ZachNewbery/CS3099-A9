@@ -105,9 +105,15 @@ pub(crate) fn get_parent_of(
     conn: &MysqlConnection,
     post: &DatabasePost,
 ) -> Result<Option<DatabasePost>, diesel::result::Error> {
-    DatabasePost::belonging_to(post)
-        .first::<DatabasePost>(conn)
-        .optional()
+    use crate::database::schema::Posts::dsl::*;
+    if let Some(parent_id) = post.parent_id {
+        Posts
+            .filter(id.eq(parent_id))
+            .first::<DatabasePost>(conn)
+            .optional()
+    } else {
+        Ok(None)
+    }
 }
 
 pub(crate) fn get_children_posts_of(
