@@ -18,7 +18,7 @@ use std::convert::{TryFrom, TryInto};
 use uuid::Uuid;
 
 const fn true_func() -> bool {
-    false
+    true
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
