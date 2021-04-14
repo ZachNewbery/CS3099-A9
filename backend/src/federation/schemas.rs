@@ -51,7 +51,6 @@ pub(crate) struct NewPost {
     pub parent_post: Option<Uuid>,
     pub title: String,
     pub content: Vec<HashMap<ContentType, serde_json::Value>>,
-    pub user_id: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

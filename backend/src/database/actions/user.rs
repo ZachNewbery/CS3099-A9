@@ -13,9 +13,7 @@ pub(crate) fn get_user_detail(
         .first::<DatabaseLocalUser>(conn)
         .optional()?;
 
-    let fed: Option<DatabaseFederatedUser> = DatabaseFederatedUser::belonging_to(user)
-        .first::<DatabaseFederatedUser>(conn)
-        .optional()?;
+    let fed: Option<DatabaseFederatedUser> = get_federated_user(conn, user)?;
 
     match (local, fed) {
         (None, None) => Err(diesel::NotFound),
@@ -24,15 +22,27 @@ pub(crate) fn get_user_detail(
     }
 }
 
+pub(crate) fn get_federated_user(
+    conn: &MysqlConnection,
+    user: &DatabaseUser,
+) -> Result<Option<DatabaseFederatedUser>, diesel::result::Error> {
+    DatabaseFederatedUser::belonging_to(user)
+        .first::<DatabaseFederatedUser>(conn)
+        .optional()
+}
+
 pub(crate) fn insert_new_federated_user(
     conn: &MysqlConnection,
     new_user: &User,
-) -> Result<(), diesel::result::Error> {
+) -> Result<DatabaseUser, diesel::result::Error> {
     use crate::database::models::{DatabaseNewFederatedUser, DatabaseNewUser};
     use crate::database::schema::FederatedUsers::dsl::*;
     use crate::database::schema::Users::dsl::*;
+
+    // Format the input
     let mut formatted_user = new_user.clone();
     formatted_user.host = formatted_user.host.replace("https://", "").replace("/", "");
+
     let db_new_user: DatabaseNewUser = formatted_user.clone().into();
 
     diesel::insert_into(Users)
@@ -43,13 +53,13 @@ pub(crate) fn insert_new_federated_user(
         .filter(username.eq(&db_new_user.username))
         .first::<DatabaseUser>(conn)?;
 
-    let db_new_fed_user: DatabaseNewFederatedUser = (inserted_user, formatted_user).into();
+    let db_new_fed_user: DatabaseNewFederatedUser = (inserted_user.clone(), formatted_user).into();
 
     diesel::insert_into(FederatedUsers)
         .values(db_new_fed_user)
         .execute(conn)?;
 
-    Ok(())
+    Ok(inserted_user)
 }
 
 pub(crate) fn get_user_detail_by_name(

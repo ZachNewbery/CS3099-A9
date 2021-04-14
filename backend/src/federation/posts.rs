@@ -1,16 +1,18 @@
+use crate::database::actions::communities::get_community;
 use crate::database::actions::post::{
     get_all_posts, get_all_top_level_posts, get_children_posts_of, get_post, modify_post_title,
-    put_post_contents, remove_post, remove_post_contents, touch_post,
+    put_post, put_post_contents, remove_post, remove_post_contents, touch_post,
 };
 use crate::database::get_conn_from_pool;
-use crate::federation::schemas::{ContentType, NewPost, Post};
+use crate::database::models::{DatabaseNewPost, DatabasePost};
+use crate::federation::schemas::{ContentType, NewPost, Post, User};
 use crate::internal::authentication::verify_federated_request;
 use crate::util::route_error::RouteError;
 use crate::util::{UserDetail, HOSTNAME};
 use crate::DBPool;
 use actix_web::{delete, get, post, put, web, HttpRequest};
 use actix_web::{HttpResponse, Result};
-use chrono::NaiveDateTime;
+use chrono::{NaiveDateTime, Utc};
 use diesel::Connection;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -137,33 +139,68 @@ pub(crate) async fn post_matching_filters(
 
 #[post("")]
 pub(crate) async fn new_post_federated(
-    _pool: web::Data<DBPool>,
+    pool: web::Data<DBPool>,
     req: HttpRequest,
     payload: web::Payload,
-    _new_post: web::Json<NewPost>,
+    new_post: web::Json<NewPost>,
 ) -> Result<HttpResponse> {
-    let _client_host = req
+    let client_host = req
         .headers()
         .get("Client-Host")
-        .ok_or(RouteError::MissingClientHost)?;
+        .ok_or(RouteError::MissingClientHost)?
+        .clone();
+
+    let user_id = req
+        .headers()
+        .get("User-ID")
+        .ok_or(RouteError::MissingClientHost)?
+        .clone();
 
     verify_federated_request(req, payload).await?;
 
-    // TODO: Implement /fed/posts (POST)
-    // let conn = pool
-    //     .get()
-    //     .map_err(|_| HttpResponse::InternalServerError().finish())?;
-    //
-    // web::block(move || {
-    //     create_federated_post(&conn, new_post.clone())?;
-    //     Ok::<(), diesel::result::Error>(())
-    // })
-    // .await
-    // .map_err(|_| HttpResponse::InternalServerError().finish())?;
+    let conn = get_conn_from_pool(pool.clone())?;
 
-    // Return type: Post
+    let post = web::block(move || {
+        let user = User {
+            id: user_id.to_str()?.to_string(),
+            host: client_host.to_str()?.to_string(),
+        };
 
-    Ok(HttpResponse::NotImplemented().finish())
+        let post = conn.transaction(|| {
+            use crate::database::actions::user;
+            let user = user::insert_new_federated_user(&conn, &user)?;
+
+            let parent = if let Some(u) = &new_post.parent_post {
+                Some(get_post(&conn, u)?.ok_or(diesel::NotFound)?)
+            } else {
+                None
+            };
+
+            let community = get_community(&conn, &new_post.community)?.ok_or(diesel::NotFound)?;
+
+            let db_new_post = DatabaseNewPost {
+                uuid: Uuid::new_v4().to_string(),
+                title: new_post.title.clone(),
+                author_id: user.id,
+                created: Utc::now().naive_utc(),
+                modified: Utc::now().naive_utc(),
+                parent_id: parent.map(|p| p.post.id),
+                community_id: community.id,
+            };
+
+            let post = put_post(&conn, &db_new_post)?;
+            put_post_contents(&conn, &post, &new_post.content)?;
+
+            Ok::<DatabasePost, diesel::result::Error>(post)
+        })?;
+
+        let post = get_post(&conn, &post.uuid.parse()?)?.ok_or(diesel::NotFound)?;
+
+        Post::try_from((post, None))
+    })
+    .await?;
+
+    Ok(HttpResponse::Ok().json(post))
 }
 
 #[get("/{id}")]
