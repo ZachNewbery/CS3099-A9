@@ -454,9 +454,10 @@ pub struct CreatePost {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct CreatePostExtern {
     pub community: String,
-    pub parent: Option<Uuid>,
+    pub parent_post: Option<Uuid>,
     pub title: Option<String>,
     pub content: Vec<HashMap<ContentType, serde_json::Value>>,
 }
@@ -524,7 +525,7 @@ pub(crate) async fn create_post(
 
             let body = CreatePostExtern {
                 community: post.community.id.clone(),
-                parent: post.parent,
+                parent_post: post.parent,
                 title: post.title.clone(),
                 content: post.content.clone(),
             };
