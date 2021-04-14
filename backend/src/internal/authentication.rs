@@ -226,14 +226,14 @@ pub async fn verify_federated_request(
         // construct and send GET request to host/fed/key
         let key_path = format!("https://{}/fed/key", client_host);
         let connector = awc::Connector::new()
-            .timeout(Duration::from_secs(3))
+            .timeout(Duration::from_secs(10))
             .finish();
 
         let client = awc::Client::builder()
             .connector(connector)
-            .timeout(Duration::from_secs(5))
+            .timeout(Duration::from_secs(10))
             .finish();
-        dbg!(client_host.clone());
+
         let mut key_req = client
             .get(key_path)
             .header("User-Agent", "Actix Web")
@@ -241,11 +241,13 @@ pub async fn verify_federated_request(
             .header("Client-Host", "cs3099user-a9.host.cs.st-andrews.ac.uk")
             .send()
             .await
-            .map_err(|_| RouteError::BadKey)?;
+            .map_err(|e| {
+                dbg!(e);
+                RouteError::BadKey
+            })?;
 
         // using body of response, get public key
         let key_req = key_req.body().await?;
-        dbg!(key_req.clone());
         let pkey = PKey::public_key_from_pem(&key_req)?;
         println!("Decoded public key successfully: {:?}", pkey);
 
