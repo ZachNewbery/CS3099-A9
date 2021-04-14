@@ -452,7 +452,7 @@ pub struct CreatePost {
     pub content: Vec<HashMap<ContentType, serde_json::Value>>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct CreatePostExtern {
     pub community: String,
     pub parent: Option<Uuid>,
@@ -527,6 +527,8 @@ pub(crate) async fn create_post(
                 title: post.title.clone(),
                 content: post.content.clone(),
             };
+
+            dbg!(&body);
 
             let req = make_federated_request(
                 awc::Client::post,
