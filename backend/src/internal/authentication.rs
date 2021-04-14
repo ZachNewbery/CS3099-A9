@@ -233,7 +233,7 @@ pub async fn verify_federated_request(
             .connector(connector)
             .timeout(Duration::from_secs(5))
             .finish();
-
+        dbg!(client_host.clone());
         let mut key_req = client
             .get(key_path)
             .header("User-Agent", "Actix Web")
@@ -245,6 +245,7 @@ pub async fn verify_federated_request(
 
         // using body of response, get public key
         let key_req = key_req.body().await?;
+        dbg!(key_req.clone());
         let pkey = PKey::public_key_from_pem(&key_req)?;
         println!("Decoded public key successfully: {:?}", pkey);
 
