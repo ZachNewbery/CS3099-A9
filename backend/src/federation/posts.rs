@@ -167,6 +167,7 @@ pub(crate) async fn new_post_federated(
         .map(DatabaseContentType::try_from)
         .collect::<Result<Vec<DatabaseContentType>, RouteError>>()?;
 
+
     let post = web::block(move || {
         let user = User {
             id: user_id.to_str()?.to_string(),
@@ -198,9 +199,16 @@ pub(crate) async fn new_post_federated(
             };
             dbg!(db_new_post.clone());
 
-            let post = put_post(&conn, &db_new_post)?;
+            let post = put_post(&conn, &db_new_post).map_err(|e| {
+                dbg!(&e);
+                e
+            })?;
+            dbg!(post.clone());
 
-            put_post_contents(&conn, &post, &content)?;
+            put_post_contents(&conn, &post, &content).map_err(|e| {
+                dbg!(&e);
+                e
+            })?;
 
             Ok::<DatabasePost, diesel::result::Error>(post)
         })?;
