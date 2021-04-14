@@ -65,6 +65,7 @@ pub(crate) async fn post_matching_filters(
             }
             .unwrap_or_default()
             .into_iter()
+            .filter(|p| !p.deleted)
             .map(|p| {
                 Ok::<_, RouteError>((
                     get_post(&conn, &p.uuid.parse()?)?
@@ -129,7 +130,7 @@ pub(crate) async fn post_matching_filters(
         .into_iter()
         .map(|x| x.try_into())
         .collect::<Result<Vec<Post>, _>>()?;
-
+    dbg!(posts.clone());
     // Return type: Vec<Post>
     Ok(HttpResponse::Ok().json(posts))
 }
