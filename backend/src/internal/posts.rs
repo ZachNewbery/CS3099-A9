@@ -11,8 +11,7 @@ use crate::database::actions::user::{
 };
 use crate::database::get_conn_from_pool;
 use crate::database::models::{DatabaseLocalUser, DatabaseNewPost};
-use crate::federation::posts::EditPost;
-use crate::federation::schemas::{ContentType, DatabaseContentType, Post, User};
+use crate::federation::schemas::{ContentType, DatabaseContentType, Post, User, EditPost};
 use crate::internal::authentication::{authenticate, make_federated_request};
 use crate::internal::{get_known_hosts, LocatedCommunity};
 use crate::util::route_error::RouteError;
@@ -97,6 +96,7 @@ pub(crate) async fn get_post(
     Ok(HttpResponse::Ok().json(post))
 }
 
+/// Obtains a post that is locally stored
 pub(crate) async fn get_post_local(
     pool: web::Data<DBPool>,
     post: PostInformation,
@@ -132,6 +132,7 @@ pub(crate) async fn get_post_local(
     Ok(lp)
 }
 
+/// Obtains a post that is stored on a remote host
 pub(crate) fn request_get_post(
     uuid: &Uuid,
     host: &str,
@@ -147,7 +148,7 @@ pub(crate) fn request_get_post(
     )
 }
 
-// Gets one post matching UUID from a host.
+/// Gets one post matching UUID from a host.
 pub(crate) async fn external_get_post(
     uuid: &Uuid,
     pool: web::Data<DBPool>,
@@ -194,7 +195,7 @@ pub(crate) async fn external_get_post(
     }
 }
 
-// Writes a federated author to cache.
+/// Writes a federated author to cache
 pub(crate) fn cache_federated_user(
     conn: &MysqlConnection,
     federated_user: &User,
@@ -212,6 +213,7 @@ pub(crate) fn cache_federated_user(
     }
 }
 
+/// Internal endpoint to list all the posts, optionally in a specified community or hosted by a specified host
 #[get("/posts")]
 pub(crate) async fn list_posts(
     query: web::Query<GetPost>,
@@ -245,6 +247,7 @@ pub(crate) async fn list_posts(
     Ok(HttpResponse::Ok().json(posts))
 }
 
+/// Obtains all the posts stored locally, optionally filtered by a specified community
 pub(crate) async fn list_local_posts(
     community: Option<&str>,
     pool: web::Data<DBPool>,
@@ -302,7 +305,7 @@ pub(crate) async fn list_local_posts(
     Ok(posts)
 }
 
-// Returns a list of all posts from one host.
+/// Returns a list of all posts from one host, optionally with a specified community
 pub(crate) async fn external_list_posts(
     host: &str,
     community: Option<&str>,
@@ -321,6 +324,7 @@ pub(crate) async fn external_list_posts(
     external_list_posts_inner(host, requester_name, pool, opt_query).await
 }
 
+/// Inner function to send a request obtaining posts from a remote host
 async fn external_list_posts_inner(
     host: &str,
     requester_name: &str,
@@ -388,6 +392,7 @@ pub struct SearchPosts {
     search: String,
 }
 
+/// Internal endpoint to search posts given a search string, optionally filtered by host and community
 #[get("/posts-search")]
 pub(crate) async fn search_posts(
     query: web::Query<SearchPosts>,
@@ -462,6 +467,7 @@ pub(crate) async fn search_posts(
 /// Struct representing a community object sent when creating a Post
 #[derive(Serialize, Deserialize)]
 pub struct CreateCommunity {
+    /// Name of the Community
     id: String,
 }
 
@@ -499,6 +505,7 @@ pub struct HostQuery {
     host: Option<String>,
 }
 
+/// Internal endpoint to create a new post
 #[post("/posts/create")]
 pub(crate) async fn create_post(
     query: web::Query<HostQuery>,
@@ -583,6 +590,7 @@ pub(crate) async fn create_post(
     }
 }
 
+/// Internal endpoint to edit a post
 #[patch("/posts/{id}")]
 pub(crate) async fn edit_post(
     query: web::Query<HostQuery>,
@@ -662,6 +670,7 @@ pub(crate) async fn edit_post(
     }
 }
 
+/// Determines if a user has the permissions to modify a post
 async fn local_user_has_modify_post_permission(
     pool: web::Data<DBPool>,
     local_user: DatabaseLocalUser,
@@ -682,6 +691,7 @@ async fn local_user_has_modify_post_permission(
     return Ok(true);
 }
 
+/// Internal endpoint to delete a post
 #[delete("/posts/{id}")]
 pub(crate) async fn delete_post(
     query: web::Query<HostQuery>,

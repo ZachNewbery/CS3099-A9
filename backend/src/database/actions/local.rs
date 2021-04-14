@@ -5,6 +5,7 @@ use diesel::MysqlConnection;
 use crate::database::models::{DatabaseLocalUser, DatabaseUser};
 use crate::internal::user::{EditProfile, NewLocalUser};
 
+/// Updates a local user's current session
 pub(crate) fn update_session(
     conn: &MysqlConnection,
     user: &DatabaseLocalUser,
@@ -18,6 +19,7 @@ pub(crate) fn update_session(
     Ok(())
 }
 
+/// Validates a local user's current session
 pub(crate) fn validate_session(
     conn: &MysqlConnection,
     id_ck: u64,
@@ -32,6 +34,7 @@ pub(crate) fn validate_session(
         .optional()
 }
 
+/// Returns a local user given their email and username
 pub(crate) fn get_local_user_by_username_email(
     conn: &MysqlConnection,
     username_: &str,
@@ -48,6 +51,7 @@ pub(crate) fn get_local_user_by_username_email(
         .optional()
 }
 
+/// Returns a local user given their login credentials
 pub(crate) fn get_local_user_by_credentials(
     conn: &MysqlConnection,
     email_ck: &str,
@@ -65,6 +69,7 @@ pub(crate) fn get_local_user_by_credentials(
         .optional()
 }
 
+/// Returns a local user given their username
 pub(crate) fn get_local_user_by_user_id(
     conn: &MysqlConnection,
     username_: &str,
@@ -80,6 +85,7 @@ pub(crate) fn get_local_user_by_user_id(
         .optional()
 }
 
+/// Inserts a new local user into the database
 pub(crate) fn insert_new_local_user(
     conn: &MysqlConnection,
     new_user: NewLocalUser,
@@ -109,6 +115,7 @@ pub(crate) fn insert_new_local_user(
     Ok(())
 }
 
+/// Updates the details of a local user
 pub(crate) fn update_local_user(
     conn: &MysqlConnection,
     user: DatabaseLocalUser,

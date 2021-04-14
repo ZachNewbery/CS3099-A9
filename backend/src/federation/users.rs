@@ -27,6 +27,7 @@ pub struct SearchUsersParameters {
     prefix: Option<String>,
 }
 
+/// Federated endpoint to search local users by a specified search prefix
 #[get("")]
 pub(crate) async fn search_users(
     pool: web::Data<DBPool>,
@@ -54,14 +55,20 @@ pub(crate) async fn search_users(
     ))
 }
 
+/// Struct representing the required details of a local user
 #[derive(Clone, Serialize, Deserialize)]
 struct UserDetails {
+    /// Username of the local user
     id: String,
+    /// Bio of the local user
     about: Option<String>,
+    /// Avatar URL of the local user
     avatar_url: Option<String>,
+    /// Array of posts made by the local user
     posts: Vec<Post>,
 }
 
+/// Federated endpoint to retrieve a local user given their username
 #[get("/{id}")]
 pub(crate) async fn user_by_id(
     web::Path(id): web::Path<String>,
@@ -106,6 +113,7 @@ pub(crate) async fn user_by_id(
     }))
 }
 
+/// Unimplemented federated endpoint to send a user a message
 #[post("/{id}")]
 pub(crate) async fn send_user_message(
     _parameters: web::Query<MessageParameters>,

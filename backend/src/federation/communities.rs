@@ -17,6 +17,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+/// Federated endpoint to get all of the communities hosted on our instance
 #[get("")]
 pub(crate) async fn communities(
     pool: web::Data<DBPool>,
@@ -37,6 +38,7 @@ pub(crate) async fn communities(
     ))
 }
 
+/// Federated endpoint to retrieve a community by it's name (id as per supergroup spec)
 #[get("/{id}")]
 pub(crate) async fn community_by_id(
     pool: web::Data<DBPool>,
@@ -68,13 +70,17 @@ pub(crate) async fn community_by_id(
     }))
 }
 
+/// Struct representing a newly updated post with its updated timestamp
 #[derive(Clone, Serialize, Deserialize)]
 struct PostModified {
+    /// UUID of the newly updated post
     id: Uuid,
+    /// Time of modification
     #[serde(with = "ts_seconds")]
     modified: DateTime<Utc>,
 }
 
+/// Federated endpoint returning all the timestamps for all the posts in a Community given its name (id as per supergroup spec)
 #[get("/{id}/timestamps")]
 pub(crate) async fn community_by_id_timestamps(
     pool: web::Data<DBPool>,

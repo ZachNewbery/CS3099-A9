@@ -1,6 +1,6 @@
 [package]
 name = "starlight"
-version = "0.1.0"
+version = "1.0.0"
 authors = ["Anson <twac@st-andrews.ac.uk>", "Zach <zn6@st-andrews.ac.uk>"]
 edition = "2018"
 

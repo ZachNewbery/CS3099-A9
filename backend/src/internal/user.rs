@@ -30,6 +30,7 @@ pub struct NewLocalUser {
     pub password: String,
 }
 
+/// Internal endpoint to create a new local user
 #[post("/new_user")]
 pub(crate) async fn new_user(
     pool: web::Data<DBPool>,
@@ -78,6 +79,7 @@ pub struct LoginOutput {
     pub new_token: NewToken,
 }
 
+/// Internal endpoint used to let a user login
 #[post("/login")]
 pub(crate) async fn login(
     pool: web::Data<DBPool>,
@@ -120,6 +122,7 @@ pub(crate) async fn login(
     }))
 }
 
+/// Internal endpoint to let a user logout
 #[post("/logout")]
 pub(crate) async fn logout(
     request: HttpRequest,
@@ -157,6 +160,7 @@ pub struct NewToken {
     pub token_type: String,
 }
 
+/// Internal endpoint to edit a local users profile
 #[put("/edit_profile")]
 pub(crate) async fn edit_profile(
     request: HttpRequest,
@@ -188,14 +192,19 @@ pub(crate) async fn edit_profile(
     }))
 }
 
+/// Struct representing a local users profile
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct UserProfile {
+    /// Username of the local user
     pub id: String,
+    /// Bio of the local user
     pub about: Option<String>,
+    /// Avatar of the local user
     pub avatar_url: Option<String>,
 }
 
+/// Internal endpoint to retrieve the details of a local user by their username
 #[get("/user/{name}")]
 pub(crate) async fn get_user(
     request: HttpRequest,
@@ -243,6 +252,7 @@ pub(crate) async fn get_user(
     Ok(HttpResponse::Ok().json(profile))
 }
 
+/// Retrieves a user hosted on an external host
 pub(crate) async fn get_extern_user(
     user: DatabaseFederatedUser,
     name: String,
