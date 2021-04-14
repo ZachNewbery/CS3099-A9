@@ -1,4 +1,4 @@
-use crate::database::actions::communities::{get_community, get_community_admins};
+use crate::database::actions::communities::{get_community_admins, get_community_by_id};
 use crate::database::actions::post;
 use crate::database::actions::post::{
     get_all_top_level_posts, get_children_posts_of, get_top_level_posts_of_community,
@@ -11,7 +11,7 @@ use crate::database::actions::user::{
 use crate::database::get_conn_from_pool;
 use crate::database::models::{DatabaseLocalUser, DatabaseNewPost};
 use crate::federation::posts::EditPost;
-use crate::federation::schemas::{ContentType, Post, User};
+use crate::federation::schemas::{ContentType, DatabaseContentType, Post, User};
 use crate::internal::authentication::{authenticate, make_federated_request};
 use crate::internal::{get_known_hosts, LocatedCommunity};
 use crate::util::route_error::RouteError;
@@ -24,6 +24,7 @@ use chrono::{DateTime, Utc};
 use diesel::{Connection, MysqlConnection};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::convert::TryFrom;
 use uuid::Uuid;
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -299,7 +300,7 @@ pub(crate) async fn list_local_posts(
         let posts = match &comm {
             None => get_all_top_level_posts(&conn),
             Some(c) => {
-                let community = get_community(&conn, c)?.ok_or(diesel::NotFound)?;
+                let community = get_community_by_id(&conn, c)?.ok_or(diesel::NotFound)?;
 
                 get_top_level_posts_of_community(&conn, &community)
             }
@@ -548,7 +549,7 @@ pub(crate) async fn create_post(
             };
             let conn = get_conn_from_pool(pool.clone())?;
             let id = post.community.id.clone();
-            let community = web::block(move || get_community(&conn, &id))
+            let community = web::block(move || get_community_by_id(&conn, &id))
                 .await?
                 .ok_or(RouteError::NotFound)?;
 
@@ -563,9 +564,16 @@ pub(crate) async fn create_post(
             };
 
             let conn = get_conn_from_pool(pool.clone())?;
+
+            let content = post
+                .content
+                .iter()
+                .map(DatabaseContentType::try_from)
+                .collect::<Result<Vec<DatabaseContentType>, RouteError>>()?;
+
             web::block(move || {
                 let db_post = put_post(&conn, &new_post)?;
-                put_post_contents(&conn, &db_post, &post.content)
+                put_post_contents(&conn, &db_post, &content)
             })
             .await?;
             Ok(HttpResponse::Ok().finish())
@@ -639,11 +647,17 @@ pub(crate) async fn edit_post(
                         None => {}
                         Some(n) => {
                             remove_post_contents(&conn, &post.post.clone())?;
-                            put_post_contents(&conn, &post.post, n)?;
+
+                            let content = n
+                                .iter()
+                                .map(DatabaseContentType::try_from)
+                                .collect::<Result<Vec<DatabaseContentType>, RouteError>>()?;
+
+                            put_post_contents(&conn, &post.post, &content)?;
                         }
                     }
                     touch_post(&conn, post.post)?;
-                    Ok::<(), diesel::result::Error>(())
+                    Ok::<(), RouteError>(())
                 })
             })
             .await?;

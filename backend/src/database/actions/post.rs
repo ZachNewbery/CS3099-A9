@@ -2,7 +2,7 @@ use crate::database::actions::user::get_user_detail;
 use crate::database::models::{
     DatabaseCommunity, DatabaseMarkdown, DatabaseNewPost, DatabasePost, DatabaseText, DatabaseUser,
 };
-use crate::federation::schemas::ContentType;
+use crate::federation::schemas::{ContentType, DatabaseContentType};
 use std::collections::HashMap;
 
 use diesel::prelude::*;
@@ -258,35 +258,25 @@ pub(crate) fn put_post(
 pub(crate) fn put_post_contents(
     conn: &MysqlConnection,
     post: &DatabasePost,
-    contents: &[HashMap<ContentType, serde_json::Value>],
+    contents: &[DatabaseContentType],
 ) -> Result<(), diesel::result::Error> {
-    for content_map in contents {
-        if content_map.contains_key(&ContentType::Text) {
-            let text = &content_map
-                .get(&ContentType::Text)
-                .unwrap()
-                .get("text")
-                .unwrap()
-                .as_str()
-                .unwrap();
-            use crate::database::schema::Text::dsl::*;
-            diesel::insert_into(Text)
-                .values((content.eq(text), postId.eq(post.id)))
-                .execute(conn)?;
-        } else if content_map.contains_key(&ContentType::Markdown) {
-            let text = &content_map
-                .get(&ContentType::Markdown)
-                .unwrap()
-                .get("text")
-                .unwrap()
-                .as_str()
-                .unwrap();
-            use crate::database::schema::Markdown::dsl::*;
-            diesel::insert_into(Markdown)
-                .values((content.eq(text), postId.eq(post.id)))
-                .execute(conn)?;
+    for content in contents {
+        match content {
+            DatabaseContentType::Text { text } => {
+                use crate::database::schema::Text::dsl::*;
+                diesel::insert_into(Text)
+                    .values((content.eq(text), postId.eq(post.id)))
+                    .execute(conn)?;
+            }
+            DatabaseContentType::Markdown { text } => {
+                use crate::database::schema::Markdown::dsl::*;
+                diesel::insert_into(Markdown)
+                    .values((content.eq(text), postId.eq(post.id)))
+                    .execute(conn)?;
+            }
         }
     }
+
     Ok(())
 }
 

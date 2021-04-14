@@ -1,7 +1,9 @@
 use actix_web::{get, web, HttpResponse};
 use actix_web::{HttpRequest, Result};
 
-use crate::database::actions::communities::{get_communities, get_community, get_community_admins};
+use crate::database::actions::communities::{
+    get_communities, get_community_admins, get_community_by_id,
+};
 use crate::database::actions::post::get_top_level_posts_of_community;
 use crate::database::get_conn_from_pool;
 
@@ -54,7 +56,7 @@ pub(crate) async fn community_by_id(
     let conn = get_conn_from_pool(pool.clone())?;
 
     let (community, admins) = web::block(move || {
-        let community = get_community(&conn, &id)?.ok_or(diesel::NotFound)?;
+        let community = get_community_by_id(&conn, &id)?.ok_or(diesel::NotFound)?;
         let admins = get_community_admins(&conn, &community)?;
         Ok::<(_, _), RouteError>((community, admins))
     })
@@ -96,7 +98,7 @@ pub(crate) async fn community_by_id_timestamps(
     let conn = get_conn_from_pool(pool.clone())?;
 
     let posts = web::block(move || {
-        let community = get_community(&conn, &id)?.ok_or(diesel::NotFound)?;
+        let community = get_community_by_id(&conn, &id)?.ok_or(diesel::NotFound)?;
         get_top_level_posts_of_community(&conn, &community)
     })
     .await?

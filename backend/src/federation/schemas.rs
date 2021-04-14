@@ -1,8 +1,10 @@
 use crate::database::actions::post::PostInformation;
 use crate::util::route_error::RouteError;
+use crate::util::route_error::RouteError::{BadPostContent, UnsupportedContentType};
 use chrono::serde::{ts_seconds, ts_seconds_option};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use serde_with::rust::string_empty_as_none;
 use std::collections::HashMap;
 use std::convert::TryFrom;
@@ -22,6 +24,48 @@ pub enum ContentType {
     Markdown,
     #[serde(other)]
     Unsupported,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub enum DatabaseContentType {
+    Text { text: String },
+    Markdown { text: String },
+}
+
+impl TryFrom<&HashMap<ContentType, serde_json::Value>> for DatabaseContentType {
+    type Error = RouteError;
+
+    fn try_from(value: &HashMap<ContentType, Value>) -> Result<Self, Self::Error> {
+        let ct = match value.iter().next() {
+            Some((k, v)) => {
+                match k {
+                    ContentType::Text => {
+                        // Text: field is text
+                        DatabaseContentType::Text {
+                            text: v
+                                .get("text")
+                                .ok_or(BadPostContent)?
+                                .as_str()
+                                .ok_or(BadPostContent)?
+                                .to_string(),
+                        }
+                    }
+                    ContentType::Markdown => DatabaseContentType::Markdown {
+                        text: v
+                            .get("text")
+                            .ok_or(BadPostContent)?
+                            .as_str()
+                            .ok_or(BadPostContent)?
+                            .to_string(),
+                    },
+                    ContentType::Unsupported => return Err(UnsupportedContentType),
+                }
+            }
+            None => return Err(BadPostContent),
+        };
+
+        Ok(ct)
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq)]
