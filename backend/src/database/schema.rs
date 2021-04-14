@@ -48,7 +48,7 @@ table! {
     Posts (id) {
         id -> Unsigned<Bigint>,
         uuid -> Varchar,
-        title -> Text,
+        title -> Nullable<Text>,
         authorId -> Unsigned<Bigint>,
         created -> Timestamp,
         modified -> Timestamp,

@@ -87,7 +87,7 @@ pub struct DatabaseNewCommunitiesUser {
 pub struct DatabasePost {
     pub id: u64,
     pub uuid: String,
-    pub title: String,
+    pub title: Option<String>,
     #[column_name = "authorId"]
     pub author_id: u64,
     pub created: NaiveDateTime,

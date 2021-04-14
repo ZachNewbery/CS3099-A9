@@ -146,7 +146,7 @@ impl TryFrom<(PostInformation, Option<Vec<PostInformation>>)> for Post {
                 .into_iter()
                 .map(|p| Ok(p.post.uuid.parse()?))
                 .collect::<Result<Vec<_>, RouteError>>()?,
-            title: Some(post.post.title),
+            title: post.post.title,
             content: post.content,
             author: (post.user, post.user_details).into(),
             modified: DateTime::<Utc>::from_utc(post.post.modified, Utc),

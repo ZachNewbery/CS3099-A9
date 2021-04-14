@@ -105,7 +105,7 @@ pub(crate) async fn get_post_local(
             .into_iter()
             .map(|p| Ok(p.post.uuid.parse()?))
             .collect::<Result<Vec<_>, RouteError>>()?,
-        title: Some(post.post.title),
+        title: post.post.title,
         content: post.content,
         author: (post.user, post.user_details).into(),
         modified: DateTime::<Utc>::from_utc(post.post.modified, Utc),
@@ -273,7 +273,7 @@ pub(crate) async fn list_local_posts(
                     .into_iter()
                     .map(|h| h.post.uuid.parse().map_err(RouteError::UuidParse))
                     .collect::<Result<Vec<Uuid>, RouteError>>()?,
-                title: Some(p.post.title),
+                title: p.post.title,
                 content: p.content,
                 author: (p.user, p.user_details).into(),
                 modified: DateTime::<Utc>::from_utc(p.post.modified, Utc),
