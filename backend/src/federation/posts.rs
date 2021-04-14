@@ -7,6 +7,7 @@ use crate::database::get_conn_from_pool;
 use crate::database::models::{DatabaseNewPost, DatabasePost};
 use crate::federation::schemas::{ContentType, NewPost, Post, User};
 use crate::internal::authentication::verify_federated_request;
+use crate::internal::posts::cache_federated_user;
 use crate::util::route_error::RouteError;
 use crate::util::{UserDetail, HOSTNAME};
 use crate::DBPool;
@@ -167,7 +168,8 @@ pub(crate) async fn new_post_federated(
 
         let post = conn.transaction(|| {
             use crate::database::actions::user;
-            let user = user::insert_new_federated_user(&conn, &user)?;
+            cache_federated_user(&conn, &user)?;
+            let user = user::get_user_detail_by_name(&conn, &user.id)?;
             dbg!(user.clone());
             let parent = if let Some(u) = &new_post.parent_post {
                 Some(get_post(&conn, u)?.ok_or(diesel::NotFound)?)
