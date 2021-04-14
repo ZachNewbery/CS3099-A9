@@ -67,7 +67,7 @@ const createComment = async ({ postId, communityId, instance, content }) => {
     community: {
       id: communityId,
     },
-    title: "atitle",
+    title: null
   };
 
   const url = new URL(`${process.env.REACT_APP_API}/posts/create`);
@@ -171,7 +171,7 @@ export const CreateComment = ({ postId, communityId, refresh }) => {
         await createComment({ postId, content, instance, communityId });
         return refresh();
       } catch (error) {
-        currentErrors.content = error.message; // TODO: see how they're passing errors
+        currentErrors.content = error.message;
       }
     }
 
