@@ -328,6 +328,7 @@ async fn external_list_posts_inner(
                 .map_err(|_| RouteError::ActixInternal)?;
             serde_json::from_str(&s_posts).map_err(|_| RouteError::ActixInternal)?
         };
+        dbg!(posts.clone());
 
         let conn = get_conn_from_pool(pool.clone()).map_err(|_| RouteError::ActixInternal)?;
         let host2 = host.to_string();

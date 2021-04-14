@@ -149,7 +149,6 @@ pub(crate) async fn new_post_federated(
     let new_post: NewPost = serde_json::from_slice(&verify_federated_request(req, payload).await?)?;
 
     let conn = get_conn_from_pool(pool.clone())?;
-    dbg!("Recieved create post req.");
 
     let content = new_post
         .content
@@ -167,7 +166,6 @@ pub(crate) async fn new_post_federated(
             use crate::database::actions::user;
             cache_federated_user(&conn, &user)?;
             let user = user::get_user_detail_by_name(&conn, &user.id)?;
-            dbg!(user.clone());
             let parent = if let Some(u) = &new_post.parent_post {
                 Some(get_post(&conn, u)?.ok_or(diesel::NotFound)?)
             } else {
@@ -186,28 +184,19 @@ pub(crate) async fn new_post_federated(
                 parent_id: parent.map(|p| p.post.id),
                 community_id: community.id,
             };
-            dbg!(db_new_post.clone());
 
-            let post = put_post(&conn, &db_new_post).map_err(|e| {
-                dbg!(&e);
-                e
-            })?;
-            dbg!(post.clone());
+            let post = put_post(&conn, &db_new_post)?;
 
-            put_post_contents(&conn, &post, &content).map_err(|e| {
-                dbg!(&e);
-                e
-            })?;
+            put_post_contents(&conn, &post, &content)?;
 
             Ok::<DatabasePost, diesel::result::Error>(post)
         })?;
 
         let post = get_post(&conn, &post.uuid.parse()?)?.ok_or(diesel::NotFound)?;
-        dbg!(post.clone());
+
         Post::try_from((post, None))
     })
     .await?;
-    dbg!(post.clone());
     Ok(HttpResponse::Ok().json(post))
 }
 

@@ -183,9 +183,7 @@ where
             .header("Signature", str_header),
         None => req.header("Signature", str_header),
     };
-
-    dbg!(&new_req);
-    dbg!(&body_string);
+    
     // send request
     if body_string.is_empty() {
         Ok(new_req.send())
