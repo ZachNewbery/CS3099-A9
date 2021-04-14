@@ -228,7 +228,7 @@ pub(crate) async fn get_post_by_id(
     Ok(HttpResponse::Created().json(Post::try_from((post, children))?))
 }
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct EditPost {
     pub title: Option<String>,
     pub content: Option<Vec<HashMap<ContentType, serde_json::Value>>>,
