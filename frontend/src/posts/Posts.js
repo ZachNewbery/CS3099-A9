@@ -25,8 +25,10 @@ const loadPosts = async ({ instance, community }) => {
       if (users[instance][post.author.id]) {
         post.user = users[instance][post.author.id];
       } else {
-        post.user = await fetchData(`${process.env.REACT_APP_API}/user/${post.author.id}?host=${instance}`);
-        users[instance][post.author.id] = post.user;
+        try {
+          post.user = await fetchData(`${process.env.REACT_APP_API}/user/${post.author.id}?host=${instance}`);
+          users[instance][post.author.id] = post.user;
+        } catch(e) {}
       }
     } catch (error) {}
     return post;

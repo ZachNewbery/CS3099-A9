@@ -7,11 +7,36 @@ import { Spinner, Error, colors, fonts, fetchData } from "../helpers";
 import { ScrollContainer } from "../components/ScrollContainer";
 import { InstanceContext, CommunityContext, SearchContext } from "../App";
 
+import { users } from "../posts/Posts";
+
 const loadPosts = async ({ instance, search }) => {
   const url = new URL(`${process.env.REACT_APP_API}/posts-search`);
   url.searchParams.append("host", instance);
   url.searchParams.append("search", search);
-  return await fetchData(url);
+  
+  let posts = await fetchData(url);
+  
+  const editedPosts = posts.map(async (post) => {
+    try {
+      if (!users[instance]) {
+        users[instance] = {};
+      }
+
+      if (users[instance][post.author.id]) {
+        post.user = users[instance][post.author.id];
+      } else {
+        try {
+          post.user = await fetchData(`${process.env.REACT_APP_API}/user/${post.author.id}?host=${instance}`);
+          users[instance][post.author.id] = post.user;
+        } catch (e) {}
+      }
+    } catch (error) {}
+    return post;
+  });
+
+  posts = await Promise.all([...editedPosts]);
+  
+  return posts;
 };
 
 const StyledPosts = styled.div`
@@ -84,7 +109,7 @@ export const ListPosts = ({ search, setIsOpen }) => {
   if (isLoading) return <Spinner />;
   if (error) return <Error message={error} />;
 
-  const filteredPosts = posts.filter((post) => !post.deleted);
+  const filteredPosts = posts.filter((post) => !post.deleted && post.user);
 
   return (
     <StyledPosts>

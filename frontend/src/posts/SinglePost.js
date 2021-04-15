@@ -22,21 +22,23 @@ const loadSinglePost = async ({ postId, instance, community }) => {
   const appendParam = (key, value) => value && url.searchParams.append(key, value);
   appendParam("host", instance);
   appendParam("community", community);
-  
+
   const post = await fetchData(url);
 
   if (!users[instance]) {
     users[instance] = {};
   }
 
-  let user;
+  let user = {};
 
   if (users[instance][post.author.id]) {
     user = users[instance][post.author.id];
   } else {
-    user = await fetchData(`${process.env.REACT_APP_API}/user/${post.author.id}`);
+    try {
+      user = await fetchData(`${process.env.REACT_APP_API}/user/${post.author.id}`);
+    } catch (e) {}
   }
-  
+
   post.user = user;
   return post;
 };
@@ -46,7 +48,7 @@ const deletePost = async ({ id, instance, community }) => {
   const appendParam = (key, value) => value && url.searchParams.append(key, value);
   appendParam("host", instance);
   appendParam("community", community);
-  
+
   return fetchData(url, null, "DELETE");
 };
 
@@ -109,9 +111,9 @@ const StyledPost = styled.div`
     & > .profile {
       display: flex;
       & > .profile-picture {
-        margin-left: 1rem;        
+        margin-left: 1rem;
       }
-      
+
       & > .details {
         justify-content: center;
         display: flex;
@@ -177,7 +179,7 @@ export const SinglePost = () => {
 
   const { instance } = useContext(InstanceContext);
   const { community, setCommunity } = useContext(CommunityContext);
-  
+
   const { data, isLoading, reload } = useAsync(loadSinglePost, { postId, instance, community });
 
   useEffect(() => {
@@ -189,7 +191,7 @@ export const SinglePost = () => {
   const refresh = () => {
     setCommentCount(0);
     reload();
-  }
+  };
 
   const addComment = () => setCommentCount((c) => c + 1);
   const removeComment = () => setCommentCount((c) => c - 1);
@@ -201,8 +203,15 @@ export const SinglePost = () => {
   return (
     <StyledPostContainer>
       <Post {...data} refresh={refresh} commentCount={commentCount} instance={instance} community={community} />
-      <CreateComment postId={data.id} refresh={refresh} communityId={data.community.id} />
-      <Comments children={data.children} addComment={addComment} removeComment={removeComment} setCommentCount={setCommentCount} />
+      <CreateComment postId={data?.id} refresh={refresh} communityId={data?.community?.id} />
+      <Comments
+        key={data?.children?.length}
+        refreshParent={refresh}
+        children={data?.children}
+        addComment={addComment}
+        removeComment={removeComment}
+        setCommentCount={setCommentCount}
+      />
     </StyledPostContainer>
   );
 };

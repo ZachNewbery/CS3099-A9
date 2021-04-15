@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect } from "react";
 import styled from "styled-components";
-import { Switch, Route } from "react-router-dom";
+import { Switch, Route, useLocation } from "react-router-dom";
 
 import { InstanceContext, CommunityContext } from "./App";
 import { Spinner } from "./helpers";
@@ -30,6 +30,8 @@ const StyledContainer = styled.div`
 export const Home = () => {
   const { community, communities } = useContext(CommunityContext);
 
+  const location = useLocation();
+  
   return (
     <StyledContainer>
       <div className="communities-container">
@@ -39,7 +41,7 @@ export const Home = () => {
         {community ? (
           <Switch>
             <ErrorHandledRoute path="/post/:postId">
-              <SinglePost />
+              <SinglePost key={location.pathname} />
             </ErrorHandledRoute>
             <Route path="/">
               <Posts />

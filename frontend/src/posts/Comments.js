@@ -67,7 +67,7 @@ const createComment = async ({ postId, communityId, instance, content }) => {
     community: {
       id: communityId,
     },
-    title: null
+    title: null,
   };
 
   const url = new URL(`${process.env.REACT_APP_API}/posts/create`);
@@ -194,7 +194,7 @@ export const CreateComment = ({ postId, communityId, refresh }) => {
   );
 };
 
-export const Comments = ({ children, addComment, removeComment, setCommentCount }) => {
+export const Comments = ({ children, addComment, removeComment, setCommentCount, refreshParent }) => {
   const { instance } = useContext(InstanceContext);
   const { community } = useContext(CommunityContext);
 
@@ -235,9 +235,7 @@ export const Comments = ({ children, addComment, removeComment, setCommentCount 
             };
 
             const handleDelete = async () => {
-              await deletePost({ id: comment.id, instance, community })
-                .then(() => removeComment())
-                .then(() => refresh());
+              await deletePost({ id: comment.id, instance, community }).then(() => refreshParent());
             };
 
             const isEdited = comment.created !== comment.modified;
