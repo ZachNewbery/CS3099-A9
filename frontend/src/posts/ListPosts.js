@@ -1,119 +1,138 @@
-import React, { useState, useEffect } from "react";
+import React, { useContext } from "react";
 import styled from "styled-components";
+import moment from "moment";
+import { useHistory } from "react-router-dom";
+
+import { Profile } from "../components/Profile";
+import { InstanceContext } from "../App";
+import { StyledBlock, StyledContent, renderContent } from "./PostContent";
 import { useAsync } from "react-async";
-import { fetchData } from "../helpers";
-import { useDebouncedCallback } from "use-debounce";
+import { fetchData, Spinner, Error, colors } from "../helpers";
+
 import { Post } from "./SinglePost";
 
-const loadCommunities = async () => {
-  return fetchData(`${process.env.REACT_APP_API_URL}/communities`);
-};
+const StyledPosts = styled.div`
+  padding-bottom: 3rem;
 
-const StyledContainer = styled.div`
-  margin: auto;
-  width: 500px;
-  padding: 1.5em 0;
-  display: flex;
-  flex-flow: column nowrap;
-  align-items: center;
+  .header {
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid ${colors.veryLightGray};
+    padding: 1rem;
+
+    & > .back-icon {
+      height: 2rem;
+      width: 2rem;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 1rem;
+      margin-right: 0.75rem;
+
+      cursor: pointer;
+      transition: all 0.2s;
+      &:hover {
+        background: ${colors.veryLightGray};
+      }
+
+      & > svg {
+        font-size: 1rem;
+        color: ${colors.darkGray};
+      }
+    }
+
+    & > .title {
+      flex: 1;
+      & > h3 {
+        margin: 0;
+        color: ${colors.lightText};
+        font-size: 1.15rem;
+      }
+      & > p {
+        margin: 0;
+        color: ${colors.lightGray};
+        font-size: 0.7rem;
+        max-width: 10rem;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
+    }
+
+    & > .profile {
+      display: flex;
+      & > .profile-picture {
+        margin-left: 1rem;
+      }
+
+      & > .details {
+        justify-content: center;
+        display: flex;
+        flex-flow: column;
+        & > h3 {
+          margin: 0;
+          color: ${colors.lightText};
+          font-size: 0.9rem;
+          text-align: right;
+          line-height: 1;
+        }
+        & > p {
+          margin: 0;
+          color: ${colors.lightGray};
+          font-size: 0.7rem;
+          text-align: right;
+          max-width: 10rem;
+          overflow: hidden;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+        }
+      }
+    }
+  }
 `;
 
-const StyledSearchbar = styled.input`
-  border: 1px solid lightgray;
-  border-radius: 0.3rem;
-  box-sizing: border-box;
-  width: 100%;
-  outline: none;
-  margin: 1em 0;
-  padding: 0.75em;
-  color: inherit;
-  font: inherit;
-  font-size: 1em;
-`;
+export const ListPosts = ({ posts, isLoading, error }) => {
+  const history = useHistory();
 
-const StyledCommunityPicker = styled.select`
-  border: 1px solid lightgray;
-  border-radius: 0.3em;
-  padding: 0.5em;
-  margin: 0.5em 0;
-  width: 100%;
-`;
+  if (isLoading) return <Spinner />;
+  if (error) return <Error message={error} />;
 
-const ALL_COMMUNITY = {
-  title: "All Communities",
-  id: "-1",
-  userIds: []
-}
-
-export const ListPosts = () => {
-  const [search, setSearch] = useState("");
-  const [posts, setPosts] = useState(null);
-  const [community, setCommunity] = useState(null);
-
-  const { data: communities } = useAsync(loadCommunities);
-
-  useEffect(() => {
-    const loadPosts = async ({ search, community }) => {
-      const communityParam =
-        community !== ALL_COMMUNITY.id ? `&communityId=${community}` : "";
-      const _data = await fetchData(
-        `${process.env.REACT_APP_API_URL}/posts?title_like=${search}${communityParam}`
-      );
-      setPosts(_data);
-    };
-    if (community) loadPosts({ search, community });
-  }, [search, community]);
-
-  useEffect(() => {
-    if (communities) {
-      setCommunity(communities[0].id);
-    }
-  }, [communities]);
-
-  const debouncedSearch = useDebouncedCallback((s) => {
-    setSearch(s);
-  }, 500);
-
-  const renderReponse = () => {
-    if (!posts) {
-      return <h1>Loading</h1>;
-    }
-    if (!posts.length) {
-      return <p>There are no posts that match this search</p>;
-    }
-    return posts.map((post) => <Post key={post.id} {...post} />);
-  };
-
-  const handleSelectCommunity = (e) => {
-    const id = e.target.selectedOptions[0].value;
-    setCommunity(id);
-  };
-
-  const currentCommunity = communities && (communities?.find((c) => c.id === community) || ALL_COMMUNITY);
+  const filteredPosts = posts.filter((post) => !post.deleted && post.user);
 
   return (
-    <StyledContainer>
-      <StyledCommunityPicker onChange={handleSelectCommunity}>
-        {communities && (
-          <>
-            {communities.map(({ id, title }) => (
-              <option key={id} value={id}>
-                {title}
-              </option>
-            ))}
-            <option value={ALL_COMMUNITY.id}>{ALL_COMMUNITY.title}</option>
-          </>
-        )}
-      </StyledCommunityPicker>
-      <StyledSearchbar
-        placeholder={
-          currentCommunity
-            ? `Search posts in ${currentCommunity.title}`
-            : "Loading communities"
-        }
-        onChange={(e) => debouncedSearch.callback(e.target.value)}
-      />
-      {renderReponse()}
-    </StyledContainer>
+    <StyledPosts>
+      {filteredPosts.length > 0 ? (
+        filteredPosts
+          .sort((a, b) => b.created - a.created)
+          .map(({ id, title, content, author, user, created, modified }) => {
+            const isEdited = created !== modified;
+
+            return (
+              <StyledContent key={id} onClick={() => history.push(`/post/${id}`)}>
+                <div className="header">
+                  <div className="title">
+                    <h3>{title}</h3>
+                    <p title={moment.unix(created).format("HH:mma - MMMM D, YYYY")}>{`${moment.unix(created).format("MMMM D, YYYY")} ${
+                      isEdited ? "(Edited)" : ""
+                    }`}</p>
+                  </div>
+                  <div className="profile">
+                    <div className="details">
+                      <h3>{author.id}</h3>
+                      <p title={author.host}>{author.host}</p>
+                    </div>
+                    <Profile user={user} />
+                  </div>
+                </div>
+                {content.map((block, i) => (
+                  <StyledBlock key={i}>{renderContent(block)}</StyledBlock>
+                ))}
+              </StyledContent>
+            );
+          })
+      ) : (
+        <p style={{ textAlign: "center" }}>No posts in this community yet</p>
+      )}
+    </StyledPosts>
   );
 };

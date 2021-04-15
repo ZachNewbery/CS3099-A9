@@ -1,21 +1,23 @@
+//! Database interactions implementation.
 #![allow(non_snake_case)]
 
-use crate::DBPool;
 use actix_web::{web, HttpResponse};
 use chrono::{NaiveDateTime, Utc};
+use diesel::prelude::*;
 use diesel::r2d2::{ConnectionManager, PooledConnection};
-use diesel::MysqlConnection;
 
-pub mod federation;
-pub mod local;
+use crate::DBPool;
+
+pub mod actions;
 pub mod models;
 pub mod schema;
 
+/// Returns the current datetime as a NaiveDateTime
 fn naive_date_time_now() -> NaiveDateTime {
     NaiveDateTime::from_timestamp(Utc::now().timestamp(), 0)
 }
 
-// TODO: Refactor all other endpoints to use this!
+/// Returns an SQL Connection to the database from a connection pool
 pub fn get_conn_from_pool(
     pool: web::Data<DBPool>,
 ) -> actix_web::Result<PooledConnection<ConnectionManager<MysqlConnection>>> {

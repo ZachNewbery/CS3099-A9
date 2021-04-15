@@ -1,0 +1,1 @@
+initSidebarItems({"constant":[["HOSTNAME","Our server's hostname"]],"enum":[["UserDetail","Enum abstracting over Federated and Local User details"]],"mod":[["route_error","Error mapping to reduce panicking"]]});

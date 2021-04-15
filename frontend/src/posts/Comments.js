@@ -1,117 +1,157 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useContext } from "react";
 import styled from "styled-components";
 import moment from "moment";
 import { useAsync } from "react-async";
-import { fetchData } from "../helpers";
-import { StyledBlock, StyledContent, renderContent } from "./PostContent";
 
-const loadComments = async ({ postId }) => {
-  return fetchData(
-    `${process.env.REACT_APP_API_URL}/posts/${postId}/comments?_expand=user`
-  );
+import { InstanceContext, CommunityContext } from "../App";
+
+import { fetchData, Spinner, Error, colors } from "../helpers";
+import { StyledBlock, StyledContent, renderContent } from "./PostContent";
+import { useUser } from "../index";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPencilAlt, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { EditComment } from "./EditComment";
+import { useDebouncedCallback } from "use-debounce";
+import { Tooltip } from "../components/Tooltip";
+import { Profile } from "../components/Profile";
+
+import { users } from "./Posts";
+
+const loadChildPosts = async ({ children, community, instance, addComment }) => {
+  let posts = children.map(async (child) => {
+    const url = new URL(`${process.env.REACT_APP_API}/posts/${child}`);
+    const appendParam = (key, value) => value && url.searchParams.append(key, value);
+    appendParam("host", instance);
+    appendParam("community", community);
+    const post = await fetchData(url);
+
+    if (!users[instance]) {
+      users[instance] = {};
+    }
+
+    let user;
+
+    if (users[instance][post.author.id]) {
+      user = users[instance][post.author.id];
+    } else {
+      user = await fetchData(`${process.env.REACT_APP_API}/user/${post.author.id}`);
+    }
+    if (!post.deleted) addComment();
+    post.user = user;
+    return post;
+  });
+
+  posts = await Promise.all([...posts]);
+
+  return posts;
 };
 
-const createComment = async ({ postId, content }) => {
-  const comment = {
-    postId,
-    timestamp: moment().toISOString(),
-    body: [
+const deletePost = async ({ id, community, instance }) => {
+  const url = new URL(`${process.env.REACT_APP_API}/posts/${id}`);
+  const appendParam = (key, value) => value && url.searchParams.append(key, value);
+  appendParam("host", instance);
+  appendParam("community", community);
+  return fetchData(url, null, "DELETE");
+};
+
+const createComment = async ({ postId, communityId, instance, content }) => {
+  const post = {
+    parent: postId,
+    content: [
       {
-        content,
-        contentType: "text",
+        markdown: {
+          text: content,
+        },
       },
     ],
-    likesCount: 0,
-    userId: "0",
-    edited: false,
+    community: {
+      id: communityId,
+    },
+    title: null,
   };
 
-  return fetchData(
-    `${process.env.REACT_APP_API_URL}/comments`,
-    JSON.stringify(comment),
-    "POST"
-  );
+  const url = new URL(`${process.env.REACT_APP_API}/posts/create`);
+  const appendParam = (key, value) => value && url.searchParams.append(key, value);
+  appendParam("host", instance);
+  appendParam("community", communityId);
+  return fetchData(url, JSON.stringify(post), "POST");
 };
 
 const StyledComments = styled.div`
-  margin: 0;
-  font-size: 0.8em;
-  & > div {
-    padding: 5px 10px;
-    cursor: auto;
-    background-color: #f8f9f9;
-  }
-  .user {
-    flex: 1;
-    font-weight: bold;
-    margin: 0;
-    color: #676767;
-  }
-  .date-time {
-    font-size: 0.9em;
-    flex-flow: row nowrap;
-  }
-  img {
-    height: 100px !important;
-    width: auto !important;
+  background: ${colors.pageBackground};
+  padding: 1rem 0;
+  & > .comment {
+    padding: 0 1rem;
+    &:not(:first-child) {
+      padding-top: 1rem;
+    }
+    & > .main {
+      display: flex;
+      align-items: center;
+      & > .profile > div {
+        margin-right: 0.5rem;
+      }
+      & > .content {
+        width: 100%;
+        background: white;
+        border: 1px solid ${colors.mediumLightGray};
+        border-radius: 0.6rem;
+        padding: 0 1rem;
+        .mde-preview-content {
+          padding: 0;
+        }
+      }
+    }
+    & > .footer {
+      display: flex;
+      margin: 0.25rem;
+      margin-left: 3.5rem;
+      & > p {
+        margin: 0;
+        font-size: 0.75rem;
+      }
+      & > .actions {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        margin-left: 0.5rem;
+        border-left: 1px solid ${colors.lightGray};
+        padding-left: 0.5rem;
+        & > svg {
+          margin-right: 0.5rem;
+          color: ${colors.darkGray};
+          cursor: pointer;
+          transition: all 0.3s;
+          &:hover {
+            color: ${colors.gray};
+          }
+        }
+      }
+    }
   }
 `;
 
 const StyledCreateComment = styled.div`
-  padding: 1em;
-  cursor: auto;
-  display: flex;
-  flex-flow: column nowrap;
-  align-items: flex-start;
-  & > input {
-    border: 1px solid lightgray;
+  padding: 0.8rem 0;
+  margin: 0 0.8rem;
+  label {
+    position: relative;
+  }
+  input {
+    border: 1px solid ${colors.veryLightGray};
     width: 100%;
-    border-radius: 0.3em;
-    padding: 10px;
+    border-radius: 0.6em;
+    padding: 0.5rem 0.7rem;
     color: inherit;
     font: inherit;
-    font-size: 1em;
-    box-sizing: border-box;
-  }
-  & > p {
-    margin: 0.5em 0;
-  }
-  & > button {
-    align-self: flex-end;
-    border: 1px solid lightgray;
-    background: #e5e5e5;
-    border-radius: 0.3em;
-    cursor: pointer;
-    padding: 0.2em 1em;
+    font-size: 0.8rem;
+    outline: none;
   }
 `;
 
-const Comment = ({ body, timestamp, likesCount, edited, user }) => {
-  const { firstName, lastName, userName } = user;
-  return (
-    <StyledContent>
-      {body.map((block, i) => (
-        <StyledBlock key={i} style={{ padding: "0.3em 0", fontSize: "1.1em" }}>
-          {renderContent(block)}
-        </StyledBlock>
-      ))}
-      <hr />
-      <div className="header">
-        <p className="user" title={`${firstName} ${lastName}`}>
-          {userName}
-        </p>
-        <div className="date-time">
-          <p className="date" style={{ marginRight: "0.5em" }}>{`${
-            edited ? "Edited" : ""
-          } ${moment(timestamp).fromNow()}`}</p>
-          <p className="time">{`${likesCount} likes`}</p>
-        </div>
-      </div>
-    </StyledContent>
-  );
-};
+export const CreateComment = ({ postId, communityId, refresh }) => {
+  const { instance } = useContext(InstanceContext);
 
-export const CreateComment = ({ postId, refresh }) => {
   const contentRef = useRef(null);
   const [errors, setErrors] = useState({});
 
@@ -122,44 +162,111 @@ export const CreateComment = ({ postId, refresh }) => {
     const content = contentRef.current.value;
 
     if (content.length < 5) {
-      currentErrors.content = "Comment is too short";
+      currentErrors.content = "Too short";
     }
 
     if (Object.keys(currentErrors).length === 0) {
       try {
-        await createComment({ postId, content })
+        contentRef.current.value = "";
+        await createComment({ postId, content, instance, communityId });
         return refresh();
       } catch (error) {
-        currentErrors.content = error.message; // TODO: see how they're passing errors
+        currentErrors.content = error.message;
       }
     }
 
     setErrors(currentErrors);
   };
 
+  const [handleKeyDownDebounced] = useDebouncedCallback(async (e) => {
+    if (e.key === "Enter") {
+      await handleSubmit(e);
+    }
+  }, 500);
+
   return (
-    <StyledContent style={{ background: "#f8f9f9", padding: 0 }}>
-      <StyledCreateComment>
-        <input ref={contentRef} placeholder="Enter comment" />
-        <p>{errors.content}</p>
-        <button onClick={handleSubmit}>Post</button>
-      </StyledCreateComment>
-    </StyledContent>
+    <StyledCreateComment>
+      <label>
+        <input ref={contentRef} placeholder="Write a comment..." onKeyDown={handleKeyDownDebounced} onChange={() => setErrors({})} />
+        {errors.content && <Tooltip text={errors.content} />}
+      </label>
+    </StyledCreateComment>
   );
 };
 
-export const Comments = ({ postId }) => {
-  const { data, isLoading } = useAsync(loadComments, { postId });
+export const Comments = ({ children, addComment, removeComment, setCommentCount, refreshParent }) => {
+  const { instance } = useContext(InstanceContext);
+  const { community } = useContext(CommunityContext);
 
-  if (isLoading) {
-    return <h1>Loading</h1>;
-  }
+  const { data: comments, isLoading, error, reload } = useAsync(loadChildPosts, { children, instance, community, addComment });
+  const [showEdit, setShowEdit] = useState({ showModal: false, content: null, id: null });
+
+  const refresh = () => {
+    setCommentCount(0);
+    reload();
+  };
+
+  const user = useUser();
+
+  if (isLoading) return <Spinner />;
+  if (error) return <Error message={error} />;
 
   return (
-    <StyledComments>
-      {data.map((comment) => (
-        <Comment key={comment.id} {...comment} />
-      ))}
-    </StyledComments>
+    <>
+      <EditComment
+        id={showEdit.id}
+        hide={() => setShowEdit({ showModal: false })}
+        show={showEdit.showModal}
+        initialContent={showEdit.content}
+        refresh={refresh}
+        instance={instance}
+        community={community}
+      />
+      <StyledComments>
+        {comments
+          .filter((post) => !post.deleted)
+          .sort((a, b) => moment(b.created).unix() - moment(a.created).unix())
+          .map((comment) => {
+            const { author } = comment;
+            const isAdmin = author.id.toLowerCase() === user.id.toLowerCase() && author.host.toLowerCase() === user.host.toLowerCase();
+
+            const handleEdit = () => {
+              setShowEdit({ showModal: true, content: comment.content, id: comment.id });
+            };
+
+            const handleDelete = async () => {
+              await deletePost({ id: comment.id, instance, community }).then(() => refreshParent());
+            };
+
+            const isEdited = comment.created !== comment.modified;
+
+            return (
+              <div key={comment.id} className="comment">
+                <div className="main">
+                  <div className="profile">
+                    <Profile user={comment.user} />
+                  </div>
+                  <div className="content">
+                    {comment.content.map((block, i) => (
+                      <StyledBlock key={i}>{renderContent(block)}</StyledBlock>
+                    ))}
+                  </div>
+                </div>
+                <div className="footer">
+                  <p title={moment.unix(comment.created).format("HH:mma - Do MMMM, YYYY")}>{`${moment.unix(comment.created).fromNow()} ${
+                    isEdited ? "(Edited)" : ""
+                  }`}</p>
+                  {isAdmin && (
+                    <div className="actions">
+                      <FontAwesomeIcon onClick={handleEdit} icon={faPencilAlt} />
+                      <FontAwesomeIcon onClick={handleDelete} icon={faTrash} />
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+      </StyledComments>
+    </>
   );
 };

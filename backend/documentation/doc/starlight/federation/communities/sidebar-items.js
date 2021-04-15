@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["PostModified","Struct representing a newly updated post with its updated timestamp"],["communities",""],["community_by_id",""],["community_by_id_timestamps",""]]});

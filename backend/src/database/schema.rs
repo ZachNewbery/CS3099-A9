@@ -1,24 +1,18 @@
+//! Module containing the database SQL schema for all the tables.
 table! {
-    Comments (id) {
+    Communities (id) {
         id -> Unsigned<Bigint>,
-        post -> Unsigned<Bigint>,
-        parent -> Nullable<Unsigned<Bigint>>,
-        uuid -> Text,
+        name -> Varchar,
+        description -> Text,
         title -> Text,
-        author -> Unsigned<Bigint>,
-        contentType -> Unsigned<Bigint>,
-        body -> Text,
-        created -> Timestamp,
-        modified -> Timestamp,
     }
 }
 
 table! {
-    Communities (id) {
+    CommunitiesUsers (id) {
         id -> Unsigned<Bigint>,
-        uuid -> Text,
-        description -> Text,
-        title -> Text,
+        communityId -> Unsigned<Bigint>,
+        userId -> Unsigned<Bigint>,
     }
 }
 
@@ -38,19 +32,38 @@ table! {
         password -> Text,
         createdAt -> Timestamp,
         session -> Varchar,
+        bio -> Nullable<Text>,
+        avatar -> Nullable<Text>,
+    }
+}
+
+table! {
+    Markdown (id) {
+        id -> Unsigned<Bigint>,
+        content -> Text,
+        postId -> Unsigned<Bigint>,
     }
 }
 
 table! {
     Posts (id) {
         id -> Unsigned<Bigint>,
-        uuid -> Text,
-        title -> Text,
-        author -> Unsigned<Bigint>,
-        contentType -> Unsigned<Bigint>,
-        body -> Text,
+        uuid -> Varchar,
+        title -> Nullable<Text>,
+        authorId -> Unsigned<Bigint>,
         created -> Timestamp,
         modified -> Timestamp,
+        parentId -> Nullable<Unsigned<Bigint>>,
+        communityId -> Unsigned<Bigint>,
+        deleted -> Bool,
+    }
+}
+
+table! {
+    Text (id) {
+        id -> Unsigned<Bigint>,
+        content -> Text,
+        postId -> Unsigned<Bigint>,
     }
 }
 
@@ -61,17 +74,22 @@ table! {
     }
 }
 
-joinable!(Comments -> Posts (post));
-joinable!(Comments -> Users (author));
+joinable!(CommunitiesUsers -> Communities (communityId));
+joinable!(CommunitiesUsers -> Users (userId));
 joinable!(FederatedUsers -> Users (userId));
 joinable!(LocalUsers -> Users (userId));
-joinable!(Posts -> Users (author));
+joinable!(Markdown -> Posts (postId));
+joinable!(Posts -> Communities (communityId));
+joinable!(Posts -> Users (authorId));
+joinable!(Text -> Posts (postId));
 
 allow_tables_to_appear_in_same_query!(
-    Comments,
     Communities,
+    CommunitiesUsers,
     FederatedUsers,
     LocalUsers,
+    Markdown,
     Posts,
+    Text,
     Users,
 );

@@ -1,72 +1,58 @@
-import React from "react";
+import React, { useState, useContext, useEffect } from "react";
 import styled from "styled-components";
-import { Redirect, Link, Switch, Route } from "react-router-dom";
-import { isAuthenticated } from "./helpers";
-import { ListPosts, SinglePost, CreatePost } from "./posts";
+import { Switch, Route, useLocation } from "react-router-dom";
+
+import { InstanceContext, CommunityContext } from "./App";
+import { Spinner } from "./helpers";
+import { ErrorHandledRoute } from "./components/ErrorHandledRoute";
+import { Posts, SinglePost } from "./posts";
+import { Communities } from "./communities/Communities";
 
 const StyledContainer = styled.div`
-  width: 100%;
-`;
-
-const StyledHeader = styled.div`
-  width: 100%;
-  padding: 5px 0;
-  border-bottom: 1px solid lightgray;
-  background: white;
-  box-sizing: border-box;
   display: flex;
-  justify-content: center;
-  align-items: center;
-  & > div {
-    width: 500px;
-    margin: auto;
-    display: flex;
-    justify-content: space-between;
-    & > a {
-      padding: 5px 10px;
-    }
+  margin: 2rem 0;
+
+  & > .communities-container {
+    min-width: 15rem;
+    max-width: 15rem;
+    min-height: 20rem;
+    height: 100%;
+    margin-right: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  & > .posts-container {
+    min-width: 35rem;
+    max-width: 35rem;
   }
 `;
 
-const StyledContent = styled.div`
-  width: 100%;
-  display: flex;
-  align-items: center;
-  flex: 1;
-  background: #ffffff;
-`;
+export const Home = () => {
+  const { community, communities } = useContext(CommunityContext);
 
-const Header = () => {
-  return (
-    <StyledHeader>
-      <div>
-        <Link to="/logout">Logout</Link>
-        <Link to="/">Home</Link>
-        <Link to="/create-post">Create Post</Link>
-      </div>
-    </StyledHeader>
-  )
-}
-
-export const Home = () => {  
-  if (!isAuthenticated()) return <Redirect to='/login' />;
-
+  const location = useLocation();
+  
   return (
     <StyledContainer>
-      <Header />
-      <StyledContent>
-        <Switch>
-          <Route path="/post/:postId">
-            <SinglePost />
-          </Route>
-          <Route path="/create-post">
-            <CreatePost />
-          </Route>
-          <Route path="/">
-            <ListPosts />
-          </Route>
-        </Switch>
-      </StyledContent>
+      <div className="communities-container">
+        <Communities />
+      </div>
+      <div className="posts-container">
+        {community ? (
+          <Switch>
+            <ErrorHandledRoute path="/post/:postId">
+              <SinglePost key={location.pathname} />
+            </ErrorHandledRoute>
+            <Route path="/">
+              <Posts />
+            </Route>
+          </Switch>
+        ) : communities ? (
+          <h3 style={{ textAlign: "center", margin: "2rem 0" }}>No community selected</h3>
+        ) : (
+          <Spinner />
+        )}
+      </div>
     </StyledContainer>
-  )
-}
+  );
+};

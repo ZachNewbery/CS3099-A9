@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["starlight"] = [{"text":"impl <a class=\"trait\" href=\"https://doc.rust-lang.org/nightly/core/marker/trait.StructuralEq.html\" title=\"trait core::marker::StructuralEq\">StructuralEq</a> for <a class=\"enum\" href=\"starlight/federation/schemas/enum.ContentType.html\" title=\"enum starlight::federation::schemas::ContentType\">ContentType</a>","synthetic":false,"types":["starlight::federation::schemas::ContentType"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

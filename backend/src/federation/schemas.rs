@@ -1,105 +1,175 @@
-use actix_web::dev::HttpResponseBuilder;
-use actix_web::http::StatusCode;
-use actix_web::{HttpResponse, ResponseError};
-use chrono::NaiveDateTime;
-use either::Either;
+//! Federated schema implementations for serialization
+use crate::database::actions::post::PostInformation;
+use crate::util::route_error::RouteError;
+use crate::util::route_error::RouteError::{BadPostContent, UnsupportedContentType};
+use chrono::serde::ts_seconds;
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
+use serde_with::rust::string_empty_as_none;
+use std::collections::HashMap;
 use std::convert::TryFrom;
-use thiserror::Error;
 use uuid::Uuid;
 
-#[derive(Error, Debug, Copy, Clone)]
-#[error("bad request")]
-pub enum FederationSchemaError {
-    #[error("unknown post content type")]
-    PostContentType,
-}
-
-impl ResponseError for FederationSchemaError {
-    fn status_code(&self) -> StatusCode {
-        StatusCode::BAD_REQUEST
-    }
-
-    fn error_response(&self) -> HttpResponse {
-        HttpResponseBuilder::new(self.status_code()).finish()
-    }
-}
-
+/// Represents a User object passed via JSON request bodies
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct UserID {
+pub(crate) struct User {
+    /// Username of the user
     pub id: String,
+    /// Hostname the user belongs to
     pub host: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, Copy, Clone)]
+/// Enum representing the currently supported content types
+#[derive(Serialize, Deserialize, Debug, Clone, Eq, PartialEq, Hash)]
 #[serde(rename_all = "camelCase")]
-pub(crate) enum PostContentType {
+pub enum ContentType {
+    /// Text content type
     Text,
+    /// Markdown content type
+    Markdown,
+    /// Unsupported content type (all values other than the above are mapped to this)
+    #[serde(other)]
+    Unsupported,
 }
 
-impl TryFrom<u64> for PostContentType {
-    type Error = FederationSchemaError;
+/// Struct representing the content of a content type object
+#[derive(Clone, Serialize, Deserialize)]
+pub enum DatabaseContentType {
+    /// Text content object
+    Text { 
+        /// Actual text content
+        text: String 
+    },
+    /// Markdown content object
+    Markdown { 
+        /// Actual markdown content
+        text: String
+    },
+}
 
-    fn try_from(value: u64) -> Result<Self, Self::Error> {
-        match value {
-            0 => Ok(PostContentType::Text),
-            _ => Err(FederationSchemaError::PostContentType),
-        }
+impl TryFrom<&HashMap<ContentType, serde_json::Value>> for DatabaseContentType {
+    type Error = RouteError;
+
+    fn try_from(value: &HashMap<ContentType, Value>) -> Result<Self, Self::Error> {
+        let ct = match value.iter().next() {
+            Some((k, v)) => {
+                match k {
+                    ContentType::Text => {
+                        // Text: field is text
+                        DatabaseContentType::Text {
+                            text: v
+                                .get("text")
+                                .ok_or(BadPostContent)?
+                                .as_str()
+                                .ok_or(BadPostContent)?
+                                .to_string(),
+                        }
+                    }
+                    ContentType::Markdown => DatabaseContentType::Markdown {
+                        text: v
+                            .get("text")
+                            .ok_or(BadPostContent)?
+                            .as_str()
+                            .ok_or(BadPostContent)?
+                            .to_string(),
+                    },
+                    ContentType::Unsupported => return Err(UnsupportedContentType),
+                }
+            }
+            None => return Err(BadPostContent),
+        };
+
+        Ok(ct)
     }
 }
 
-impl From<PostContentType> for u64 {
-    fn from(value: PostContentType) -> Self {
-        match value {
-            PostContentType::Text => 0,
-        }
-    }
-}
-
+/// Struct representing the response recieved by federated hosts when finding communities
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct Community {
-    id: String,
-    title: String,
-    description: String,
-    admins: Vec<UserID>,
+    /// Name of the community (id as per supergroup spec)
+    pub(crate) id: String,
+    /// Title of the community
+    pub(crate) title: String,
+    /// Description of the community
+    pub(crate) description: String,
+    /// Array of admins of the community
+    pub(crate) admins: Vec<User>,
 }
 
+/// Struct representing the JSON body when a federated host creates a new post
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct NewPost {
-    pub parent: Uuid,
-    pub title: String,
-    pub content_type: PostContentType,
-    pub body: String,
-    pub author: UserID,
+    /// Name of the community the post is being created in
+    pub community: String,
+    /// Optional UUID of the parent post of the Post
+    pub parent_post: Option<Uuid>,
+    /// Title of the new post (null for comments)
+    pub title: Option<String>,
+    /// Array of content of the new post
+    pub content: Vec<HashMap<ContentType, serde_json::Value>>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct UpdatePost {
-    title: Option<String>,
-    content_type: Option<PostContentType>,
-    body: Option<String>,
+/// Struct reprsenting a request body to edit a post
+#[derive(Clone, Serialize, Deserialize, Debug)]
+pub(crate) struct EditPost {
+    /// Optional new title to be set
+    pub title: Option<String>,
+    /// Optional new content to be set
+    pub content: Option<Vec<HashMap<ContentType, serde_json::Value>>>,
 }
 
+/// Struct representing all the required attributes to form correct responses containing Posts as per the supergroup protocol
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct Post {
-    id: Uuid,
-    parent: Option<Either<Uuid, String>>,
-    children: Vec<Uuid>,
-    content_type: PostContentType,
-    body: String,
-    author: UserID,
-    created: NaiveDateTime,
-    modified: NaiveDateTime,
+    /// UUID of the Post
+    pub(crate) id: Uuid,
+    /// Name of the community the Post belongs to
+    pub(crate) community: String,
+    /// Optional UUID of the parent post of the Post
+    #[serde(deserialize_with = "string_empty_as_none::deserialize")]
+    pub(crate) parent_post: Option<Uuid>,
+    /// Array of children of the Post
+    pub(crate) children: Vec<Uuid>,
+    /// Title of the Post (null for comments)
+    pub(crate) title: Option<String>,
+    /// Array of content of the Post
+    pub(crate) content: Vec<HashMap<ContentType, serde_json::Value>>,
+    /// User details for the author of the Post
+    pub(crate) author: User,
+    /// Time of last post modification
+    #[serde(with = "ts_seconds")]
+    pub(crate) modified: DateTime<Utc>,
+    /// Time of post creation
+    #[serde(with = "ts_seconds")]
+    pub(crate) created: DateTime<Utc>,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-#[serde(rename_all = "camelCase")]
-pub(crate) struct PostTimeStamp {
-    id: Uuid,
-    modified: Option<NaiveDateTime>,
+impl TryFrom<(PostInformation, Option<Vec<PostInformation>>)> for Post {
+    type Error = RouteError;
+
+    fn try_from(
+        value: (PostInformation, Option<Vec<PostInformation>>),
+    ) -> Result<Self, Self::Error> {
+        let (post, children) = value;
+        Ok(Post {
+            id: post.post.uuid.parse()?,
+            community: post.community.name,
+            parent_post: post.parent.map(|u| u.uuid.parse()).transpose()?,
+            children: children
+                .unwrap_or_default()
+                .into_iter()
+                .map(|p| Ok(p.post.uuid.parse()?))
+                .collect::<Result<Vec<_>, RouteError>>()?,
+            title: post.post.title,
+            content: post.content,
+            author: (post.user, post.user_details).into(),
+            modified: DateTime::<Utc>::from_utc(post.post.modified, Utc),
+            created: DateTime::<Utc>::from_utc(post.post.created, Utc),
+        })
+    }
 }

@@ -1,6 +1,9 @@
 import React from "react";
 import styled from "styled-components";
 
+import { colors } from "../helpers";
+import { MarkdownEditor } from "../components/MarkdownEditor";
+
 export const StyledBlock = styled.div`
   padding: 0.8em 0;
   * {
@@ -8,28 +11,36 @@ export const StyledBlock = styled.div`
   }
   .image-block {
     img {
-    width: 100%;
-    height: auto;
+      width: 100%;
+      height: auto;
     }
   }
 `;
 
 export const StyledContent = styled.div`
   cursor: pointer;
-  padding: 10px;
+  display: flex;
+  height: 100%;
+  flex-flow: column nowrap;
   background: white;
-  border-radius: 5px;
-  border: 1px solid lightgray;
-  margin: 0 0 1.5em;
-  width: 100%;
-  box-sizing: border-box;
-  .header {
-    display: flex;
-    .title {
-      font-size: 1.5em;
-      flex: 1;
-      margin: 0;
-    }
+  border: 1px solid ${colors.mediumLightGray};
+  border-radius: 0.6rem;
+  margin-top: 1rem;
+  max-height: 20rem;
+  overflow: hidden;
+  position: relative;
+
+  &::after {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 15px;
+    background: linear-gradient(0, white 16%, rgba(255, 255, 255, 0.7) 70%, transparent);
+    bottom: 0;
+  }
+
+  .header + div {
+    padding: 0.5rem;
   }
   .date-time {
     display: flex;
@@ -68,38 +79,8 @@ export const StyledContent = styled.div`
   }
 `;
 
-export const CONTENT_TYPES = {
-  TEXT: "text",
-  IMAGE: "image",
-  POLL: "poll"
-}
-
-export const renderContent = ({ contentType, content }) => {
-  switch (contentType) {
-    case CONTENT_TYPES.TEXT:
-      return <TextContent content={content} />
-    case CONTENT_TYPES.IMAGE:
-      return <ImageContent content={content} />
-    case CONTENT_TYPES.POLL:
-      return <PollContent content={content} />
-    default:
-      return null;
-  }
-}
-
-const TextContent = ({ content }) => {
-  return <p>{content}</p>
-}
-
-const ImageContent = ({ content: { url, caption }  }) => {
+export const renderContent = (content = {}) => {
   return (
-    <div className="image-block">
-      <img src={url} alt="Lovely Scenery" />
-      <p>{caption}</p>
-    </div>
-  )
-}
-
-const PollContent = ({ content }) => {
-  return <div>{content}</div>
-}
+    <MarkdownEditor readOnly={true} name="content" defaultValue={content.text?.text || content.markdown?.text} />
+  );
+};
