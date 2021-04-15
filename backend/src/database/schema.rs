@@ -1,3 +1,4 @@
+//! Module containing the database SQL schema for all the tables.
 table! {
     Communities (id) {
         id -> Unsigned<Bigint>,

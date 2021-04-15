@@ -1,3 +1,4 @@
+//! Database actions concerning Posts
 use crate::database::actions::user::get_user_detail;
 use crate::database::models::{
     DatabaseCommunity, DatabaseMarkdown, DatabaseNewPost, DatabasePost, DatabaseText, DatabaseUser,
@@ -13,6 +14,7 @@ use chrono::Utc;
 use serde_json::json;
 use uuid::Uuid;
 
+/// Returns all the top level posts stored in the Posts table
 pub(crate) fn get_all_top_level_posts(
     conn: &MysqlConnection,
 ) -> Result<Option<Vec<DatabasePost>>, diesel::result::Error> {
@@ -23,6 +25,7 @@ pub(crate) fn get_all_top_level_posts(
         .optional()
 }
 
+/// Returns all posts in the Posts table
 pub(crate) fn get_all_posts(
     conn: &MysqlConnection,
 ) -> Result<Option<Vec<DatabasePost>>, diesel::result::Error> {
@@ -30,6 +33,7 @@ pub(crate) fn get_all_posts(
     Posts.load(conn).optional()
 }
 
+/// Returns all top level posts in a specified community in the Posts table
 pub(crate) fn get_top_level_posts_of_community(
     conn: &MysqlConnection,
     community: &DatabaseCommunity,
@@ -42,6 +46,7 @@ pub(crate) fn get_top_level_posts_of_community(
         .optional()
 }
 
+/// Obtains all the posts authored by a given user
 pub(crate) fn get_posts_by_user(
     conn: &MysqlConnection,
     user: &DatabaseUser,
@@ -50,16 +55,24 @@ pub(crate) fn get_posts_by_user(
     Posts.filter(authorId.eq(user.id)).load(conn).optional()
 }
 
+/// Struct representing an unwrapped Post, containing all useful information
 #[derive(Clone, Debug)]
 pub struct PostInformation {
+    /// Row belonging to the Post in the Posts table in the database
     pub post: DatabasePost,
+    /// Content of the Post, stored as a Vector
     pub content: Vec<HashMap<ContentType, serde_json::Value>>,
+    /// Community that the Post belongs to
     pub community: DatabaseCommunity,
+    /// User who authored the Post
     pub user: DatabaseUser,
+    /// Further details of the author
     pub user_details: UserDetail,
+    /// Row belonging to the parent Post of the Post in the Posts table in the database
     pub parent: Option<DatabasePost>,
 }
 
+/// Retrieves a specified post from the Posts table given its UUID
 pub(crate) fn get_post(
     conn: &MysqlConnection,
     post_uuid: &Uuid,
@@ -101,6 +114,7 @@ pub(crate) fn get_post(
     }))
 }
 
+/// Obtains the parent of a post given the post
 pub(crate) fn get_parent_of(
     conn: &MysqlConnection,
     post: &DatabasePost,
@@ -116,6 +130,7 @@ pub(crate) fn get_parent_of(
     }
 }
 
+/// Obtains the children of a post given a post
 pub(crate) fn get_children_posts_of(
     conn: &MysqlConnection,
     parent: &DatabasePost,
@@ -158,6 +173,7 @@ pub(crate) fn get_children_posts_of(
     Ok(Some(children))
 }
 
+/// Obtains an array of the content of a post given a post
 pub(crate) fn get_content_of_post(
     conn: &MysqlConnection,
     post: &DatabasePost,
@@ -192,6 +208,7 @@ pub(crate) fn get_content_of_post(
     Ok(post_content)
 }
 
+/// Removes the content of a post from the database
 pub(crate) fn remove_post_contents(
     conn: &MysqlConnection,
     post: &DatabasePost,
@@ -213,6 +230,7 @@ pub(crate) fn remove_post_contents(
     Ok(())
 }
 
+/// Edits the title of a Post in the Posts table
 pub(crate) fn modify_post_title(
     conn: &MysqlConnection,
     post: DatabasePost,
@@ -229,6 +247,7 @@ pub(crate) fn modify_post_title(
     Posts.filter(id.eq(id_)).first::<DatabasePost>(conn)
 }
 
+/// Removes a post from the database
 pub(crate) fn remove_post(
     conn: &MysqlConnection,
     post: DatabasePost,
@@ -242,6 +261,7 @@ pub(crate) fn remove_post(
     Ok(())
 }
 
+/// Inserts a new post and content into the database
 pub(crate) fn put_post(
     conn: &MysqlConnection,
     new_post: &DatabaseNewPost,
@@ -255,6 +275,7 @@ pub(crate) fn put_post(
     Posts.filter(uuid.eq(uuid_)).first::<DatabasePost>(conn)
 }
 
+/// Inserts post content into the database
 pub(crate) fn put_post_contents(
     conn: &MysqlConnection,
     post: &DatabasePost,
@@ -280,6 +301,7 @@ pub(crate) fn put_post_contents(
     Ok(())
 }
 
+/// Updates a post in the Posts table
 pub(crate) fn touch_post(
     conn: &MysqlConnection,
     post: DatabasePost,

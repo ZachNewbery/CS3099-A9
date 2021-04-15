@@ -1,3 +1,4 @@
+//! Internal API endpoints for actions concerning posts 
 use crate::database::actions::communities::{get_community_admins, get_community_by_id};
 use crate::database::actions::post;
 use crate::database::actions::post::{
@@ -10,8 +11,7 @@ use crate::database::actions::user::{
 };
 use crate::database::get_conn_from_pool;
 use crate::database::models::{DatabaseLocalUser, DatabaseNewPost};
-use crate::federation::posts::EditPost;
-use crate::federation::schemas::{ContentType, DatabaseContentType, Post, User};
+use crate::federation::schemas::{ContentType, DatabaseContentType, Post, User, EditPost};
 use crate::internal::authentication::{authenticate, make_federated_request};
 use crate::internal::{get_known_hosts, LocatedCommunity};
 use crate::util::route_error::RouteError;
@@ -27,30 +27,45 @@ use std::collections::HashMap;
 use std::convert::TryFrom;
 use uuid::Uuid;
 
+/// Struct representing a query to get all posts from a host (optionally from a community as well)
 #[derive(Serialize, Deserialize, Clone)]
 pub struct GetPost {
+    /// Hostname to be queried
     host: String,
+    /// Optional community to be queried
     community: Option<String>,
 }
 
+/// Struct representing a singular Post that can be serialized into a JSON response
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct LocatedPost {
+    /// UUID of the Post
     pub(crate) id: Uuid,
+    /// Community that the Post belongs to
     pub(crate) community: LocatedCommunity,
+    /// UUID of the parent Post of the Post
     pub(crate) parent_post: Option<Uuid>,
+    /// Array of children of the Post
     pub(crate) children: Vec<Uuid>,
+    /// Title of the post (null for comments)
     pub(crate) title: Option<String>,
+    /// Array of content of the Post
     pub(crate) content: Vec<HashMap<ContentType, serde_json::Value>>,
+    /// User information for the author of the Post
     pub(crate) author: User,
+    /// Time of Post creation
     #[serde(with = "ts_seconds")]
     pub(crate) modified: DateTime<Utc>,
+    /// Time of last Post modification
     #[serde(with = "ts_seconds")]
     pub(crate) created: DateTime<Utc>,
+    /// Boolean representing if post has been deleted
     #[serde(default)]
     pub(crate) deleted: bool,
 }
 
+/// Internal endpoint to obtain a post given its UUID
 #[get("/posts/{id}")]
 pub(crate) async fn get_post(
     web::Path(id): web::Path<Uuid>,
@@ -81,6 +96,7 @@ pub(crate) async fn get_post(
     Ok(HttpResponse::Ok().json(post))
 }
 
+/// Obtains a post that is locally stored
 pub(crate) async fn get_post_local(
     pool: web::Data<DBPool>,
     post: PostInformation,
@@ -116,6 +132,7 @@ pub(crate) async fn get_post_local(
     Ok(lp)
 }
 
+/// Obtains a post that is stored on a remote host
 pub(crate) fn request_get_post(
     uuid: &Uuid,
     host: &str,
@@ -131,7 +148,7 @@ pub(crate) fn request_get_post(
     )
 }
 
-// Gets one post matching UUID from a host.
+/// Gets one post matching UUID from a host.
 pub(crate) async fn external_get_post(
     uuid: &Uuid,
     pool: web::Data<DBPool>,
@@ -178,7 +195,7 @@ pub(crate) async fn external_get_post(
     }
 }
 
-// Writes a federated author to cache.
+/// Writes a federated author to cache
 pub(crate) fn cache_federated_user(
     conn: &MysqlConnection,
     federated_user: &User,
@@ -196,6 +213,7 @@ pub(crate) fn cache_federated_user(
     }
 }
 
+/// Internal endpoint to list all the posts, optionally in a specified community or hosted by a specified host
 #[get("/posts")]
 pub(crate) async fn list_posts(
     query: web::Query<GetPost>,
@@ -229,6 +247,7 @@ pub(crate) async fn list_posts(
     Ok(HttpResponse::Ok().json(posts))
 }
 
+/// Obtains all the posts stored locally, optionally filtered by a specified community
 pub(crate) async fn list_local_posts(
     community: Option<&str>,
     pool: web::Data<DBPool>,
@@ -286,7 +305,7 @@ pub(crate) async fn list_local_posts(
     Ok(posts)
 }
 
-// Returns a list of all posts from one host.
+/// Returns a list of all posts from one host, optionally with a specified community
 pub(crate) async fn external_list_posts(
     host: &str,
     community: Option<&str>,
@@ -305,6 +324,7 @@ pub(crate) async fn external_list_posts(
     external_list_posts_inner(host, requester_name, pool, opt_query).await
 }
 
+/// Inner function to send a request obtaining posts from a remote host
 async fn external_list_posts_inner(
     host: &str,
     requester_name: &str,
@@ -328,7 +348,6 @@ async fn external_list_posts_inner(
                 .map_err(|_| RouteError::ActixInternal)?;
             serde_json::from_str(&s_posts).map_err(|_| RouteError::ActixInternal)?
         };
-        dbg!(posts.clone());
 
         let conn = get_conn_from_pool(pool.clone()).map_err(|_| RouteError::ActixInternal)?;
         let host2 = host.to_string();
@@ -362,13 +381,18 @@ async fn external_list_posts_inner(
     }
 }
 
+/// Struct representing a query to search posts
 #[derive(Serialize, Deserialize, Clone)]
 pub struct SearchPosts {
+    /// Optional hostname to be searched
     host: Option<String>,
+    /// Optional community to be searched
     community: Option<String>,
+    /// Search string
     search: String,
 }
 
+/// Internal endpoint to search posts given a search string, optionally filtered by host and community
 #[get("/posts-search")]
 pub(crate) async fn search_posts(
     query: web::Query<SearchPosts>,
@@ -440,32 +464,48 @@ pub(crate) async fn search_posts(
     Ok(HttpResponse::Ok().json(posts))
 }
 
+/// Struct representing a community object sent when creating a Post
 #[derive(Serialize, Deserialize)]
 pub struct CreateCommunity {
+    /// Name of the Community
     id: String,
 }
 
+/// Struct representing the body of a POST request making a new Post
 #[derive(Serialize, Deserialize)]
 pub struct CreatePost {
+    /// Community the Post is to be created in
     pub community: CreateCommunity,
+    /// Optional parent post UUID
     pub parent: Option<Uuid>,
+    /// Title of the post (null for comments)
     pub title: Option<String>,
+    /// Content of the new Post
     pub content: Vec<HashMap<ContentType, serde_json::Value>>,
 }
 
+/// Struct representing a body of a POST request matching that of the supergroup specification
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct CreatePostExtern {
+    /// Community name to make the Post in
     pub community: String,
-    pub parent: Option<Uuid>,
+    /// Optional part post UUID
+    pub parent_post: Option<Uuid>,
+    /// Title of the post (null for comments)
     pub title: Option<String>,
+    /// Content of the new Post
     pub content: Vec<HashMap<ContentType, serde_json::Value>>,
 }
 
+/// Struct representing the query of post creation, where a host is specified
 #[derive(Serialize, Deserialize)]
 pub struct HostQuery {
+    /// Optional hostname to create post on
     host: Option<String>,
 }
 
+/// Internal endpoint to create a new post
 #[post("/posts/create")]
 pub(crate) async fn create_post(
     query: web::Query<HostQuery>,
@@ -524,12 +564,10 @@ pub(crate) async fn create_post(
 
             let body = CreatePostExtern {
                 community: post.community.id.clone(),
-                parent: post.parent,
+                parent_post: post.parent,
                 title: post.title.clone(),
                 content: post.content.clone(),
             };
-
-            dbg!(&body);
 
             let req = make_federated_request(
                 awc::Client::post,
@@ -552,6 +590,7 @@ pub(crate) async fn create_post(
     }
 }
 
+/// Internal endpoint to edit a post
 #[patch("/posts/{id}")]
 pub(crate) async fn edit_post(
     query: web::Query<HostQuery>,
@@ -631,6 +670,7 @@ pub(crate) async fn edit_post(
     }
 }
 
+/// Determines if a user has the permissions to modify a post
 async fn local_user_has_modify_post_permission(
     pool: web::Data<DBPool>,
     local_user: DatabaseLocalUser,
@@ -651,6 +691,7 @@ async fn local_user_has_modify_post_permission(
     return Ok(true);
 }
 
+/// Internal endpoint to delete a post
 #[delete("/posts/{id}")]
 pub(crate) async fn delete_post(
     query: web::Query<HostQuery>,

@@ -1,3 +1,4 @@
+//! Database actions concerning Users
 use crate::database::models::{DatabaseFederatedUser, DatabaseLocalUser, DatabaseUser};
 
 use crate::federation::schemas::User;
@@ -5,6 +6,7 @@ use crate::util::UserDetail;
 use diesel::prelude::*;
 use diesel::MysqlConnection;
 
+/// Abstracts over the retrieval of user detail for federated and local users
 pub(crate) fn get_user_detail(
     conn: &MysqlConnection,
     user: &DatabaseUser,
@@ -22,6 +24,7 @@ pub(crate) fn get_user_detail(
     }
 }
 
+/// Obtains the details of a federated user
 pub(crate) fn get_federated_user(
     conn: &MysqlConnection,
     user: &DatabaseUser,
@@ -31,6 +34,7 @@ pub(crate) fn get_federated_user(
         .optional()
 }
 
+/// Inserts a new federated user
 pub(crate) fn insert_new_federated_user(
     conn: &MysqlConnection,
     new_user: &User,
@@ -62,6 +66,7 @@ pub(crate) fn insert_new_federated_user(
     Ok(inserted_user)
 }
 
+/// Obtains the details of a user given their username
 pub(crate) fn get_user_detail_by_name(
     conn: &MysqlConnection,
     name: &str,
@@ -78,6 +83,7 @@ pub(crate) fn get_user_detail_by_name(
     }
 }
 
+/// Obtains all local users currently stored on the instance
 pub(crate) fn get_local_users(
     conn: &MysqlConnection,
 ) -> Result<Vec<(DatabaseUser, DatabaseLocalUser)>, diesel::result::Error> {
@@ -90,6 +96,7 @@ pub(crate) fn get_local_users(
         .load::<(_, _)>(conn)
 }
 
+/// Obtains the username of a local user given their row in the LocalUsers table
 pub(crate) fn get_name_from_local_user(
     conn: &MysqlConnection,
     lu: DatabaseLocalUser,

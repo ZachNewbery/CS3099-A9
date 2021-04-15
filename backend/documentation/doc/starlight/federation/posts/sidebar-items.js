@@ -1,0 +1,1 @@
+initSidebarItems({"fn":[["true_func","Returns true, always. Used as a default deserialization function."]],"struct":[["PostFilters","Struct representing the multiple filters that can be set when obtaining posts"],["delete_post",""],["edit_post",""],["get_post_by_id",""],["new_post_federated",""],["post_matching_filters",""]]});

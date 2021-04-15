@@ -1,3 +1,4 @@
+//! Error mapping to reduce panicking
 use actix_web::error::BlockingError;
 use actix_web::http::header::ToStrError;
 use actix_web::http::StatusCode;
@@ -5,57 +6,82 @@ use actix_web::{HttpResponse, ResponseError};
 use diesel::result::Error;
 use serde::{Deserialize, Serialize};
 
+/// Struct to represent a bad response
 #[derive(Serialize, Deserialize)]
 pub struct BadResponse {
+    /// Title of the error
     title: String,
+    /// Error message
     message: String,
 }
 
-// Errors that may be encountered during the processing of a route.
+/// Errors that may be encountered during the processing of a route
 #[derive(thiserror::Error, Debug)]
 pub enum RouteError {
+    /// Missing Client-Host Header error
     #[error("missing Client-Host")]
     MissingClientHost,
+    /// Invalid Client-Host Header error
     #[error("bad Client-Host")]
     BadClientHost,
+    /// Invalid Public Key error
     #[error("bad Public Key")]
     BadKey,
+    /// Missing User-ID Header error
     #[error("missing User-ID")]
     MissingUserId,
+    /// Missing Date Header error
     #[error("missing Date")]
     MissingDate,
+    /// Missing Signature Header error
     #[error("missing Signature")]
     MissingSignature,
+    /// Invalid Digest Header error
     #[error("bad Digest")]
     BadDigest,
+    /// Invalid Signature Header error
     #[error("bad Signature Header")]
     BadSignHeader,
+    /// Diesel Errors
     #[error(transparent)]
     Diesel(diesel::result::Error), // no "from" proc-macro here because we define it ourselves
+    /// Database retrieval error (NotFound)
     #[error("item not found in database")]
     NotFound,
+    /// Actix-web Error
     #[error("actix internal")]
     ActixInternal,
+    /// Actix-web Payload error
     #[error(transparent)]
     Payload(#[from] actix_web::error::PayloadError),
+    /// External service error
     #[error("external service error")]
     ExternalService,
+    /// UUID parsing error
     #[error(transparent)]
     UuidParse(#[from] uuid::Error),
+    /// Header parsing error
     #[error(transparent)]
     HeaderParse(#[from] ToStrError),
+    /// Hex parsing error
     #[error(transparent)]
     Hex(#[from] hex::FromHexError),
+    /// Json serialization error
     #[error(transparent)]
     JsonSerde(#[from] serde_json::Error),
+    /// Json URL encoding error
     #[error(transparent)]
     JsonSerdeUrl(#[from] serde_urlencoded::ser::Error),
+    /// OpenSSL error
     #[error(transparent)]
     OpenSsl(#[from] openssl::error::ErrorStack),
+    /// Timeout error
     #[error("timed out")]
     Cancelled,
+    /// Unsupported Content Type error
     #[error("unsupported content type")]
     UnsupportedContentType,
+    /// Invalid post content error
     #[error("bad post content")]
     BadPostContent,
 }

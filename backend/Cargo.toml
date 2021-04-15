@@ -1,6 +1,6 @@
 [package]
 name = "starlight"
-version = "0.1.0"
+version = "1.0.0"
 authors = ["Anson <twac@st-andrews.ac.uk>", "Zach <zn6@st-andrews.ac.uk>"]
 edition = "2018"
 
@@ -12,7 +12,6 @@ bytes = "1.0.1"
 dotenv = "^0.15.0"
 serde = "^1.0.117"
 diesel = { version = "^1.4.4", features = ["mysql", "r2d2", "chrono", "numeric"] }
-diesel-derive-enum = { version = "^1.1.0", features = ["mysql"] }
 futures = "0.3.13"
 r2d2 = "^0.8.9"
 chrono = { version = "^0.4.19", features = ["serde"] }
@@ -21,8 +20,6 @@ uuid = { version = "^0.8.1", features = ["v4", "serde"] }
 jsonwebtoken = "^7.2.0"
 actix-web-httpauth = "^0.5.0"
 actix-cors = "^0.5.2"
-http-signature-normalization-actix = { version = "0.4.1", default-features = false, features = ["sha-2"] }
-rust-crypto = "0.2.36"
 actix-rt = "2.1.0"
 base64 = "0.13.0"
 awc = "2.0.3"

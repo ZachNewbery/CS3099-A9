@@ -1,0 +1,1 @@
+initSidebarItems({"struct":[["MessageParameters","Struct representing the body of a sent message"],["SearchUsersParameters","Struct representing the query when searching users"],["UserDetails","Struct representing the required details of a local user"],["search_users",""],["send_user_message",""],["user_by_id",""]]});

@@ -1,9 +1,11 @@
+//! Database actions concerning Communities
 use diesel::prelude::*;
 use diesel::BelongingToDsl;
 
 use crate::database::models::*;
 use crate::util::UserDetail;
 
+/// Returns all of the stored communities in the Communities table
 pub(crate) fn get_communities(
     conn: &MysqlConnection,
 ) -> Result<Vec<DatabaseCommunity>, diesel::result::Error> {
@@ -12,6 +14,7 @@ pub(crate) fn get_communities(
     Communities.load::<DatabaseCommunity>(conn)
 }
 
+/// Returns a vector of admins for a given Community
 pub(crate) fn get_community_admins(
     conn: &MysqlConnection,
     community: &DatabaseCommunity,
@@ -53,6 +56,7 @@ pub(crate) fn get_community_admins(
     Ok(v)
 }
 
+/// Returns a Community given its name (id as per supergroup spec)
 pub(crate) fn get_community_by_id(
     conn: &MysqlConnection,
     id_: &str,
@@ -64,6 +68,7 @@ pub(crate) fn get_community_by_id(
         .optional()
 }
 
+/// Inserts a new community into the Communities table
 pub(crate) fn put_community(
     conn: &MysqlConnection,
     new_community: DatabaseNewCommunity,
@@ -81,6 +86,7 @@ pub(crate) fn put_community(
         .first::<DatabaseCommunity>(conn)
 }
 
+/// Sets the admins for a new community
 pub(crate) fn set_community_admins(
     conn: &MysqlConnection,
     community: &DatabaseCommunity,
@@ -107,6 +113,7 @@ pub(crate) fn set_community_admins(
     Ok(())
 }
 
+/// Removes a Community from the database
 pub(crate) fn remove_community(
     conn: &MysqlConnection,
     community: DatabaseCommunity,
@@ -166,6 +173,7 @@ pub(crate) fn remove_community(
     Ok(())
 }
 
+/// Updates the title of a given Community
 pub(crate) fn update_community_title(
     conn: &MysqlConnection,
     mut community: DatabaseCommunity,
@@ -182,6 +190,7 @@ pub(crate) fn update_community_title(
     Ok(community)
 }
 
+/// Updates the description of a given Community
 pub(crate) fn update_community_description(
     conn: &MysqlConnection,
     mut community: DatabaseCommunity,

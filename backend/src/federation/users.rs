@@ -1,3 +1,4 @@
+//! Federated API endpoints for actions concerning users
 use crate::database::actions::local::get_local_user_by_user_id;
 use crate::database::actions::post::get_posts_by_user;
 use crate::database::actions::post::{get_children_posts_of, get_post};
@@ -10,17 +11,23 @@ use crate::DBPool;
 use actix_web::{get, post, web, HttpRequest, HttpResponse, Result};
 use serde::{Deserialize, Serialize};
 
+/// Struct representing the body of a sent message
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct MessageParameters {
+    /// Title of the message
     title: String,
+    /// Content of the message
     content: String,
 }
 
+/// Struct representing the query when searching users
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SearchUsersParameters {
+    /// Search string
     prefix: Option<String>,
 }
 
+/// Federated endpoint to search local users by a specified search prefix
 #[get("")]
 pub(crate) async fn search_users(
     pool: web::Data<DBPool>,
@@ -48,14 +55,20 @@ pub(crate) async fn search_users(
     ))
 }
 
+/// Struct representing the required details of a local user
 #[derive(Clone, Serialize, Deserialize)]
 struct UserDetails {
+    /// Username of the local user
     id: String,
+    /// Bio of the local user
     about: Option<String>,
+    /// Avatar URL of the local user
     avatar_url: Option<String>,
+    /// Array of posts made by the local user
     posts: Vec<Post>,
 }
 
+/// Federated endpoint to retrieve a local user given their username
 #[get("/{id}")]
 pub(crate) async fn user_by_id(
     web::Path(id): web::Path<String>,
@@ -100,6 +113,7 @@ pub(crate) async fn user_by_id(
     }))
 }
 
+/// Unimplemented federated endpoint to send a user a message
 #[post("/{id}")]
 pub(crate) async fn send_user_message(
     _parameters: web::Query<MessageParameters>,

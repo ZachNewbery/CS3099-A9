@@ -1,13 +1,18 @@
+//! Miscellaneous Helper Functions
 use crate::database::models::{DatabaseFederatedUser, DatabaseLocalUser, DatabaseUser};
 use crate::federation::schemas::User;
 
 pub mod route_error;
 
+/// Our server's hostname
 pub const HOSTNAME: &str = "cs3099user-a9.host.cs.st-andrews.ac.uk";
 
+/// Enum abstracting over Federated and Local User details
 #[derive(Clone, Debug)]
 pub enum UserDetail {
+    /// LocalUser details
     Local(DatabaseLocalUser),
+    /// FederatedUser details
     Federated(DatabaseFederatedUser),
 }
 

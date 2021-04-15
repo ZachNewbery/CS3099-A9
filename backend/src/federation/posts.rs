@@ -1,3 +1,4 @@
+//! Federated API endpoints for actions concerning posts
 use crate::database::actions::communities::get_community_by_id;
 use crate::database::actions::post::{
     get_all_posts, get_all_top_level_posts, get_children_posts_of, get_post, modify_post_title,
@@ -5,7 +6,7 @@ use crate::database::actions::post::{
 };
 use crate::database::get_conn_from_pool;
 use crate::database::models::{DatabaseNewPost, DatabasePost};
-use crate::federation::schemas::{ContentType, DatabaseContentType, NewPost, Post, User};
+use crate::federation::schemas::{ContentType, DatabaseContentType, NewPost, Post, User, EditPost};
 use crate::internal::authentication::verify_federated_request;
 use crate::internal::posts::cache_federated_user;
 use crate::util::route_error::RouteError;
@@ -16,28 +17,38 @@ use actix_web::{HttpResponse, Result};
 use chrono::{NaiveDateTime, Utc};
 use diesel::Connection;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::convert::{TryFrom, TryInto};
 use uuid::Uuid;
 
+/// Returns true, always. Used as a default deserialization function.
 const fn true_func() -> bool {
     true
 }
 
+/// Struct representing the multiple filters that can be set when obtaining posts
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct PostFilters {
+    /// Optional limit of posts to be sent
     limit: Option<u64>,
+    /// Optional community to be specified
     community: Option<String>,
+    /// Optional minimum date for posts
     min_date: Option<NaiveDateTime>,
+    /// Optional author of posts
     author: Option<String>,
+    /// Optional hostname of posts
     host: Option<String>,
+    /// Optional parent post of posts
     parent_post: Option<Uuid>,
+    /// Optional boolean to include comments when getting posts (default: true)
     #[serde(default = "true_func")]
     include_sub_children_posts: bool,
+    /// Optional content type of posts
     content_type: Option<ContentType>,
 }
 
+/// Federated endpoint to obtain all the locally stored posts matching optionally set filters
 #[get("")]
 pub(crate) async fn post_matching_filters(
     pool: web::Data<DBPool>,
@@ -128,6 +139,7 @@ pub(crate) async fn post_matching_filters(
     Ok(HttpResponse::Ok().json(posts))
 }
 
+/// Federated endpoint to create a new post on our instance
 #[post("")]
 pub(crate) async fn new_post_federated(
     pool: web::Data<DBPool>,
@@ -200,6 +212,7 @@ pub(crate) async fn new_post_federated(
     Ok(HttpResponse::Ok().json(post))
 }
 
+/// Federated endpoint to obtain a post given its UUID
 #[get("/{id}")]
 pub(crate) async fn get_post_by_id(
     web::Path(id): web::Path<Uuid>,
@@ -228,12 +241,7 @@ pub(crate) async fn get_post_by_id(
     Ok(HttpResponse::Created().json(Post::try_from((post, children))?))
 }
 
-#[derive(Clone, Serialize, Deserialize)]
-pub struct EditPost {
-    pub title: Option<String>,
-    pub content: Option<Vec<HashMap<ContentType, serde_json::Value>>>,
-}
-
+/// Federated endpoint to edit a post given its UUID
 #[put("/{id}")]
 pub(crate) async fn edit_post(
     pool: web::Data<DBPool>,
@@ -289,11 +297,7 @@ pub(crate) async fn edit_post(
     Ok(HttpResponse::Ok().finish())
 }
 
-#[derive(Clone, Serialize, Deserialize)]
-pub struct DeletePost {
-    id: Uuid,
-}
-
+/// Federated endpoint to delete a post given its UUID
 #[delete("/{id}")]
 pub(crate) async fn delete_post(
     pool: web::Data<DBPool>,

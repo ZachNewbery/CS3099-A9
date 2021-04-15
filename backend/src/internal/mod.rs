@@ -1,3 +1,4 @@
+//! Internal API Implementation for frontend communication.
 use crate::internal::authentication::authenticate;
 use crate::DBPool;
 use actix_web::{get, http, web, HttpRequest, HttpResponse, Result};
@@ -9,13 +10,25 @@ pub mod communities;
 pub mod posts;
 pub mod user;
 
+/// Struct abstracting over local and federated communities
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(untagged)]
 pub enum LocatedCommunity {
-    Local { id: String },
-    Federated { id: String, host: String },
+    /// Local Community details
+    Local { 
+        /// Name of the community (id as per supergroup spec)
+        id: String 
+    },
+    /// Federated Community details
+    Federated { 
+        /// Name of the community (id as per supergroup spec)
+        id: String, 
+        /// Hostname that the community is stored on
+        host: String 
+    },
 }
 
+/// Internal endpoint to return all the currently known federated hosts
 #[get("/servers")]
 pub(crate) async fn discover(
     pool: web::Data<DBPool>,
@@ -31,6 +44,7 @@ pub(crate) async fn discover(
         .body(json))
 }
 
+/// Returns all our known hosts as a vector of Strings
 pub(crate) fn get_known_hosts() -> Vec<String> {
     let hosts = fs::File::open("known_hosts.txt").expect("file should open read only");
     let json: serde_json::Value =

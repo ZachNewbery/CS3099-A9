@@ -1,3 +1,7 @@
+//! Backend binary project developed as part of Fediversity: A Federated Social Media Service
+//!
+//! Provides an API for use by the frontend to interact with other hosts, and our local database.
+#![warn(clippy::missing_docs_in_private_items)]
 #[macro_use]
 extern crate diesel;
 
@@ -23,9 +27,11 @@ pub mod federation;
 pub mod internal;
 pub mod util;
 
+/// Type alias to abstract over a r2d2 connection pool
 #[allow(clippy::upper_case_acronyms)]
 type DBPool = r2d2::Pool<ConnectionManager<MysqlConnection>>;
 
+/// Main driver function to setup web server to recieve requests
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     // Make sure dotenvs are all here

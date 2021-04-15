@@ -1,3 +1,4 @@
+//! Internal API endpoints for actions concerning users 
 use crate::database::actions::local::{
     get_local_user_by_credentials, get_local_user_by_username_email, insert_new_local_user,
     update_local_user, update_session,
@@ -18,13 +19,18 @@ use actix_web::{web, HttpRequest};
 use diesel::Connection;
 use serde::{Deserialize, Serialize};
 
+/// Struct representing a New LocalUser, that hasn't been assigned a User row yet
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct NewLocalUser {
+    /// Username of the new LocalUser
     pub username: String,
+    /// Email of the new LocalUser
     pub email: String,
+    /// Password of the new LocalUser
     pub password: String,
 }
 
+/// Internal endpoint to create a new local user
 #[post("/new_user")]
 pub(crate) async fn new_user(
     pool: web::Data<DBPool>,
@@ -48,23 +54,32 @@ pub(crate) async fn new_user(
     Ok(HttpResponse::Ok().finish())
 }
 
-// We will use email + password for this
+/// Struct representing a Login form
 #[derive(Serialize, Deserialize)]
 pub struct Login {
+    /// Login email
     pub email: String,
+    /// Login password
     pub password: String,
 }
 
+/// Struct representing the authentication output from a Login
 #[derive(Serialize, Deserialize, Debug)]
 pub struct LoginOutput {
+    /// Username used to login
     pub username: String,
+    /// Hostname used to login
     pub host: String,
+    /// Avatar URL of the user used to login
     pub avatar: Option<String>,
+    /// Bio of the user used to login
     pub bio: Option<String>,
+    /// Authentication Token for the newly logged in session
     #[serde(flatten)]
     pub new_token: NewToken,
 }
 
+/// Internal endpoint used to let a user login
 #[post("/login")]
 pub(crate) async fn login(
     pool: web::Data<DBPool>,
@@ -107,6 +122,7 @@ pub(crate) async fn login(
     }))
 }
 
+/// Internal endpoint to let a user logout
 #[post("/logout")]
 pub(crate) async fn logout(
     request: HttpRequest,
@@ -124,19 +140,27 @@ pub(crate) async fn logout(
     Ok(HttpResponse::Ok().finish())
 }
 
+/// Struct used to represent a request to edit a LocalUser's profile
 #[derive(Serialize, Deserialize)]
 pub struct EditProfile {
+    /// New optional avatar URL to be set
     pub avatar: Option<String>,
+    /// New optional bio to be set
     pub bio: Option<String>,
+    /// New optional password to be set
     pub password: Option<String>,
 }
 
+/// Struct representing a new JWT authentication token for login
 #[derive(Serialize, Deserialize, Debug)]
 pub struct NewToken {
+    /// JWT Token
     pub token: String,
+    /// Token type
     pub token_type: String,
 }
 
+/// Internal endpoint to edit a local users profile
 #[put("/edit_profile")]
 pub(crate) async fn edit_profile(
     request: HttpRequest,
@@ -168,14 +192,19 @@ pub(crate) async fn edit_profile(
     }))
 }
 
+/// Struct representing a local users profile
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct UserProfile {
+    /// Username of the local user
     pub id: String,
+    /// Bio of the local user
     pub about: Option<String>,
+    /// Avatar of the local user
     pub avatar_url: Option<String>,
 }
 
+/// Internal endpoint to retrieve the details of a local user by their username
 #[get("/user/{name}")]
 pub(crate) async fn get_user(
     request: HttpRequest,
@@ -223,6 +252,7 @@ pub(crate) async fn get_user(
     Ok(HttpResponse::Ok().json(profile))
 }
 
+/// Retrieves a user hosted on an external host
 pub(crate) async fn get_extern_user(
     user: DatabaseFederatedUser,
     name: String,
