@@ -1,0 +1,3 @@
+(function() {var implementors = {};
+implementors["starlight"] = [{"text":"impl ResponseError for <a class=\"enum\" href=\"starlight/util/route_error/enum.RouteError.html\" title=\"enum starlight::util::route_error::RouteError\">RouteError</a>","synthetic":false,"types":["starlight::util::route_error::RouteError"]}];
+if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
