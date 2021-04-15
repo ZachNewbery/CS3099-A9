@@ -648,7 +648,7 @@ pub(crate) async fn edit_post(
         Some(host) => {
             let conn = get_conn_from_pool(pool.clone())?;
             let user = web::block(move || get_name_from_local_user(&conn, local_user)).await?;
-            dbg!(&edit_post);
+
             let req = make_federated_request(
                 awc::Client::put,
                 host.to_string(),
