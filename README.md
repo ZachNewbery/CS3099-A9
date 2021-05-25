@@ -5,7 +5,7 @@ This project is a federated platform for distributed news communities.
 
 ## Instructions to run locally
 
-To make it clear how to run our project locally, should it become necessary, we have included two ```README.md``` files with instructions. Each outlines the nececcary dependencies, as well as build and run instructions for our platform. 
+To make it clear how to run our project locally, should it become necessary, we have included two ```README.md``` files with instructions. Each outlines the necessary dependencies, as well as build and run instructions for our platform. 
 
 ### Backend:
 
