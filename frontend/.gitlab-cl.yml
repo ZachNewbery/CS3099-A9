@@ -1,0 +1,29 @@
+stages:
+- build
+- deploy
+
+build:
+  image: node
+  stage: build
+  script:
+    - cd ./frontend
+    - npm install
+    - npm run build
+  artifacts:
+    paths:
+      - frontend/build
+
+deploy:
+  image: ubuntu
+  stage: deploy
+  script:
+    - apt-get update
+    - apt-get install -y rsync openssh-client
+    - eval $(ssh-agent -s)
+    - mkdir -p ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - cat -A ~/.ssh/id_rsa
+    - ssh-add ~/.ssh/id_rsa
+    - echo -e "Host *\n\tStrictHostKeyChecking no\n\n" > ~/.ssh/config
+    - rsync -rav --delete frontend/build/ fm205@cs3099user-a9.host.cs.st-andrews.ac.uk:/cs/home/cs3099user-a9/nginx_default/frontend/build
